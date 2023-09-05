@@ -32,7 +32,7 @@ After(async function () {
 });
 
 
-Given('a receipt with id {string} stored into receipt generator', async function (id) {
+Given('a receipt with id {string} stored into receipt datastore', async function (id) {
     this.eventId = id;
     // prior cancellation to avoid dirty cases
     await deleteDocumentFromReceiptsDatastore(this.eventId, this.eventId);
@@ -69,13 +69,13 @@ Given('a random biz event with id {string} enqueued on receipts poison queue wit
     await putMessageOnPoisonQueue(this.event);
 });
 
-When('the biz event has been properly stored on receipt-message-error generator after {int} ms', async function (time) {
+When('the biz event has been properly stored on receipt-message-error datastore after {int} ms', async function (time) {
     // boundary time spent by azure function to process event
     await sleep(time);
     this.responseToCheck = await getDocumentByMessagePayloadFromErrorReceiptsDatastore(this.event);
 });
 
-Then('the receipt-message-error generator returns the error receipt', async function () {
+Then('the receipt-message-error datastore returns the error receipt', async function () {
     assert.notStrictEqual(this.responseToCheck.resources.length, 0);
     this.errorReceiptId = this.responseToCheck.resources[0].id;
     assert.strictEqual(this.responseToCheck.resources.length, 1);
@@ -88,7 +88,7 @@ Then('the error receipt has the status {string}', function (targetStatus) {
 
 
 
-Given('a error receipt with id {string} stored into receipt-message-error generator with status REVIEWED', async function (id) {
+Given('a error receipt with id {string} stored into receipt-message-error datastore with status REVIEWED', async function (id) {
     assert.strictEqual(this.eventId, id);
     let response = await createDocumentInErrorReceiptsDatastore(id);
     assert.strictEqual(response.statusCode, 201);
