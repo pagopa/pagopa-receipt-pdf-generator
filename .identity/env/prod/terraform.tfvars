@@ -6,7 +6,7 @@ tags = {
   CreatedBy   = "Terraform"
   Environment = "Prod"
   Owner       = "pagoPA"
-  Source      = "https://github.com/pagopa/pagopa-receipt-pdf-datastore"
+  Source      = "https://github.com/pagopa/pagopa-receipt-pdf-generator"
   CostCenter  = "TS310 - PAGAMENTI & SERVIZI"
 }
 

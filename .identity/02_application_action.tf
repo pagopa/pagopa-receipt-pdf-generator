@@ -78,12 +78,6 @@ resource "azurerm_role_assignment" "environment_receipts_cosmos_role" {
   principal_id         = module.github_runner_app.object_id
 }
 
-resource "azurerm_role_assignment" "environment_bizevents_cosmos_role" {
-  scope                = data.azurerm_cosmosdb_account.bizevents_cosmos.id
-  role_definition_name = "Contributor"
-  principal_id         = module.github_runner_app.object_id
-}
-
 resource "azurerm_key_vault_access_policy" "ad_group_policy" {
   key_vault_id = data.azurerm_key_vault.key_vault.id
 

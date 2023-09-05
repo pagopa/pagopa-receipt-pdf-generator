@@ -1,7 +1,7 @@
 locals {
   github = {
     org        = "pagopa"
-    repository = "pagopa-receipt-pdf-datastore"
+    repository = "pagopa-receipt-pdf-generator"
   }
 
   prefix          = "pagopa"

@@ -52,11 +52,6 @@ data "azurerm_cosmosdb_account" "receipts_cosmos" {
   resource_group_name = "pagopa-${var.env_short}-${local.location_short}-receipts-rg"
 }
 
-data "azurerm_cosmosdb_account" "bizevents_cosmos" {
-  name                = "pagopa-${var.env_short}-${local.location_short}-bizevents-ds-cosmos-account"
-  resource_group_name = "pagopa-${var.env_short}-${local.location_short}-bizevents-rg"
-}
-
 data "azurerm_key_vault_secret" "key_vault_integration_test_webhook_slack" {
   name         = "webhook-slack"
   key_vault_id = data.azurerm_key_vault.key_vault_domain.id
