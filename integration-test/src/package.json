@@ -1,5 +1,5 @@
 {
-  "name": "pagopa-receipt-pdf-datastore",
+  "name": "pagopa-receipt-pdf-generator",
   "license": "MIT",
   "version": "0.0.1",
   "scripts": {

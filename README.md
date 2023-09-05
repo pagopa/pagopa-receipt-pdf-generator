@@ -1,10 +1,11 @@
-# pagoPA Receipt-pdf-datastore
+# pagoPA Receipt-pdf-generator
 
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=pagopa_pagopa-receipt-pdf-datastore&metric=alert_status)](https://sonarcloud.io/dashboard?id=pagopa_pagopa-receipt-pdf-datastore)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=pagopa_pagopa-receipt-pdf-generator&metric=alert_status)](https://sonarcloud.io/dashboard?id=pagopa_pagopa-receipt-pdf-generator)
 
-Java Azure Functions that ingest a biz-event, save a receipt object on a CosmosDB,
-then generate a PDF based on specific templates using the [PDF-engine function](https://github.com/pagopa/pagopa-pdf-engine) and
-save it on an Azure Blob Storage.
+Java Azure Functions that generate a PDF, from a receipt generated and saved on a CosmosDB previously
+by [receipt-pdf-datastore](https://github.com/pagopa/pagopa-receipt-pdf-datastore), 
+based on specific templates using the [PDF-engine function](https://github.com/pagopa/pagopa-pdf-engine)
+and save it on an Azure Blob Storage.
 
 ---
 
@@ -40,7 +41,7 @@ save it on an Azure Blob Storage.
 
 #### Set environment variables
 
-`docker build -t pagopa-receip-pdf-datastore .`
+`docker build -t pagopa-receip-pdf-generator .`
 
 `cp .env.example .env`
 
@@ -50,7 +51,7 @@ and replace in `.env` with correct values
 
 then type :
 
-`docker run -p 80:80 --env-file=./.env pagopa-receip-pdf-datastore`
+`docker run -p 80:80 --env-file=./.env pagopa-receip-pdf-generator`
 
 ### Run locally with Maven
 
@@ -71,13 +72,11 @@ then replace env variables with correct values
 |-----------------------------------|----------------------------------------------------------------------------------|:-----------------------:|
 | `RECEIPT_QUEUE_CONN_STRING`       | Connection string to the Receipt Queue                                           |                         |
 | `RECEIPT_QUEUE_TOPIC`             | Topic name of the Receipt Queue                                                  |                         |
-| `RECEIPT_QUEUE_DELAY`             | Delay, in seconds, the visibility of the messages in the queue                   |           "1"           |
 | `RECEIPT_QUEUE_MAX_RETRY`         | Number of retry to complete the generation process before being tagged as FAILED |           "5"           |
-| `RECEIPT_QUEUE_TOPIC-POISON`      | Topic name of the Receipt Poison Queue                                           |                         |
+| `RECEIPT_QUEUE_TOPIC_POISON`      | Topic name of the Receipt Poison Queue                                           |                         |
 | `BLOB_STORAGE_ACCOUNT_ENDPOINT`   | Endpoint to the Receipt Blob Storage                                             |                         |
 | `BLOB_STORAGE_CONN_STRING`        | Connection string of the Receipt Blob Storage                                    |                         |
 | `BLOB_STORAGE_CONTAINER_NAME`     | Container name of the Receipt container in the Blob Storage                      |                         |
-| `COSMOS_BIZ_EVENT_CONN_STRING`    | Connection string to the BizEvent CosmosDB                                       |                         |
 | `COSMOS_RECEIPTS_CONN_STRING`     | Connection string to the Receipt CosmosDB                                        |                         |
 | `COSMOS_RECEIPT_SERVICE_ENDPOINT` | Endpoint to the Receipt CosmosDB                                                 |                         |
 | `COSMOS_RECEIPT_KEY`              | Key to the Receipt CosmosDB                                                      |                         |
