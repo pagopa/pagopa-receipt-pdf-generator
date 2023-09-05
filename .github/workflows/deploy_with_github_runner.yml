@@ -14,7 +14,7 @@ on:
 
 env:
   NAMESPACE: receipts
-  APP_NAME: pagopapagopareceiptpdfdatastore
+  APP_NAME: pagopapagopareceiptpdfgenerator
 
 permissions:
   id-token: write
