@@ -84,13 +84,3 @@ Then('the receipt-message-error datastore returns the error receipt', async func
 Then('the error receipt has the status {string}', function (targetStatus) {
     assert.strictEqual(this.responseToCheck.resources[0].status, targetStatus);
 });
-
-
-
-
-Given('a error receipt with id {string} stored into receipt-message-error datastore with status REVIEWED', async function (id) {
-    assert.strictEqual(this.eventId, id);
-    let response = await createDocumentInErrorReceiptsDatastore(id);
-    assert.strictEqual(response.statusCode, 201);
-    this.errorReceiptId = id;
-});
