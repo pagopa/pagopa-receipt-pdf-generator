@@ -3,8 +3,8 @@ microservice-chart:
   nameOverride: ""
   fullnameOverride: ""
   image:
-    repository: ghcr.io/pagopa/pagopa-receipt-pdf-datastore
-    tag: "0.8.7"
+    repository: ghcr.io/pagopa/pagopa-receipt-pdf-generator
+    tag: "0.0.1"
     pullPolicy: Always
   # https://github.com/Azure/azure-functions-host/blob/dev/src/WebJobs.Script.WebHost/Controllers/HostController.cs
   livenessProbe:
@@ -40,7 +40,7 @@ microservice-chart:
   ingress:
     create: true
     host: "weuprod.receipts.internal.platform.pagopa.it"
-    path: /pagopa-receipt-pdf-datastore/(.*)
+    path: /pagopa-receipt-pdf-generator/(.*)
     servicePort: 80
   serviceAccount:
     create: false
@@ -78,7 +78,7 @@ microservice-chart:
           value: "70"
   envConfig:
     ENV: "prod"
-    WEBSITE_SITE_NAME: "pagopareceiptpdfdatastore" # required to show cloud role name in application insights
+    WEBSITE_SITE_NAME: "pagopareceiptpdfgenerator" # required to show cloud role name in application insights
     FUNCTIONS_WORKER_RUNTIME: "java"
     RECEIPT_QUEUE_TOPIC: 'pagopa-p-weu-receipts-queue-receipt-waiting-4-gen'
     RECEIPT_QUEUE_TOPIC_POISON: "pagopa-d-weu-receipts-queue-receipt-waiting-4-gen-poison"
@@ -89,8 +89,8 @@ microservice-chart:
     COSMOS_RECEIPT_CONTAINER_NAME: 'receipts'
     BLOB_STORAGE_ACCOUNT_ENDPOINT: 'https://pagopapweureceiptsfnsa.blob.core.windows.net'
     BLOB_STORAGE_CONTAINER_NAME: 'pagopa-p-weu-receipts-azure-blob-receipt-st-attach'
-    ELASTIC_APM_SERVICE_NAME: "pagopareceiptpdfdatastoreapm"
-    ELASTIC_APM_APPLICATION_PACKAGES: "it.gov.pagopa.receipt.pdf.datastore"
+    ELASTIC_APM_SERVICE_NAME: "pagopareceiptpdfgeneratorapm"
+    ELASTIC_APM_APPLICATION_PACKAGES: "it.gov.pagopa.receipt.pdf.generator"
     ELASTIC_APM_SERVER_URL: "http://quickstart-apm-http.elastic-system.svc:8200"
     ELASTIC_APM_LOG_SENDING: "false"
     ENABLE_ECS_CONSOLE: "true"
@@ -103,7 +103,6 @@ microservice-chart:
     BLOB_STORAGE_CONN_STRING: 'pdf-blob-storage-p-connection-string'
     COSMOS_RECEIPTS_CONN_STRING: 'cosmos-receipt-p-connection-string'
     RECEIPT_QUEUE_CONN_STRING: "receipts-storage-account-connection-string"
-    COSMOS_BIZ_EVENT_CONN_STRING: 'cosmos-biz-event-p-connection-string'
     OCP_APIM_SUBSCRIPTION_KEY: 'shared-apim-p-subscription-key'
     COSMOS_RECEIPT_KEY: "cosmos-receipt-pkey"
     ELASTIC_APM_SECRET_TOKEN: 'elastic-apm-secret-token'
@@ -134,8 +133,8 @@ microservice-chart:
     deployment:
       create: false
       image:
-        repository: ghcr.io/pagopa/pagopa-receipt-pdf-datastore
-        tag: "0.8.7"
+        repository: ghcr.io/pagopa/pagopa-receipt-pdf-generator
+        tag: "0.0.1"
         pullPolicy: Always
       envConfig:
       envSecret:
