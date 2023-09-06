@@ -55,11 +55,24 @@ When('the PDF receipt has been properly generate from biz event after {int} ms',
     this.responseToCheck = await getDocumentByIdFromReceiptsDatastore(this.eventId);
 });
 
+Then('the receipts datastore returns the receipt', async function () {
+    assert.notStrictEqual(this.responseToCheck.resources.length, 0);
+    this.receiptId = this.responseToCheck.resources[0].id;
+    assert.strictEqual(this.responseToCheck.resources.length, 1);
+});
+
+Then('the receipt has eventId {string}', function (targetId) {
+    assert.strictEqual(this.responseToCheck.resources[0].eventId, targetId);
+});
+
+Then('the receipt has not the status {string}', function (targetStatus) {
+    assert.notStrictEqual(this.responseToCheck.resources[0].status, targetStatus);
+});
+
 Then('the blob storage has the PDF document', async function () {
     let blobExist = await receiptPDFExist(this.responseToCheck.resources[0].mdAttach.name);
     assert.strictEqual(true, blobExist);
 });
-
 
 
 Given('a random biz event with id {string} enqueued on receipts poison queue with poison retry {string}', async function (id, value) {
