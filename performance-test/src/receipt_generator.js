@@ -96,7 +96,7 @@ export default function () {
 		tag = { storageMethod: "SendMessageToQueue" };
 
 		let eventMessage = JSON.stringify(createEvent(id));
-		let responseQueue = sendMessageToQueue(eventMessage, receiptQueueURI, receiptQueuePrimaryKey);
+		let responseQueue = sendMessageToQueue(eventMessage, receiptQueueURI, receiptQueueAccountName, receiptQueuePrimaryKey, receiptQueueName);
 
 		console.log("SendMessageToQueue call, Status " + responseQueue.status);
 	
@@ -105,7 +105,7 @@ export default function () {
 		}, tag);
 	
 		//if the message is sent to queue wait and check if it was correctly processed
-		if (responseQueue.status === 201) {
+		if (responseQueue.status === 200) {
 			sleep(processTime);
 			postcondition(id);
 		}
