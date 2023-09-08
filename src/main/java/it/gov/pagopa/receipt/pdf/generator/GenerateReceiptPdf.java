@@ -29,6 +29,8 @@ import java.util.List;
  */
 public class GenerateReceiptPdf {
 
+    private final Logger logger = LoggerFactory.getLogger(GenerateReceiptPdf.class);
+
     /**
      * This function will be invoked when a Queue trigger occurs
      * #
@@ -93,11 +95,8 @@ public class GenerateReceiptPdf {
         }
 
         List<Receipt> itemsToNotify = new ArrayList<>();
-        Logger logger = LoggerFactory.getLogger(getClass());
-
-        String logMsg = String.format("[%s] function called at %s for bizEvent with id %s",
+        logger.info("[{}] function called at {} for bizEvent with id {}",
                 context.getFunctionName(), LocalDateTime.now(), bizEvent.getId());
-        logger.info(logMsg);
 
         //Retrieve receipt's data from CosmosDB
         Receipt receipt;
@@ -130,32 +129,21 @@ public class GenerateReceiptPdf {
 
             if (debtorCF != null || payerCF != null) {
                 boolean generateOnlyDebtor = payerCF == null || payerCF.equals(debtorCF);
-
-                String log = String.format(
-                        "[%s] Generating pdf for Receipt with id %s",
+                logger.info("[{}] Generating pdf for Receipt with id {}",
                         context.getFunctionName(),
-                        receipt.getEventId()
-                );
-                logger.info(log);
+                        receipt.getEventId());
 
                 //Generate and save PDF
-                PdfGeneration pdfGeneration = service.handlePdfsGeneration(generateOnlyDebtor, receipt, bizEvent, debtorCF, payerCF, logger);
-
-
-                log = String.format(
-                        "[%s] Saving pdf for Receipt with id %s to the blob storage",
+                PdfGeneration pdfGeneration = service.handlePdfsGeneration(generateOnlyDebtor, receipt, bizEvent, debtorCF, payerCF);
+                logger.info("[{}] Saving pdf for Receipt with id {} to the blob storage",
                         context.getFunctionName(),
-                        receipt.getEventId()
-                );
-                logger.info(log);
+                        receipt.getEventId());
 
                 //Write PDF blob storage metadata on receipt
                 numberOfSavedPdfs = service.addPdfsMetadataToReceipt(receipt, pdfGeneration);
 
                 //Verify PDF generation success
                 service.verifyPdfGeneration(bizEventMessage, requeueMessage, logger, receipt, generateOnlyDebtor, pdfGeneration);
-
-
             } else {
                 String errorMessage = String.format(
                         "[%s] Error processing receipt with id %s : both debtor's and payer's fiscal code are null",
@@ -169,34 +157,24 @@ public class GenerateReceiptPdf {
                         errorMessage,
                         bizEventMessage,
                         receipt,
-                        requeueMessage,
-                        logger
+                        requeueMessage
                 );
             }
 
             //Add receipt to items to be saved to CosmosDB
             itemsToNotify.add(receipt);
-
         } else if (receipt != null) {
-            String errorMessage = String.format(
-                    "[%s] Receipt with id %s not in INSERTED or RETRY",
+            logger.info("[{}] Receipt with id {} not in INSERTED or RETRY",
                     context.getFunctionName(),
-                    receipt.getEventId()
-            );
-            logger.info(errorMessage);
+                    receipt.getEventId());
         }
 
-
-
         if (!itemsToNotify.isEmpty()) {
-            String log = String.format(
-                    "[%s] Receipt with id %s being saved with status %s and with %s pdfs",
+            logger.info("[{}] Receipt with id {} being saved with status {} and with {} pdfs",
                     context.getFunctionName(),
                     receipt.getEventId(),
                     receipt.getStatus(),
-                    numberOfSavedPdfs
-            );
-            logger.info(log);
+                    numberOfSavedPdfs);
             documentdb.setValue(itemsToNotify);
         }
     }
