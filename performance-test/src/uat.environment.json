@@ -1,0 +1,13 @@
+{
+  "environment": [
+    {
+      "env": "uat",
+      "receiptCosmosDBURI": "https://pagopa-u-weu-receipts-ds-cosmos-account.documents.azure.com:443/",
+      "receiptDatabaseID":"db",
+      "receiptContainerID":"receipts",
+      "receiptQueueAccountName": "pagopauweureceiptsfnsa",
+      "receiptQueueName": "pagopa-u-weu-receipts-queue-receipt-waiting-4-gen",
+      "processTime":"3"
+    }
+  ]
+}
