@@ -38,8 +38,6 @@ function generateAPISharedKey(accountName, accountKey, httpMethod, queueName){
     
     // Calcola la firma HMAC-SHA256
     const signature = crypto.hmac("sha256", accountKey, encodeURI(stringToSign), "hex");
-
-    console.log(encodeURI(stringToSign));
     
     // Crea l'intestazione "Authorization"
     return `SharedKey ${accountName}:${signature}`;
