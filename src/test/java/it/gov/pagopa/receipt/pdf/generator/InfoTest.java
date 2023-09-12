@@ -51,7 +51,7 @@ class InfoTest {
         assertNotNull(responseBody.getName());
         assertNotNull(responseBody.getVersion());
         assertNotNull(responseBody.getEnvironment());
-        assertEquals("receipt-pdf-generator", responseBody.getName());
+        assertEquals("pagopa-receipt-pdf-generator", responseBody.getName());
         assertEquals("azure-fn", responseBody.getEnvironment());
     }
 }
