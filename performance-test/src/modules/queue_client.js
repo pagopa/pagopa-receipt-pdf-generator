@@ -7,5 +7,5 @@ export function sendMessageToQueue(message, url, accountKey){
 
     let body = `<QueueMessage><MessageText>${message}</MessageText></QueueMessage>`;
     
-    return http.post(`${url}${accountKey}`, body, { headers });
+    return http.post(`${url}?${accountKey}`, body, { headers });
 }
