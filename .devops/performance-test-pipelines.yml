@@ -31,12 +31,14 @@ parameters:
 
 variables:
   ${{ if eq(parameters['ENVIRONMENT'], 'dev') }}:
-    receiptQueueSubscriptionKey: "$(DEV_RECEIPT_QUEUE_SUBSCRIPTION_KEY)"
     receiptCosmosSubscriptionKey: "$(DEV_RECEIPT_COSMOS_DB_SUBSCRIPTION_KEY)"
+    receiptQueueAccountName: "pagopadweureceiptsfnsa"
+    receiptQueueName: "pagopa-d-weu-receipts-queue-receipt-waiting-4-gen"
     poolImage: 'pagopa-dev-loadtest-linux'
   ${{ if eq(parameters['ENVIRONMENT'], 'uat') }}:
-    receiptQueueSubscriptionKey: "$(UAT_RECEIPT_QUEUE_SUBSCRIPTION_KEY)"
     receiptCosmosSubscriptionKey: "$(UAT_RECEIPT_COSMOS_DB_SUBSCRIPTION_KEY)"
+    receiptQueueAccountName: "pagopauweureceiptsfnsa"
+    receiptQueueName: "pagopa-u-weu-receipts-queue-receipt-waiting-4-gen"
     poolImage: 'pagopa-uat-loadtest-linux'
 
 pool:
@@ -48,8 +50,19 @@ steps:
       docker pull grafana/k6
     displayName: Pull k6 image
   - script: |
+      curl -L https://aka.ms/InstallAzureCli | bash
+      az login
+      SAS_TOKEN = "$(az storage container generate-sas \
+      --account-name pagopadweureceiptsfnsa \
+      --name pagopa-d-weu-receipts-queue-receipt-waiting-4-gen \
+      --permissions acdlrw \
+      --expiry "$(date -d '+1 day' +'%Y-%m-%d")' \
+      --auth-mode login \
+      --as-user)"
+      echo SAS_TOKEN
+  - script: |
       cd ./performance-test
-      sh ./run_performance_test.sh ${{ parameters.ENVIRONMENT }} ${{ parameters.TEST_TYPE }} ${{ parameters.SCRIPT }} ${{ parameters.DB_NAME }} $RECEIPT_QUEUE_SUBSCRIPTION_KEY $RECEIPT_COSMOS_SUBSCRIPTION_KEY
+      sh ./run_performance_test.sh ${{ parameters.ENVIRONMENT }} ${{ parameters.TEST_TYPE }} ${{ parameters.SCRIPT }} ${{ parameters.DB_NAME }} "$(SAS_TOKEN)" $RECEIPT_COSMOS_SUBSCRIPTION_KEY
     displayName: Run k6 ${{ parameters.SCRIPT }} on ${{ parameters.ENVIRONMENT }}
     env:
       RECEIPT_QUEUE_SUBSCRIPTION_KEY: ${{ variables.receiptQueueSubscriptionKey }}
