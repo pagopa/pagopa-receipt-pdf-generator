@@ -34,12 +34,14 @@ variables:
     receiptCosmosSubscriptionKey: "$(DEV_RECEIPT_COSMOS_DB_SUBSCRIPTION_KEY)"
     receiptQueueAccountName: "pagopadweureceiptsfnsa"
     receiptQueueName: "pagopa-d-weu-receipts-queue-receipt-waiting-4-gen"
-    poolImage: 'pagopa-dev-loadtest-linux'
+    azureSubscription: '$(TF_DEV_AZURE_SERVICE_CONNECTION)'
+    poolImage: "pagopa-dev-loadtest-linux"
   ${{ if eq(parameters['ENVIRONMENT'], 'uat') }}:
     receiptCosmosSubscriptionKey: "$(UAT_RECEIPT_COSMOS_DB_SUBSCRIPTION_KEY)"
     receiptQueueAccountName: "pagopauweureceiptsfnsa"
     receiptQueueName: "pagopa-u-weu-receipts-queue-receipt-waiting-4-gen"
-    poolImage: 'pagopa-uat-loadtest-linux'
+    azureSubscription: '$(TF_UAT_AZURE_SERVICE_CONNECTION)'
+    poolImage: "pagopa-uat-loadtest-linux"
 
 pool:
   name: $(poolImage)
@@ -51,15 +53,26 @@ steps:
     displayName: Pull k6 image
   - script: |
       curl -L https://aka.ms/InstallAzureCli | bash
-      az login
+    displayName: Install Azure CLI
+  - task: AzureCLI@2
+    displayName: Login Azure
+    inputs:
+      azureSubscription: $(azureSubscription)
+      scriptType: bash
+      scriptLocation: inlineScript
+      inlineScript: |
+        az --version
+        az account show
+  - script: |
       SAS_TOKEN = "$(az storage container generate-sas \
-      --account-name pagopadweureceiptsfnsa \
-      --name pagopa-d-weu-receipts-queue-receipt-waiting-4-gen \
+      --account-name ${{receiptQueueAccountName}} \
+      --name ${{receiptQueueName}} \
       --permissions acdlrw \
       --expiry "$(date -d '+1 day' +'%Y-%m-%d")' \
       --auth-mode login \
       --as-user)"
-      echo SAS_TOKEN
+      echo "$(SAS_TOKEN)"
+    displayName: Retreive Azure SAS TOKEN
   - script: |
       cd ./performance-test
       sh ./run_performance_test.sh ${{ parameters.ENVIRONMENT }} ${{ parameters.TEST_TYPE }} ${{ parameters.SCRIPT }} ${{ parameters.DB_NAME }} "$(SAS_TOKEN)" $RECEIPT_COSMOS_SUBSCRIPTION_KEY
@@ -67,4 +80,3 @@ steps:
     env:
       RECEIPT_QUEUE_SUBSCRIPTION_KEY: ${{ variables.receiptQueueSubscriptionKey }}
       RECEIPT_COSMOS_SUBSCRIPTION_KEY: ${{ variables.receiptCosmosSubscriptionKey }}
-      
