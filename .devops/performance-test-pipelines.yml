@@ -59,7 +59,7 @@ steps:
   - task: AzureCLI@2
     displayName: Login Azure
     inputs:
-      azureSubscription: $(azureSubscription)
+      azureSubscription: '$(TF_UAT_AZURE_SERVICE_CONNECTION)'
       scriptType: bash
       scriptLocation: inlineScript
       inlineScript: |
