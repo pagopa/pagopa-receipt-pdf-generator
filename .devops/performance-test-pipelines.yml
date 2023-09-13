@@ -62,7 +62,7 @@ steps:
       scriptLocation: inlineScript
       inlineScript: |
       SAS_TOKEN = "$(az storage container generate-sas \
-      --account-name '$(receiptQueueAccountName)'' \
+      --account-name '$(receiptQueueAccountName)' \
       --name '$(receiptQueueName)' \
       --permissions acdlrw \
       --expiry "$(date -d '+1 day' +'%Y-%m-%d")' \
