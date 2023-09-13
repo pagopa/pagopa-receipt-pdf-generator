@@ -53,6 +53,10 @@ steps:
     displayName: Pull k6 image
   - script: |
       curl -L https://aka.ms/InstallAzureCli | bash
+      echo $(azureSubscription)
+      echo $(variables.azureSubscription)
+      echo ${{azureSubscription}}
+      echo ${{variables.azureSubscription}}
     displayName: Install Azure CLI
   - task: AzureCLI@2
     displayName: Login Azure
