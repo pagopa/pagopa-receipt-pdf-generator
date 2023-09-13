@@ -61,9 +61,6 @@ steps:
       scriptType: bash
       scriptLocation: inlineScript
       inlineScript: |
-        az --version
-        az account show
-  - script: |
       SAS_TOKEN = "$(az storage container generate-sas \
       --account-name $(receiptQueueAccountName) \
       --name $(receiptQueueName) \
@@ -72,7 +69,6 @@ steps:
       --auth-mode login \
       --as-user)"
       echo "$(SAS_TOKEN)"
-    displayName: Retreive Azure SAS TOKEN
   - script: |
       cd ./performance-test
       sh ./run_performance_test.sh ${{ parameters.ENVIRONMENT }} ${{ parameters.TEST_TYPE }} ${{ parameters.SCRIPT }} ${{ parameters.DB_NAME }} "$(SAS_TOKEN)" $RECEIPT_COSMOS_SUBSCRIPTION_KEY
