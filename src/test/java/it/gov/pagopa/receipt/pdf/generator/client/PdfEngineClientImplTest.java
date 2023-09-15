@@ -29,7 +29,7 @@ class PdfEngineClientImplTest {
     @Test
     void runOk() throws IOException {
 
-        File tempDirectory = new File("temp");
+        File tempDirectory = new File("/temp");
         if (!tempDirectory.exists()) {
             Files.createDirectory(tempDirectory.toPath());
         }

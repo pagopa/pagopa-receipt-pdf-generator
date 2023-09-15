@@ -70,7 +70,7 @@ public class GenerateReceiptPdf {
             @QueueTrigger(
                     name = "QueueReceiptWaitingForGen",
                     queueName = "%RECEIPT_QUEUE_TOPIC%",
-                    connection = "RECEIPT_QUEUE_CONN_STRING")
+                    connection = "RECEIPTS_STORAGE_CONN_STRING")
             String bizEventMessage,
             @CosmosDBOutput(
                     name = "ReceiptDatastore",
@@ -81,7 +81,7 @@ public class GenerateReceiptPdf {
             @QueueOutput(
                     name = "QueueReceiptWaitingForGenOutput",
                     queueName = "%RECEIPT_QUEUE_TOPIC%",
-                    connection = "RECEIPT_QUEUE_CONN_STRING")
+                    connection = "RECEIPTS_STORAGE_CONN_STRING")
             OutputBinding<String> requeueMessage,
             final ExecutionContext context) throws BizEventNotValidException, ReceiptNotFoundException {
 

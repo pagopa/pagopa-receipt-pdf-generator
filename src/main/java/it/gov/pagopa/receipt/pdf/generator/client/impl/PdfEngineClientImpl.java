@@ -33,6 +33,8 @@ public class PdfEngineClientImpl implements PdfEngineClient {
 
     private final String pdfEngineEndpoint = System.getenv().getOrDefault("PDF_ENGINE_ENDPOINT", "");
     private final String ocpAimSubKey = System.getenv().getOrDefault("OCP_APIM_SUBSCRIPTION_KEY", "");
+    private final String workingDirectoryPath = System.getenv().getOrDefault("WORKING_DIRECTORY_PATH", "/temp");
+
     private static final String HEADER_AUTH_KEY = "Ocp-Apim-Subscription-Key";
     private static final String ZIP_FILE_NAME = "template.zip";
     private static final String TEMPLATE_KEY = "template";
@@ -99,7 +101,7 @@ public class PdfEngineClientImpl implements PdfEngineClient {
      * @param request The request to the PDF engine
      * @return pdf engine response
      */
-    private static PdfEngineResponse handlePdfEngineResponse(CloseableHttpClient client, HttpPost request) {
+    private PdfEngineResponse handlePdfEngineResponse(CloseableHttpClient client, HttpPost request) {
         PdfEngineResponse pdfEngineResponse = new PdfEngineResponse();
         //Execute call
         try (CloseableHttpResponse response = client.execute(request)) {
@@ -132,8 +134,8 @@ public class PdfEngineClientImpl implements PdfEngineClient {
      * @param inputStream       InputStream pdf
      * @throws IOException In case of error to save
      */
-    private static void saveTempPdf(PdfEngineResponse pdfEngineResponse, InputStream inputStream) throws IOException {
-        File tempDirectory = new File("temp");
+    private void saveTempPdf(PdfEngineResponse pdfEngineResponse, InputStream inputStream) throws IOException {
+        File tempDirectory = new File(workingDirectoryPath);
         if (!tempDirectory.exists()) {
             Files.createDirectory(tempDirectory.toPath());
         }
@@ -152,7 +154,7 @@ public class PdfEngineClientImpl implements PdfEngineClient {
      * @param pdfEngineResponse Pdf engine respone
      * @param e                 Error thrown
      */
-    private static void handleExceptionErrorMessage(PdfEngineResponse pdfEngineResponse, Exception e) {
+    private void handleExceptionErrorMessage(PdfEngineResponse pdfEngineResponse, Exception e) {
         pdfEngineResponse.setStatusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR);
         pdfEngineResponse.setErrorMessage(String.format("Exception thrown during pdf generation process: %s", e));
     }
@@ -165,7 +167,7 @@ public class PdfEngineClientImpl implements PdfEngineClient {
      * @param entityResponse    Response content from the PDF Engine
      * @throws IOException in case of error encoding to string
      */
-    private static void handleErrorResponse(
+    private void handleErrorResponse(
             PdfEngineResponse pdfEngineResponse,
             CloseableHttpResponse response,
             HttpEntity entityResponse

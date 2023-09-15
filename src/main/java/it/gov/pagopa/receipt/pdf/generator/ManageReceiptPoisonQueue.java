@@ -45,7 +45,7 @@ public class ManageReceiptPoisonQueue {
             @QueueTrigger(
                     name = "QueueReceiptWaitingForGenPoison",
                     queueName = "%RECEIPT_QUEUE_TOPIC_POISON%",
-                    connection = "RECEIPT_QUEUE_CONN_STRING")
+                    connection = "RECEIPTS_STORAGE_CONN_STRING")
             String errorMessage,
             @CosmosDBOutput(
                     name = "ReceiptMessageErrorsDatastore",
