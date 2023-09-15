@@ -27,8 +27,8 @@ import java.util.Objects;
  */
 public class ManageReceiptPoisonQueue {
 
-    private final Logger logger = LoggerFactory.getLogger(ManageReceiptPoisonQueue.class);
-    
+    // private final Logger logger = LoggerFactory.getLogger(ManageReceiptPoisonQueue.class);
+
     /**
      * This function will be invoked when a Queue trigger occurs
      *
@@ -57,23 +57,23 @@ public class ManageReceiptPoisonQueue {
 
         BizEvent bizEvent = null;
 
-        logger.info("[{}] function called at {} for payload {}", context.getFunctionName(), LocalDateTime.now(), errorMessage);
+        // logger.info("[{}] function called at {} for payload {}", context.getFunctionName(), LocalDateTime.now(), errorMessage);
         boolean retriableContent = false;
 
         try {
             //attempt to Map queue bizEventMessage to BizEvent
             bizEvent = ObjectMapperUtils.mapString(errorMessage, BizEvent.class);
-            logger.info("[{}] function called at {} recognized as valid BizEvent with id {}",
-                    context.getFunctionName(), LocalDateTime.now(), bizEvent.getId());
+            // logger.info("[{}] function called at {} recognized as valid BizEvent with id {}",
+            //         context.getFunctionName(), LocalDateTime.now(), bizEvent.getId());
             if (bizEvent.getAttemptedPoisonRetry()) {
-                logger.info("[{}] function called at {} for event with id {} has ingestion already retried, sending to review",
-                        context.getFunctionName(), LocalDateTime.now(), bizEvent.getId());
+                // logger.info("[{}] function called at {} for event with id {} has ingestion already retried, sending to review",
+                //         context.getFunctionName(), LocalDateTime.now(), bizEvent.getId());
             } else {
                 retriableContent = true;
             }
         } catch (JsonProcessingException e) {
-            logger.error("[{}] received parsing error in the function called at {} for payload {}",
-                    context.getFunctionName(), LocalDateTime.now(), errorMessage, e);
+            // logger.error("[{}] received parsing error in the function called at {} for payload {}",
+            //         context.getFunctionName(), LocalDateTime.now(), errorMessage, e);
         }
 
         if (retriableContent) {
@@ -89,9 +89,9 @@ public class ManageReceiptPoisonQueue {
                             sendMessageResult.getStatusCode());
                 }
             } catch (Exception e) {
-                logger.error("[{}] error for the function called at {} when attempting" +
-                                "to requeue BizEvent wit id {}, saving to cosmos for review",
-                        context.getFunctionName(), LocalDateTime.now(), bizEvent.getId(), e);
+                // logger.error("[{}] error for the function called at {} when attempting" +
+                //                 "to requeue BizEvent wit id {}, saving to cosmos for review",
+                //         context.getFunctionName(), LocalDateTime.now(), bizEvent.getId(), e);
                 saveToDocument(context, errorMessage, documentdb);
             }
         } else {
@@ -102,8 +102,8 @@ public class ManageReceiptPoisonQueue {
 
     private void saveToDocument(ExecutionContext context, String errorMessage,
                                 OutputBinding<ReceiptError> documentdb) {
-        logger.info("[{}] saving new entry to the retry error to review with payload {}",
-                context.getFunctionName(), errorMessage);
+        // logger.info("[{}] saving new entry to the retry error to review with payload {}",
+        //         context.getFunctionName(), errorMessage);
         documentdb.setValue(ReceiptError.builder().messagePayload(errorMessage)
                 .status(ReceiptErrorStatusType.TO_REVIEW).build());
     }

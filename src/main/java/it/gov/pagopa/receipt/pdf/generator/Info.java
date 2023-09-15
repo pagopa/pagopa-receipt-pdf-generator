@@ -22,7 +22,7 @@ import java.util.Properties;
  */
 public class Info {
 
-    private final Logger logger = LoggerFactory.getLogger(Info.class);
+    // private final Logger logger = LoggerFactory.getLogger(Info.class);
 
     /**
      * This function will be invoked when a Http Trigger occurs
@@ -41,7 +41,7 @@ public class Info {
                 .body(getInfo())
                 .build();
     }
-    public synchronized AppInfo getInfo() {
+    public AppInfo getInfo() {
         String version = null;
         String name = null;
         // try (InputStream inputStream = this.getClass().getClassLoader().getResourceAsStream("application.properties")) {
