@@ -33,7 +33,7 @@ public class PdfEngineClientImpl implements PdfEngineClient {
 
     private final String pdfEngineEndpoint = System.getenv().getOrDefault("PDF_ENGINE_ENDPOINT", "");
     private final String ocpAimSubKey = System.getenv().getOrDefault("OCP_APIM_SUBSCRIPTION_KEY", "");
-    private final String workingDirectoryPath = System.getenv().getOrDefault("WORKING_DIRECTORY_PATH", "/temp");
+    private final String workingDirectoryPath = System.getenv().getOrDefault("WORKING_DIRECTORY_PATH", "");
 
     private static final String HEADER_AUTH_KEY = "Ocp-Apim-Subscription-Key";
     private static final String ZIP_FILE_NAME = "template.zip";
