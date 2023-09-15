@@ -44,16 +44,18 @@ public class Info {
     public synchronized AppInfo getInfo() {
         String version = null;
         String name = null;
-        try (InputStream inputStream = this.getClass().getClassLoader().getResourceAsStream("application.properties")) {
-            Properties properties = new Properties();
-            if (inputStream != null) {
-                properties.load(inputStream);
-                version = properties.getProperty("version", null);
-                name = properties.getProperty("name", null);
-            }
-        } catch (Exception e) {
-            logger.error("Impossible to retrieve information from pom.properties file.", e);
-        }
-        return AppInfo.builder().version(version).environment("azure-fn").name(name).build();
+        // try (InputStream inputStream = this.getClass().getClassLoader().getResourceAsStream("application.properties")) {
+        //     Properties properties = new Properties();
+        //     if (inputStream != null) {
+        //         properties.load(inputStream);
+        //         version = properties.getProperty("version", null);
+        //         name = properties.getProperty("name", null);
+        //     }
+        // } catch (Exception e) {
+        //     logger.error("Impossible to retrieve information from pom.properties file.", e);
+        // }
+        // return AppInfo.builder().version(version).environment("azure-fn").name(name).build();
+        return AppInfo.builder().version("fake").environment("fake").name("name").build();
+
     }
 }
