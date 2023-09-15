@@ -257,6 +257,7 @@ public class GenerateReceiptPdfService {
                                 responsePayerGen.getStatusCode() == HttpStatus.SC_OK))
         ) {
             receipt.setStatus(ReceiptStatusType.GENERATED);
+            receipt.setGenerated_at(System.currentTimeMillis());
         } else {
             ReceiptStatusType receiptStatusType;
             //Verify if the max number of retry have been passed
