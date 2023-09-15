@@ -21,7 +21,7 @@ class ReceiptQueueClientImplTest {
         @SuppressWarnings("secrets:S6338")
         String mockKey = "mockKeymockKeymockKeymockKeymockKeymockKeymockKeymockKeymockKeymockKeymockKeymockKeyMK==";
         withEnvironmentVariables(
-                "RECEIPT_QUEUE_CONN_STRING", "DefaultEndpointsProtocol=https;AccountName=samplequeue;AccountKey="+mockKey+";EndpointSuffix=core.windows.net",
+                "RECEIPTS_STORAGE_CONN_STRING", "DefaultEndpointsProtocol=https;AccountName=samplequeue;AccountKey="+mockKey+";EndpointSuffix=core.windows.net",
                 "RECEIPT_QUEUE_TOPIC", "validTopic"
         ).execute(() -> Assertions.assertDoesNotThrow(ReceiptQueueClientImpl::getInstance)
         );

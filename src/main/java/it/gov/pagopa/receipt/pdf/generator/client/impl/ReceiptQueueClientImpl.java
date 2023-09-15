@@ -21,7 +21,7 @@ public class ReceiptQueueClientImpl implements ReceiptQueueClient {
     private final QueueClient queueClient;
 
     private ReceiptQueueClientImpl() {
-        String receiptQueueConnString = System.getenv("RECEIPT_QUEUE_CONN_STRING");
+        String receiptQueueConnString = System.getenv("RECEIPTS_STORAGE_CONN_STRING");
         String receiptQueueTopic = System.getenv("RECEIPT_QUEUE_TOPIC");
 
         this.queueClient = new QueueClientBuilder()

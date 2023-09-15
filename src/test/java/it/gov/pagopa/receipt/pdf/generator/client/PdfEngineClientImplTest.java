@@ -11,6 +11,10 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -19,7 +23,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+@ExtendWith(SystemStubsExtension.class)
 class PdfEngineClientImplTest {
+
+    @SystemStub
+    private EnvironmentVariables environmentVariables;
 
     @Test
     void testSingleton() {
@@ -27,7 +35,7 @@ class PdfEngineClientImplTest {
     }
 
     @Test
-    void runOk() throws IOException {
+    void runOk() throws Exception {
 
         File tempDirectory = new File("temp");
         if (!tempDirectory.exists()) {
@@ -63,6 +71,8 @@ class PdfEngineClientImplTest {
 
         when(mockClient.execute(any())).thenReturn(mockResponse);
         when(mockBuilder.build()).thenReturn(mockClient);
+
+        environmentVariables.set("WORKING_DIRECTORY_PATH", "temp");
 
         PdfEngineClientImpl client = new PdfEngineClientImpl(mockBuilder);
         PdfEngineResponse pdfEngineResponse = client.generatePDF(pdfEngineRequest);
