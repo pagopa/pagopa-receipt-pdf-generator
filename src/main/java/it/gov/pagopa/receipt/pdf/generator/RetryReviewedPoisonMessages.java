@@ -25,7 +25,7 @@ import java.util.List;
  */
 public class RetryReviewedPoisonMessages {
 
-//     private final Logger logger = LoggerFactory.getLogger(RetryReviewedPoisonMessages.class);
+     private final Logger logger = LoggerFactory.getLogger(RetryReviewedPoisonMessages.class);
 
     /**
      * This function will be invoked when an CosmosDB trigger occurs
@@ -61,8 +61,8 @@ public class RetryReviewedPoisonMessages {
 
         List<ReceiptError> itemsDone = new ArrayList<>();
 
-        // logger.debug("[{}] documentCaptorValue stat {} function - num errors reviewed triggered {}",
-        //         context.getFunctionName(), context.getInvocationId(), items.size());
+         logger.info("[{}] documentCaptorValue stat {} function - num errors reviewed triggered {}",
+                 context.getFunctionName(), context.getInvocationId(), items.size());
 
         ReceiptQueueClientImpl queueService = ReceiptQueueClientImpl.getInstance();
 
@@ -86,19 +86,16 @@ public class RetryReviewedPoisonMessages {
 
                     } catch (Exception e) {
                         //Error info
-                        // logger.error("[{}] Error to process receiptError with id {}",
-                        //         context.getFunctionName(), receiptError.getId(), e);
+                         logger.error("[{}] Error to process receiptError with id {}",
+                                 context.getFunctionName(), receiptError.getId(), e);
                         receiptError.setMessageError(e.getMessage());
                         receiptError.setStatus(ReceiptErrorStatusType.TO_REVIEW);
                     }
 
                     itemsDone.add(receiptError);
-
                }
-
         }
 
         documentdb.setValue(itemsDone);
-
     }
 }
