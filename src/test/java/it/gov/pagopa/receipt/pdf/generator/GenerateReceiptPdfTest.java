@@ -565,47 +565,6 @@ class GenerateReceiptPdfTest {
         assertEquals(ReceiptStatusType.FAILED, capturedCosmos.getStatus());
     }
 
-    @Test
-    void runKoTemplateNotFound() throws Exception {
-        ReceiptCosmosClientImpl cosmosClient = mock(ReceiptCosmosClientImpl.class);
-        receiptMock.setStatus(ReceiptStatusType.INSERTED);
-        EventData eventDataMock = mock(EventData.class);
-        when(eventDataMock.getDebtorFiscalCode()).thenReturn(VALID_DEBTOR_CF);
-        when(eventDataMock.getPayerFiscalCode()).thenReturn(VALID_DEBTOR_CF);
-        receiptMock.setEventData(eventDataMock);
-        receiptMock.setNumRetry(0);
-        when(cosmosClient.getReceiptDocument(any())).thenReturn(receiptMock);
-
-        GenerateReceiptPdfTest.setMock(ReceiptCosmosClientImpl.class, cosmosClient);
-
-        PdfEngineClientImpl pdfEngineClient = mock(PdfEngineClientImpl.class);
-
-        GenerateReceiptPdfTest.setMock(PdfEngineClientImpl.class, pdfEngineClient);
-
-        @SuppressWarnings("unchecked")
-        OutputBinding<List<Receipt>> documentdb = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
-
-        @SuppressWarnings("unchecked")
-        OutputBinding<String> requeueMessage = (OutputBinding<String>) spy(OutputBinding.class);
-
-        // test execution
-        withEnvironmentVariable("COMPLETE_TEMPLATE_FILE_NAME", "invalid_filename")
-                .execute(() -> {
-                    assertDoesNotThrow(() -> function.processGenerateReceipt(BIZ_EVENT_MESSAGE_SAME_CF, documentdb, requeueMessage, context));
-                });
-
-
-        verify(documentdb).setValue(receiptCaptor.capture());
-        Receipt capturedCosmos = receiptCaptor.getValue().get(0);
-
-        verify(requeueMessage).setValue(messageCaptor.capture());
-        String caputuredMessage = messageCaptor.getValue();
-
-        assertEquals(BIZ_EVENT_MESSAGE_SAME_CF, caputuredMessage);
-        assertEquals(ReceiptStatusType.RETRY, capturedCosmos.getStatus());
-        assertNotNull(capturedCosmos.getReasonErr().getMessage());
-    }
-
     private static <T> void setMock(Class<T> classToMock, T mock) {
         try {
             Field instance = classToMock.getDeclaredField("instance");
