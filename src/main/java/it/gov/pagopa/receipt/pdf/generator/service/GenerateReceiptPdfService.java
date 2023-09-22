@@ -88,14 +88,8 @@ public class GenerateReceiptPdfService {
         PdfEngineRequest request = new PdfEngineRequest();
         PdfMetadata response = new PdfMetadata();
 
-        //Get filename
-        String completeTemplateFileName = System.getenv().getOrDefault("COMPLETE_TEMPLATE_FILE_NAME", "complete_template.zip");
-        String partialTemplateFileName = System.getenv().getOrDefault("PARTIAL_TEMPLATE_FILE_NAME", "partial_template.zip");
-
-        String fileName = completeTemplate ? completeTemplateFileName : partialTemplateFileName;
-
         try {
-            URL templateStream = GenerateReceiptPdfService.class.getClassLoader().getResource(fileName);
+            URL templateStream = GenerateReceiptPdfService.class.getClassLoader().getResource("template.zip");
             //Build the request
             request.setTemplate(templateStream);
             request.setData(ObjectMapperUtils.writeValueAsString(TemplateMapperUtils.convertReceiptToPdfData(bizEvent)));
