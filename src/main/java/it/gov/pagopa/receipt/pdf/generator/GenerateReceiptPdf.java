@@ -86,23 +86,81 @@ public class GenerateReceiptPdf {
             final ExecutionContext context) throws BizEventNotValidException, ReceiptNotFoundException {
 
         //Map queue bizEventMessage to BizEvent
-        BizEvent bizEvent;
-
-        try {
-            bizEvent = ObjectMapperUtils.mapString(bizEventMessage, BizEvent.class);
-        } catch (JsonProcessingException e) {
-            throw new BizEventNotValidException("Error parsing the message coming from the queue", e);
-        }
+        BizEvent bizEvent = getBizEventFromMessage(bizEventMessage);
 
         List<Receipt> itemsToNotify = new ArrayList<>();
         logger.info("[{}] function called at {} for bizEvent with id {}",
                 context.getFunctionName(), LocalDateTime.now(), bizEvent.getId());
 
         //Retrieve receipt's data from CosmosDB
+        Receipt receipt = getReceipt(context, bizEvent);
+
+        //Verify receipt status
+        if (receipt.getEventData() == null
+                || (!receipt.getStatus().equals(ReceiptStatusType.INSERTED)
+                && !receipt.getStatus().equals(ReceiptStatusType.RETRY
+        )
+        )) {
+            logger.info("[{}] Receipt with id {} not in INSERTED or RETRY",
+                    context.getFunctionName(),
+                    receipt.getEventId());
+            return;
+        }
+        int numberOfSavedPdfs = 0;
+
+        GenerateReceiptPdfService service = new GenerateReceiptPdfService();
+
+        //Verify if debtor's and payer's fiscal code are the same
+        String debtorCF = receipt.getEventData().getDebtorFiscalCode();
+        String payerCF = receipt.getEventData().getPayerFiscalCode();
+
+        if (debtorCF != null || payerCF != null) {
+            boolean generateOnlyDebtor = payerCF == null || payerCF.equals(debtorCF);
+            logger.info("[{}] Generating pdf for Receipt with id {}",
+                    context.getFunctionName(),
+                    receipt.getEventId());
+
+            //Generate and save PDF
+            PdfGeneration pdfGeneration = service.handlePdfsGeneration(generateOnlyDebtor, receipt, bizEvent, debtorCF, payerCF);
+            logger.info("[{}] Saving pdf for Receipt with id {} to the blob storage",
+                    context.getFunctionName(),
+                    receipt.getEventId());
+
+            //Write PDF blob storage metadata on receipt
+            numberOfSavedPdfs = service.addPdfsMetadataToReceipt(receipt, pdfGeneration);
+
+            //Verify PDF generation success
+            service.verifyPdfGeneration(bizEventMessage, requeueMessage, logger, receipt, generateOnlyDebtor, pdfGeneration);
+        } else {
+            String errorMessage = String.format(
+                    "[%s] Error processing receipt with id %s : both debtor's and payer's fiscal code are null",
+                    context.getFunctionName(),
+                    receipt.getEventId()
+            );
+
+            service.handleErrorGeneratingReceipt(
+                    ReceiptStatusType.FAILED,
+                    HttpStatus.SC_INTERNAL_SERVER_ERROR,
+                    errorMessage,
+                    bizEventMessage,
+                    receipt,
+                    requeueMessage
+            );
+        }
+
+        //Add receipt to items to be saved to CosmosDB
+        itemsToNotify.add(receipt);
+        logger.info("[{}] Receipt with id {} being saved with status {} and with {} pdfs",
+                context.getFunctionName(),
+                receipt.getEventId(),
+                receipt.getStatus(),
+                numberOfSavedPdfs);
+        documentdb.setValue(itemsToNotify);
+    }
+
+    private Receipt getReceipt(ExecutionContext context, BizEvent bizEvent) throws ReceiptNotFoundException {
         Receipt receipt;
-
         ReceiptCosmosClientImpl receiptCosmosClient = ReceiptCosmosClientImpl.getInstance();
-
         //Retrieve receipt from CosmosDB
         try {
             receipt = receiptCosmosClient.getReceiptDocument(bizEvent.getId());
@@ -112,70 +170,19 @@ public class GenerateReceiptPdf {
             throw new ReceiptNotFoundException(errorMsg, e);
         }
 
-        int numberOfSavedPdfs = 0;
-
-        //Verify receipt status
-        if (receipt != null &&
-                receipt.getEventData() != null &&
-                (receipt.getStatus().equals(ReceiptStatusType.INSERTED) ||
-                        receipt.getStatus().equals(ReceiptStatusType.RETRY))
-        ) {
-
-            GenerateReceiptPdfService service = new GenerateReceiptPdfService();
-
-            //Verify if debtor's and payer's fiscal code are the same
-            String debtorCF = receipt.getEventData().getDebtorFiscalCode();
-            String payerCF = receipt.getEventData().getPayerFiscalCode();
-
-            if (debtorCF != null || payerCF != null) {
-                boolean generateOnlyDebtor = payerCF == null || payerCF.equals(debtorCF);
-                logger.info("[{}] Generating pdf for Receipt with id {}",
-                        context.getFunctionName(),
-                        receipt.getEventId());
-
-                //Generate and save PDF
-                PdfGeneration pdfGeneration = service.handlePdfsGeneration(generateOnlyDebtor, receipt, bizEvent, debtorCF, payerCF);
-                logger.info("[{}] Saving pdf for Receipt with id {} to the blob storage",
-                        context.getFunctionName(),
-                        receipt.getEventId());
-
-                //Write PDF blob storage metadata on receipt
-                numberOfSavedPdfs = service.addPdfsMetadataToReceipt(receipt, pdfGeneration);
-
-                //Verify PDF generation success
-                service.verifyPdfGeneration(bizEventMessage, requeueMessage, logger, receipt, generateOnlyDebtor, pdfGeneration);
-            } else {
-                String errorMessage = String.format(
-                        "[%s] Error processing receipt with id %s : both debtor's and payer's fiscal code are null",
-                        context.getFunctionName(),
-                        receipt.getEventId()
-                );
-
-                service.handleErrorGeneratingReceipt(
-                        ReceiptStatusType.FAILED,
-                        HttpStatus.SC_INTERNAL_SERVER_ERROR,
-                        errorMessage,
-                        bizEventMessage,
-                        receipt,
-                        requeueMessage
-                );
-            }
-
-            //Add receipt to items to be saved to CosmosDB
-            itemsToNotify.add(receipt);
-        } else if (receipt != null) {
-            logger.info("[{}] Receipt with id {} not in INSERTED or RETRY",
-                    context.getFunctionName(),
-                    receipt.getEventId());
+        if (receipt == null) {
+            String errorMsg = "[{}] Receipt retrieved with the biz-event id {} is null";
+            logger.debug(errorMsg, context.getFunctionName(), bizEvent.getId());
+            throw new ReceiptNotFoundException(errorMsg);
         }
+        return receipt;
+    }
 
-        if (!itemsToNotify.isEmpty()) {
-            logger.info("[{}] Receipt with id {} being saved with status {} and with {} pdfs",
-                    context.getFunctionName(),
-                    receipt.getEventId(),
-                    receipt.getStatus(),
-                    numberOfSavedPdfs);
-            documentdb.setValue(itemsToNotify);
+    private BizEvent getBizEventFromMessage(String bizEventMessage) throws BizEventNotValidException {
+        try {
+            return ObjectMapperUtils.mapString(bizEventMessage, BizEvent.class);
+        } catch (JsonProcessingException e) {
+            throw new BizEventNotValidException("Error parsing the message coming from the queue", e);
         }
     }
 }
