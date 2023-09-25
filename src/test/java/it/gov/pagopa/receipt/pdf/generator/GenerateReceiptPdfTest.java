@@ -262,6 +262,36 @@ class GenerateReceiptPdfTest {
     }
 
     @Test
+    void runKOReceiptNullDebtorFiscalCode() throws ReceiptNotFoundException {
+        ReceiptCosmosClientImpl cosmosClient = mock(ReceiptCosmosClientImpl.class);
+        receiptMock.setStatus(ReceiptStatusType.INSERTED);
+        EventData eventDataMock = mock(EventData.class);
+        when(eventDataMock.getDebtorFiscalCode()).thenReturn(null);
+        receiptMock.setEventData(eventDataMock);
+        when(cosmosClient.getReceiptDocument(any())).thenReturn(receiptMock);
+
+        GenerateReceiptPdfTest.setMock(ReceiptCosmosClientImpl.class, cosmosClient);
+
+        @SuppressWarnings("unchecked")
+        OutputBinding<Receipt> documentdb = (OutputBinding<Receipt>) spy(OutputBinding.class);
+
+        @SuppressWarnings("unchecked")
+        OutputBinding<String> requeueMessage = (OutputBinding<String>) spy(OutputBinding.class);
+
+        // test execution
+        assertDoesNotThrow(() -> function.processGenerateReceipt(BIZ_EVENT_MESSAGE_SAME_CF, documentdb, requeueMessage, context));
+
+        verify(documentdb).setValue(receiptCaptor.capture());
+        Receipt capturedCosmos = receiptCaptor.getValue();
+
+        assertEquals(ReceiptStatusType.FAILED, capturedCosmos.getStatus());
+        assertNotNull(capturedCosmos.getReasonErr());
+        assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, capturedCosmos.getReasonErr().getCode());
+        assertNull(capturedCosmos.getMdAttachPayer());
+        assertNull(capturedCosmos.getMdAttach());
+    }
+
+    @Test
     void runDiscarded() throws ReceiptNotFoundException {
         ReceiptCosmosClientImpl cosmosClient = mock(ReceiptCosmosClientImpl.class);
         receiptMock.setStatus(ReceiptStatusType.NOT_QUEUE_SENT);
@@ -289,6 +319,24 @@ class GenerateReceiptPdfTest {
         ReceiptCosmosClientImpl cosmosClient = mock(ReceiptCosmosClientImpl.class);
         when(cosmosClient.getReceiptDocument(any()))
                 .thenThrow(ReceiptNotFoundException.class);
+        GenerateReceiptPdfTest.setMock(ReceiptCosmosClientImpl.class, cosmosClient);
+
+        @SuppressWarnings("unchecked")
+        OutputBinding<Receipt> documentdb = (OutputBinding<Receipt>) spy(OutputBinding.class);
+
+        @SuppressWarnings("unchecked")
+        OutputBinding<String> requeueMessage = (OutputBinding<String>) spy(OutputBinding.class);
+
+        // test execution
+        Assertions.assertThrows(ReceiptNotFoundException.class,
+                () -> function.processGenerateReceipt(BIZ_EVENT_MESSAGE_SAME_CF, documentdb, requeueMessage, context));
+    }
+
+    @Test
+    void runReceiptIsNull() throws ReceiptNotFoundException {
+        ReceiptCosmosClientImpl cosmosClient = mock(ReceiptCosmosClientImpl.class);
+        when(cosmosClient.getReceiptDocument(any()))
+                .thenReturn(null);
         GenerateReceiptPdfTest.setMock(ReceiptCosmosClientImpl.class, cosmosClient);
 
         @SuppressWarnings("unchecked")
