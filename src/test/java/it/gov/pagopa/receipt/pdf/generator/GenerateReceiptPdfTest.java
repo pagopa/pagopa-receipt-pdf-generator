@@ -14,7 +14,10 @@ import it.gov.pagopa.receipt.pdf.generator.exception.ReceiptNotFoundException;
 import it.gov.pagopa.receipt.pdf.generator.model.response.BlobStorageResponse;
 import it.gov.pagopa.receipt.pdf.generator.model.response.PdfEngineResponse;
 import org.apache.http.HttpStatus;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
@@ -26,7 +29,6 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -66,7 +68,7 @@ class GenerateReceiptPdfTest {
     private ExecutionContext context;
 
     @Captor
-    private ArgumentCaptor<List<Receipt>> receiptCaptor;
+    private ArgumentCaptor<Receipt> receiptCaptor;
 
     @Captor
     private ArgumentCaptor<String> messageCaptor;
@@ -136,7 +138,7 @@ class GenerateReceiptPdfTest {
         GenerateReceiptPdfTest.setMock(ReceiptBlobClientImpl.class, blobClient);
 
         @SuppressWarnings("unchecked")
-        OutputBinding<List<Receipt>> documentdb = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
+        OutputBinding<Receipt> documentdb = (OutputBinding<Receipt>) spy(OutputBinding.class);
 
         @SuppressWarnings("unchecked")
         OutputBinding<String> requeueMessage = (OutputBinding<String>) spy(OutputBinding.class);
@@ -145,7 +147,7 @@ class GenerateReceiptPdfTest {
         assertDoesNotThrow(() -> function.processGenerateReceipt(BIZ_EVENT_MESSAGE_DIFFERENT_CF, documentdb, requeueMessage, context));
 
         verify(documentdb).setValue(receiptCaptor.capture());
-        Receipt capturedCosmos = receiptCaptor.getValue().get(0);
+        Receipt capturedCosmos = receiptCaptor.getValue();
 
         assertEquals(ReceiptStatusType.GENERATED, capturedCosmos.getStatus());
         assertEquals(VALID_DEBTOR_CF, capturedCosmos.getEventData().getDebtorFiscalCode());
@@ -189,7 +191,7 @@ class GenerateReceiptPdfTest {
         GenerateReceiptPdfTest.setMock(ReceiptBlobClientImpl.class, blobClient);
 
         @SuppressWarnings("unchecked")
-        OutputBinding<List<Receipt>> documentdb = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
+        OutputBinding<Receipt> documentdb = (OutputBinding<Receipt>) spy(OutputBinding.class);
 
         @SuppressWarnings("unchecked")
         OutputBinding<String> requeueMessage = (OutputBinding<String>) spy(OutputBinding.class);
@@ -198,7 +200,7 @@ class GenerateReceiptPdfTest {
         assertDoesNotThrow(() -> function.processGenerateReceipt(BIZ_EVENT_MESSAGE_SAME_CF, documentdb, requeueMessage, context));
 
         verify(documentdb).setValue(receiptCaptor.capture());
-        Receipt capturedCosmos = receiptCaptor.getValue().get(0);
+        Receipt capturedCosmos = receiptCaptor.getValue();
 
         assertEquals(ReceiptStatusType.GENERATED, capturedCosmos.getStatus());
         assertEquals(VALID_BLOB_URL, capturedCosmos.getMdAttach().getUrl());
@@ -239,7 +241,7 @@ class GenerateReceiptPdfTest {
         GenerateReceiptPdfTest.setMock(ReceiptBlobClientImpl.class, blobClient);
 
         @SuppressWarnings("unchecked")
-        OutputBinding<List<Receipt>> documentdb = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
+        OutputBinding<Receipt> documentdb = (OutputBinding<Receipt>) spy(OutputBinding.class);
 
         @SuppressWarnings("unchecked")
         OutputBinding<String> requeueMessage = (OutputBinding<String>) spy(OutputBinding.class);
@@ -248,7 +250,7 @@ class GenerateReceiptPdfTest {
         assertDoesNotThrow(() -> function.processGenerateReceipt(BIZ_EVENT_MESSAGE_SAME_CF, documentdb, requeueMessage, context));
 
         verify(documentdb).setValue(receiptCaptor.capture());
-        Receipt capturedCosmos = receiptCaptor.getValue().get(0);
+        Receipt capturedCosmos = receiptCaptor.getValue();
 
         assertEquals(ReceiptStatusType.GENERATED, capturedCosmos.getStatus());
         assertEquals(VALID_BLOB_URL, capturedCosmos.getMdAttach().getUrl());
@@ -271,7 +273,7 @@ class GenerateReceiptPdfTest {
         GenerateReceiptPdfTest.setMock(ReceiptCosmosClientImpl.class, cosmosClient);
 
         @SuppressWarnings("unchecked")
-        OutputBinding<List<Receipt>> documentdb = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
+        OutputBinding<Receipt> documentdb = (OutputBinding<Receipt>) spy(OutputBinding.class);
 
         @SuppressWarnings("unchecked")
         OutputBinding<String> requeueMessage = (OutputBinding<String>) spy(OutputBinding.class);
@@ -290,7 +292,7 @@ class GenerateReceiptPdfTest {
         GenerateReceiptPdfTest.setMock(ReceiptCosmosClientImpl.class, cosmosClient);
 
         @SuppressWarnings("unchecked")
-        OutputBinding<List<Receipt>> documentdb = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
+        OutputBinding<Receipt> documentdb = (OutputBinding<Receipt>) spy(OutputBinding.class);
 
         @SuppressWarnings("unchecked")
         OutputBinding<String> requeueMessage = (OutputBinding<String>) spy(OutputBinding.class);
@@ -303,7 +305,7 @@ class GenerateReceiptPdfTest {
     @Test
     void runKoInvalidBizEventMessage() {
         @SuppressWarnings("unchecked")
-        OutputBinding<List<Receipt>> documentdb = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
+        OutputBinding<Receipt> documentdb = (OutputBinding<Receipt>) spy(OutputBinding.class);
 
         @SuppressWarnings("unchecked")
         OutputBinding<String> requeueMessage = (OutputBinding<String>) spy(OutputBinding.class);
@@ -332,7 +334,7 @@ class GenerateReceiptPdfTest {
         GenerateReceiptPdfTest.setMock(PdfEngineClientImpl.class, pdfEngineClient);
 
         @SuppressWarnings("unchecked")
-        OutputBinding<List<Receipt>> documentdb = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
+        OutputBinding<Receipt> documentdb = (OutputBinding<Receipt>) spy(OutputBinding.class);
 
         @SuppressWarnings("unchecked")
         OutputBinding<String> requeueMessage = (OutputBinding<String>) spy(OutputBinding.class);
@@ -341,12 +343,12 @@ class GenerateReceiptPdfTest {
         assertDoesNotThrow(() -> function.processGenerateReceipt(BIZ_EVENT_MESSAGE_SAME_CF, documentdb, requeueMessage, context));
 
         verify(documentdb).setValue(receiptCaptor.capture());
-        Receipt capturedCosmos = receiptCaptor.getValue().get(0);
+        Receipt capturedCosmos = receiptCaptor.getValue();
 
         verify(requeueMessage).setValue(messageCaptor.capture());
-        String caputuredMessage = messageCaptor.getValue();
+        String capturedMessage = messageCaptor.getValue();
 
-        assertEquals(BIZ_EVENT_MESSAGE_SAME_CF, caputuredMessage);
+        assertEquals(BIZ_EVENT_MESSAGE_SAME_CF, capturedMessage);
         assertEquals(ReceiptStatusType.RETRY, capturedCosmos.getStatus());
         assertEquals(PDF_ENGINE_ERROR_MESSAGE, capturedCosmos.getReasonErr().getMessage());
 
@@ -373,7 +375,7 @@ class GenerateReceiptPdfTest {
         GenerateReceiptPdfTest.setMock(PdfEngineClientImpl.class, pdfEngineClient);
 
         @SuppressWarnings("unchecked")
-        OutputBinding<List<Receipt>> documentdb = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
+        OutputBinding<Receipt> documentdb = (OutputBinding<Receipt>) spy(OutputBinding.class);
 
         @SuppressWarnings("unchecked")
         OutputBinding<String> requeueMessage = (OutputBinding<String>) spy(OutputBinding.class);
@@ -382,12 +384,12 @@ class GenerateReceiptPdfTest {
         assertDoesNotThrow(() -> function.processGenerateReceipt(BIZ_EVENT_MESSAGE_SAME_CF, documentdb, requeueMessage, context));
 
         verify(documentdb).setValue(receiptCaptor.capture());
-        Receipt capturedCosmos = receiptCaptor.getValue().get(0);
+        Receipt capturedCosmos = receiptCaptor.getValue();
 
         verify(requeueMessage).setValue(messageCaptor.capture());
-        String caputuredMessage = messageCaptor.getValue();
+        String capturedMessage = messageCaptor.getValue();
 
-        assertEquals(BIZ_EVENT_MESSAGE_SAME_CF, caputuredMessage);
+        assertEquals(BIZ_EVENT_MESSAGE_SAME_CF, capturedMessage);
         assertEquals(ReceiptStatusType.RETRY, capturedCosmos.getStatus());
         assertEquals(ReasonErrorCode.ERROR_PDF_ENGINE.getCustomCode(com.microsoft.azure.functions.HttpStatus.UNAUTHORIZED.value()), capturedCosmos.getReasonErr().getCode());
         assertEquals(PDF_ENGINE_ERROR_MESSAGE, capturedCosmos.getReasonErr().getMessage());
@@ -414,7 +416,7 @@ class GenerateReceiptPdfTest {
         GenerateReceiptPdfTest.setMock(PdfEngineClientImpl.class, pdfEngineClient);
 
         @SuppressWarnings("unchecked")
-        OutputBinding<List<Receipt>> documentdb = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
+        OutputBinding<Receipt> documentdb = (OutputBinding<Receipt>) spy(OutputBinding.class);
 
         @SuppressWarnings("unchecked")
         OutputBinding<String> requeueMessage = (OutputBinding<String>) spy(OutputBinding.class);
@@ -423,12 +425,12 @@ class GenerateReceiptPdfTest {
         assertDoesNotThrow(() -> function.processGenerateReceipt(BIZ_EVENT_MESSAGE_SAME_CF, documentdb, requeueMessage, context));
 
         verify(documentdb).setValue(receiptCaptor.capture());
-        Receipt capturedCosmos = receiptCaptor.getValue().get(0);
+        Receipt capturedCosmos = receiptCaptor.getValue();
 
         verify(requeueMessage).setValue(messageCaptor.capture());
-        String caputuredMessage = messageCaptor.getValue();
+        String capturedMessage = messageCaptor.getValue();
 
-        assertEquals(BIZ_EVENT_MESSAGE_SAME_CF, caputuredMessage);
+        assertEquals(BIZ_EVENT_MESSAGE_SAME_CF, capturedMessage);
         assertEquals(ReceiptStatusType.RETRY, capturedCosmos.getStatus());
         assertEquals(ReasonErrorCode.ERROR_PDF_ENGINE.getCustomCode(HttpStatus.SC_INTERNAL_SERVER_ERROR), capturedCosmos.getReasonErr().getCode());
         assertEquals(PDF_ENGINE_ERROR_MESSAGE, capturedCosmos.getReasonErr().getMessage());
@@ -462,7 +464,7 @@ class GenerateReceiptPdfTest {
         GenerateReceiptPdfTest.setMock(ReceiptBlobClientImpl.class, blobClient);
 
         @SuppressWarnings("unchecked")
-        OutputBinding<List<Receipt>> documentdb = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
+        OutputBinding<Receipt> documentdb = (OutputBinding<Receipt>) spy(OutputBinding.class);
 
         @SuppressWarnings("unchecked")
         OutputBinding<String> requeueMessage = (OutputBinding<String>) spy(OutputBinding.class);
@@ -471,12 +473,12 @@ class GenerateReceiptPdfTest {
         assertDoesNotThrow(() -> function.processGenerateReceipt(BIZ_EVENT_MESSAGE_DIFFERENT_CF, documentdb, requeueMessage, context));
 
         verify(documentdb).setValue(receiptCaptor.capture());
-        Receipt capturedCosmos = receiptCaptor.getValue().get(0);
+        Receipt capturedCosmos = receiptCaptor.getValue();
 
         verify(requeueMessage).setValue(messageCaptor.capture());
-        String caputuredMessage = messageCaptor.getValue();
+        String capturedMessage = messageCaptor.getValue();
 
-        assertEquals(BIZ_EVENT_MESSAGE_DIFFERENT_CF, caputuredMessage);
+        assertEquals(BIZ_EVENT_MESSAGE_DIFFERENT_CF, capturedMessage);
         assertEquals(ReceiptStatusType.RETRY, capturedCosmos.getStatus());
         assertEquals(ReasonErrorCode.ERROR_BLOB_STORAGE.getCode(), capturedCosmos.getReasonErr().getCode());
     }
@@ -509,7 +511,7 @@ class GenerateReceiptPdfTest {
         GenerateReceiptPdfTest.setMock(ReceiptBlobClientImpl.class, blobClient);
 
         @SuppressWarnings("unchecked")
-        OutputBinding<List<Receipt>> documentdb = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
+        OutputBinding<Receipt> documentdb = (OutputBinding<Receipt>) spy(OutputBinding.class);
 
         @SuppressWarnings("unchecked")
         OutputBinding<String> requeueMessage = (OutputBinding<String>) spy(OutputBinding.class);
@@ -521,12 +523,12 @@ class GenerateReceiptPdfTest {
         );
 
         verify(documentdb).setValue(receiptCaptor.capture());
-        Receipt capturedCosmos = receiptCaptor.getValue().get(0);
+        Receipt capturedCosmos = receiptCaptor.getValue();
 
         verify(requeueMessage).setValue(messageCaptor.capture());
-        String caputuredMessage = messageCaptor.getValue();
+        String capturedMessage = messageCaptor.getValue();
 
-        assertEquals(BIZ_EVENT_MESSAGE_DIFFERENT_CF, caputuredMessage);
+        assertEquals(BIZ_EVENT_MESSAGE_DIFFERENT_CF, capturedMessage);
         assertEquals(ReceiptStatusType.RETRY, capturedCosmos.getStatus());
         assertEquals(ReasonErrorCode.ERROR_BLOB_STORAGE.getCode(), capturedCosmos.getReasonErr().getCode());
     }
@@ -551,7 +553,7 @@ class GenerateReceiptPdfTest {
         GenerateReceiptPdfTest.setMock(PdfEngineClientImpl.class, pdfEngineClient);
 
         @SuppressWarnings("unchecked")
-        OutputBinding<List<Receipt>> documentdb = (OutputBinding<List<Receipt>>) spy(OutputBinding.class);
+        OutputBinding<Receipt> documentdb = (OutputBinding<Receipt>) spy(OutputBinding.class);
 
         @SuppressWarnings("unchecked")
         OutputBinding<String> requeueMessage = (OutputBinding<String>) spy(OutputBinding.class);
@@ -560,7 +562,7 @@ class GenerateReceiptPdfTest {
         assertDoesNotThrow(() -> function.processGenerateReceipt(BIZ_EVENT_MESSAGE_SAME_CF, documentdb, requeueMessage, context));
 
         verify(documentdb).setValue(receiptCaptor.capture());
-        Receipt capturedCosmos = receiptCaptor.getValue().get(0);
+        Receipt capturedCosmos = receiptCaptor.getValue();
 
         assertEquals(ReceiptStatusType.FAILED, capturedCosmos.getStatus());
     }
