@@ -85,7 +85,7 @@ public class GenerateReceiptPdf {
             final ExecutionContext context) throws BizEventNotValidException, ReceiptNotFoundException {
 
         //Map queue bizEventMessage to BizEvent
-        BizEvent bizEvent = getBizEventFromMessage(bizEventMessage);
+        BizEvent bizEvent = getBizEventFromMessage(context, bizEventMessage);
 
         logger.info("[{}] function called at {} for bizEvent with id {}",
                 context.getFunctionName(), LocalDateTime.now(), bizEvent.getId());
@@ -170,11 +170,13 @@ public class GenerateReceiptPdf {
         return receipt;
     }
 
-    private BizEvent getBizEventFromMessage(String bizEventMessage) throws BizEventNotValidException {
+    private BizEvent getBizEventFromMessage(ExecutionContext context, String bizEventMessage) throws BizEventNotValidException {
         try {
             return ObjectMapperUtils.mapString(bizEventMessage, BizEvent.class);
         } catch (JsonProcessingException e) {
-            throw new BizEventNotValidException("Error parsing the message coming from the queue", e);
+            String errorMsg = String.format("[%s] Error parsing the message coming from the queue",
+                    context.getFunctionName());
+            throw new BizEventNotValidException(errorMsg, e);
         }
     }
 }
