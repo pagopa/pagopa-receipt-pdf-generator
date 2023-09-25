@@ -9,6 +9,7 @@ import com.microsoft.azure.functions.annotation.QueueOutput;
 import com.microsoft.azure.functions.annotation.QueueTrigger;
 import it.gov.pagopa.receipt.pdf.generator.client.impl.ReceiptCosmosClientImpl;
 import it.gov.pagopa.receipt.pdf.generator.entity.event.BizEvent;
+import it.gov.pagopa.receipt.pdf.generator.entity.receipt.ReasonError;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.enumeration.ReceiptStatusType;
 import it.gov.pagopa.receipt.pdf.generator.exception.BizEventNotValidException;
@@ -21,8 +22,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Azure Functions with Azure Queue trigger.
@@ -77,7 +76,7 @@ public class GenerateReceiptPdf {
                     databaseName = "db",
                     collectionName = "receipts",
                     connectionStringSetting = "COSMOS_RECEIPTS_CONN_STRING")
-            OutputBinding<List<Receipt>> documentdb,
+            OutputBinding<Receipt> documentdb,
             @QueueOutput(
                     name = "QueueReceiptWaitingForGenOutput",
                     queueName = "%RECEIPT_QUEUE_TOPIC%",
@@ -88,7 +87,6 @@ public class GenerateReceiptPdf {
         //Map queue bizEventMessage to BizEvent
         BizEvent bizEvent = getBizEventFromMessage(bizEventMessage);
 
-        List<Receipt> itemsToNotify = new ArrayList<>();
         logger.info("[{}] function called at {} for bizEvent with id {}",
                 context.getFunctionName(), LocalDateTime.now(), bizEvent.getId());
 
@@ -106,7 +104,7 @@ public class GenerateReceiptPdf {
                     receipt.getEventId());
             return;
         }
-        int numberOfSavedPdfs = 0;
+        int numberOfSavedPdfs;
 
         GenerateReceiptPdfService service = new GenerateReceiptPdfService();
 
@@ -114,7 +112,8 @@ public class GenerateReceiptPdf {
         String debtorCF = receipt.getEventData().getDebtorFiscalCode();
         String payerCF = receipt.getEventData().getPayerFiscalCode();
 
-        if (debtorCF != null || payerCF != null) {
+        if (debtorCF != null) {
+            // TODO handle null payer
             boolean generateOnlyDebtor = payerCF == null || payerCF.equals(debtorCF);
             logger.info("[{}] Generating pdf for Receipt with id {}",
                     context.getFunctionName(),
@@ -131,31 +130,24 @@ public class GenerateReceiptPdf {
 
             //Verify PDF generation success
             service.verifyPdfGeneration(bizEventMessage, requeueMessage, logger, receipt, generateOnlyDebtor, pdfGeneration);
+            logger.info("[{}] Receipt with id {} being saved with status {} and with {} pdfs",
+                    context.getFunctionName(),
+                    receipt.getEventId(),
+                    receipt.getStatus(),
+                    numberOfSavedPdfs);
         } else {
             String errorMessage = String.format(
-                    "[%s] Error processing receipt with id %s : both debtor's and payer's fiscal code are null",
-                    context.getFunctionName(),
+                    "Error processing receipt with id %s : debtor's fiscal code is null",
                     receipt.getEventId()
             );
-
-            service.handleErrorGeneratingReceipt(
-                    ReceiptStatusType.FAILED,
-                    HttpStatus.SC_INTERNAL_SERVER_ERROR,
-                    errorMessage,
-                    bizEventMessage,
-                    receipt,
-                    requeueMessage
-            );
+            receipt.setStatus(ReceiptStatusType.FAILED);
+            //Update the receipt's status and error message
+            ReasonError reasonError = new ReasonError(HttpStatus.SC_INTERNAL_SERVER_ERROR, errorMessage);
+            receipt.setReasonErr(reasonError);
+            logger.error("[{}] Error generating PDF: {}", context.getFunctionName(), errorMessage);
         }
 
-        //Add receipt to items to be saved to CosmosDB
-        itemsToNotify.add(receipt);
-        logger.info("[{}] Receipt with id {} being saved with status {} and with {} pdfs",
-                context.getFunctionName(),
-                receipt.getEventId(),
-                receipt.getStatus(),
-                numberOfSavedPdfs);
-        documentdb.setValue(itemsToNotify);
+        documentdb.setValue(receipt);
     }
 
     private Receipt getReceipt(ExecutionContext context, BizEvent bizEvent) throws ReceiptNotFoundException {
