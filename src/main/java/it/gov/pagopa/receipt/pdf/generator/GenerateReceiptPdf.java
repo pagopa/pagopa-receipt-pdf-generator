@@ -16,6 +16,7 @@ import it.gov.pagopa.receipt.pdf.generator.exception.BizEventNotValidException;
 import it.gov.pagopa.receipt.pdf.generator.exception.ReceiptNotFoundException;
 import it.gov.pagopa.receipt.pdf.generator.model.PdfGeneration;
 import it.gov.pagopa.receipt.pdf.generator.service.GenerateReceiptPdfService;
+import it.gov.pagopa.receipt.pdf.generator.service.impl.GenerateReceiptPdfServiceImpl;
 import it.gov.pagopa.receipt.pdf.generator.utils.ObjectMapperUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
@@ -29,6 +30,8 @@ import java.time.LocalDateTime;
 public class GenerateReceiptPdf {
 
     private final Logger logger = LoggerFactory.getLogger(GenerateReceiptPdf.class);
+
+    private static final int MAX_NUMBER_RETRY = Integer.parseInt(System.getenv().getOrDefault("COSMOS_RECEIPT_QUEUE_MAX_RETRY", "5"));
 
     /**
      * This function will be invoked when a Queue trigger occurs
@@ -94,47 +97,54 @@ public class GenerateReceiptPdf {
         Receipt receipt = getReceipt(context, bizEvent);
 
         //Verify receipt status
-        if (receipt.getEventData() == null
-                || (!receipt.getStatus().equals(ReceiptStatusType.INSERTED)
-                && !receipt.getStatus().equals(ReceiptStatusType.RETRY
-        )
-        )) {
-            logger.info("[{}] Receipt with id {} not in INSERTED or RETRY",
-                    context.getFunctionName(),
-                    receipt.getEventId());
-            return;
-        }
-        int numberOfSavedPdfs;
-
-        GenerateReceiptPdfService service = new GenerateReceiptPdfService();
-
-        //Verify if debtor's and payer's fiscal code are the same
-        String debtorCF = receipt.getEventData().getDebtorFiscalCode();
-        String payerCF = receipt.getEventData().getPayerFiscalCode();
-
-        if (debtorCF != null) {
-            // TODO handle null payer
-            boolean generateOnlyDebtor = payerCF == null || payerCF.equals(debtorCF);
-            logger.info("[{}] Generating pdf for Receipt with id {}",
-                    context.getFunctionName(),
-                    receipt.getEventId());
-
-            //Generate and save PDF
-            PdfGeneration pdfGeneration = service.handlePdfsGeneration(generateOnlyDebtor, receipt, bizEvent, debtorCF, payerCF);
-            logger.info("[{}] Saving pdf for Receipt with id {} to the blob storage",
-                    context.getFunctionName(),
-                    receipt.getEventId());
-
-            //Write PDF blob storage metadata on receipt
-            numberOfSavedPdfs = service.addPdfsMetadataToReceipt(receipt, pdfGeneration);
-
-            //Verify PDF generation success
-            service.verifyPdfGeneration(bizEventMessage, requeueMessage, logger, receipt, generateOnlyDebtor, pdfGeneration);
-            logger.info("[{}] Receipt with id {} being saved with status {} and with {} pdfs",
+        if (isReceiptValid(receipt)) {
+            logger.info("[{}] Receipt with id {} not in INSERTED or RETRY (status: {}) or have null event data (eventData is null: {})",
                     context.getFunctionName(),
                     receipt.getEventId(),
                     receipt.getStatus(),
-                    numberOfSavedPdfs);
+                    receipt.getEventData() == null);
+            return;
+        }
+
+        GenerateReceiptPdfService service = new GenerateReceiptPdfServiceImpl();
+
+        //Verify if debtor's and payer's fiscal code are the same
+        String debtorCF = receipt.getEventData().getDebtorFiscalCode();
+
+        if (debtorCF != null) {
+            logger.info("[{}] Generating pdf for Receipt with id {} and bizEvent with id {}",
+                    context.getFunctionName(),
+                    receipt.getId(),
+                    bizEvent.getId());
+
+            //Generate and save PDF
+            PdfGeneration pdfGeneration = service.generateReceipts(receipt, bizEvent);
+
+            //Verify PDF generation success
+            boolean success = service.verifyAndUpdateReceipt(receipt, pdfGeneration);
+            if (success) {
+                receipt.setStatus(ReceiptStatusType.GENERATED);
+                receipt.setGenerated_at(System.currentTimeMillis());
+                logger.info("[{}] Receipt with id {} being saved with status {}",
+                        context.getFunctionName(),
+                        receipt.getEventId(),
+                        receipt.getStatus());
+            } else {
+                ReceiptStatusType receiptStatusType;
+                //Verify if the max number of retry have been passed
+                if (receipt.getNumRetry() > MAX_NUMBER_RETRY) {
+                    receiptStatusType = ReceiptStatusType.FAILED;
+                } else {
+                    receiptStatusType = ReceiptStatusType.RETRY;
+                    receipt.setNumRetry(receipt.getNumRetry() + 1);
+                    requeueMessage.setValue(bizEventMessage);
+                }
+                receipt.setStatus(receiptStatusType);
+                logger.error("[{}] Error generating receipt for Receipt {} will be saved with status {}",
+                        context.getFunctionName(),
+                        receipt.getId(),
+                        receiptStatusType);
+            }
         } else {
             String errorMessage = String.format(
                     "Error processing receipt with id %s : debtor's fiscal code is null",
@@ -148,6 +158,11 @@ public class GenerateReceiptPdf {
         }
 
         documentdb.setValue(receipt);
+    }
+
+    private boolean isReceiptValid(Receipt receipt) {
+        return receipt.getEventData() == null
+                || (!receipt.getStatus().equals(ReceiptStatusType.INSERTED) && !receipt.getStatus().equals(ReceiptStatusType.RETRY));
     }
 
     private Receipt getReceipt(ExecutionContext context, BizEvent bizEvent) throws ReceiptNotFoundException {
