@@ -12,7 +12,8 @@ import lombok.Setter;
 @NoArgsConstructor
 public class PdfGeneration {
 
-    PdfMetadata debtorMetadata;
-    PdfMetadata payerMetadata;
+    private boolean generateOnlyDebtor;
+    private PdfMetadata debtorMetadata;
+    private PdfMetadata payerMetadata;
 
 }
