@@ -30,7 +30,7 @@ public class ReceiptQueueClientImpl implements ReceiptQueueClient {
                 .buildClient();
     }
 
-    public ReceiptQueueClientImpl(QueueClient queueClient) {
+    ReceiptQueueClientImpl(QueueClient queueClient) {
         this.queueClient = queueClient;
     }
 

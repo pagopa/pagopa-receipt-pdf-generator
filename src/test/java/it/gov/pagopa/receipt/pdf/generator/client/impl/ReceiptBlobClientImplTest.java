@@ -1,11 +1,10 @@
-package it.gov.pagopa.receipt.pdf.generator.client;
+package it.gov.pagopa.receipt.pdf.generator.client.impl;
 
 import com.azure.core.http.rest.Response;
 import com.azure.storage.blob.BlobClient;
 import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobServiceClient;
 import com.microsoft.azure.functions.HttpStatus;
-import it.gov.pagopa.receipt.pdf.generator.client.impl.ReceiptBlobClientImpl;
 import it.gov.pagopa.receipt.pdf.generator.model.response.BlobStorageResponse;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
