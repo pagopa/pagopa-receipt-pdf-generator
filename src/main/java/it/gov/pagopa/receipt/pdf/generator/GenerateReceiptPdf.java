@@ -66,6 +66,8 @@ public class GenerateReceiptPdf {
      * @param documentdb      Output binding that will update the receipt data with the pdfs metadata
      * @param requeueMessage  Output binding that will re-send the bizEventMessage to the queue in case of errors
      * @param context         Function context
+     * @throws BizEventNotValidException thrown when an error occur on parsing the message from the queue to a {@link BizEvent}
+     * @throws ReceiptNotFoundException thrown when a receipt associated to the bizEvent is not found on Cosmos DB or the retrieved receipt is null
      */
     @FunctionName("GenerateReceiptProcess")
     public void processGenerateReceipt(
