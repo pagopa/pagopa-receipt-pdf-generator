@@ -1,10 +1,9 @@
-package it.gov.pagopa.receipt.pdf.generator.client;
+package it.gov.pagopa.receipt.pdf.generator.client.impl;
 
 import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosDatabase;
 import com.azure.cosmos.util.CosmosPagedIterable;
-import it.gov.pagopa.receipt.pdf.generator.client.impl.ReceiptCosmosClientImpl;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.generator.exception.ReceiptNotFoundException;
 import org.junit.jupiter.api.Assertions;

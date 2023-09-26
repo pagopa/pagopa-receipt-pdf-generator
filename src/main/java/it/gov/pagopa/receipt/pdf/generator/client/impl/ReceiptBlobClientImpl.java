@@ -36,7 +36,7 @@ public class ReceiptBlobClientImpl implements ReceiptBlobClient {
                 .buildClient();
     }
 
-    public ReceiptBlobClientImpl(BlobServiceClient serviceClient) {
+    ReceiptBlobClientImpl(BlobServiceClient serviceClient) {
         this.blobServiceClient = serviceClient;
     }
 

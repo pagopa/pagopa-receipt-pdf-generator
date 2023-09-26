@@ -1,10 +1,9 @@
-package it.gov.pagopa.receipt.pdf.generator.client;
+package it.gov.pagopa.receipt.pdf.generator.client.impl;
 
 import com.azure.core.http.rest.Response;
 import com.azure.storage.queue.QueueClient;
 import com.azure.storage.queue.models.SendMessageResult;
 import com.microsoft.azure.functions.HttpStatus;
-import it.gov.pagopa.receipt.pdf.generator.client.impl.ReceiptQueueClientImpl;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
