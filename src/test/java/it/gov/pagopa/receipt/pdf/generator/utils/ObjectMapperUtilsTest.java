@@ -10,7 +10,7 @@ class ObjectMapperUtilsTest {
 
     @Test
     void returnNullAfterException() {
-        Assertions.assertNull(ObjectMapperUtils.writeValueAsString(InputStream.nullInputStream()));
+        Assertions.assertThrows(JsonProcessingException.class, () ->ObjectMapperUtils.writeValueAsString(InputStream.nullInputStream()));
         Assertions.assertThrows(JsonProcessingException.class, () -> ObjectMapperUtils.mapString("", InputStream.class));
     }
 }
