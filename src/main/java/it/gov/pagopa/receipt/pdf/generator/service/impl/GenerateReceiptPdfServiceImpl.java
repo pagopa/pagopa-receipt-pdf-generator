@@ -1,5 +1,6 @@
 package it.gov.pagopa.receipt.pdf.generator.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import it.gov.pagopa.receipt.pdf.generator.client.impl.PdfEngineClientImpl;
 import it.gov.pagopa.receipt.pdf.generator.client.impl.ReceiptBlobClientImpl;
 import it.gov.pagopa.receipt.pdf.generator.entity.event.BizEvent;
@@ -189,7 +190,7 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
         URL templateStream = GenerateReceiptPdfServiceImpl.class.getClassLoader().getResource("template.zip");
         //Build the request
         request.setTemplate(templateStream);
-        request.setData(ObjectMapperUtils.writeValueAsString(template));
+        request.setData(parseTemplateDataToString(template));
         request.setApplySignature(false);
 
         PdfEngineClientImpl pdfEngineClient = PdfEngineClientImpl.getInstance();
@@ -302,10 +303,6 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
                 .build();
     }
 
-    private boolean receiptAlreadyCreated(ReceiptMetadata receiptMetadata) {
-        return receiptMetadata != null && receiptMetadata.getUrl() != null && receiptMetadata.getUrl().isEmpty();
-    }
-
     private void deleteTempFolderAndFile(String tempPdfPath, String tempDirectoryPath) {
         File tempFile = new File(tempPdfPath);
         if (tempFile.exists()) {
@@ -324,5 +321,17 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
                 logger.warn("Error deleting temporary pdf directory from file system", e);
             }
         }
+    }
+
+    private String parseTemplateDataToString(ReceiptPDFTemplate template) throws GeneratePDFException {
+        try {
+            return ObjectMapperUtils.writeValueAsString(template);
+        } catch (JsonProcessingException e) {
+            throw new GeneratePDFException("Error preparing input data for receipt PDF template", ReasonErrorCode.ERROR_PDF_ENGINE.getCode(), e);
+        }
+    }
+
+    private boolean receiptAlreadyCreated(ReceiptMetadata receiptMetadata) {
+        return receiptMetadata != null && receiptMetadata.getUrl() != null && receiptMetadata.getUrl().isEmpty();
     }
 }
