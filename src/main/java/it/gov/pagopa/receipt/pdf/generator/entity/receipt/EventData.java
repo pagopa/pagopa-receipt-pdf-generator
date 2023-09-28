@@ -4,6 +4,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -11,4 +13,5 @@ public class EventData {
     private String payerFiscalCode;
     private String debtorFiscalCode;
     private String transactionCreationDate;
+    private List<CartItem> cart;
 }
