@@ -18,6 +18,7 @@ import it.gov.pagopa.receipt.pdf.generator.model.response.BlobStorageResponse;
 import it.gov.pagopa.receipt.pdf.generator.model.response.PdfEngineResponse;
 import it.gov.pagopa.receipt.pdf.generator.model.template.*;
 import it.gov.pagopa.receipt.pdf.generator.service.GenerateReceiptPdfService;
+import it.gov.pagopa.receipt.pdf.generator.utils.BizEventToPdfMapper;
 import it.gov.pagopa.receipt.pdf.generator.utils.ObjectMapperUtils;
 import lombok.NoArgsConstructor;
 import org.apache.http.HttpStatus;
@@ -49,37 +50,44 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
         String debtorCF = receipt.getEventData().getDebtorFiscalCode();
         String payerCF = receipt.getEventData().getPayerFiscalCode();
 
-        if (payerCF == null || payerCF.equals(debtorCF)) {
-            pdfGeneration.setGenerateOnlyDebtor(true);
-            //Generate debtor's complete PDF
-            if (receiptAlreadyCreated(receipt.getMdAttach())) {
-                pdfGeneration.setDebtorMetadata(PdfMetadata.builder().statusCode(ALREADY_CREATED).build());
+        if (payerCF != null) {
+
+            if (payerCF.equals(debtorCF)) {
+                pdfGeneration.setGenerateOnlyDebtor(true);
+                //Generate debtor's complete PDF
+                if (receiptAlreadyCreated(receipt.getMdAttach())) {
+                    pdfGeneration.setDebtorMetadata(PdfMetadata.builder().statusCode(ALREADY_CREATED).build());
+                    return pdfGeneration;
+                }
+                ReceiptPDFTemplate completeTemplate = buildTemplate(bizEvent, false);
+                PdfMetadata generationResult = generateAndSavePDFReceipt(bizEvent, debtorCF, completeTemplate);
+                pdfGeneration.setDebtorMetadata(generationResult);
                 return pdfGeneration;
+            } else {
+
+                //Generate payer's complete PDF
+                if (receiptAlreadyCreated(receipt.getMdAttachPayer())) {
+                    pdfGeneration.setPayerMetadata(PdfMetadata.builder().statusCode(ALREADY_CREATED).build());
+                } else {
+                    ReceiptPDFTemplate completeTemplate = buildTemplate(bizEvent, false);
+
+                    PdfMetadata generationResult = generateAndSavePDFReceipt(bizEvent, payerCF, completeTemplate);
+                    pdfGeneration.setPayerMetadata(generationResult);
+                }
             }
-            ReceiptPDFTemplate completeTemplate = buildCompleteReceipt(bizEvent);
-            PdfMetadata generationResult = generateAndSavePDFReceipt(bizEvent, debtorCF, completeTemplate);
-            pdfGeneration.setDebtorMetadata(generationResult);
-            return pdfGeneration;
+
         }
 
         //Generate debtor's partial PDF
         if (receiptAlreadyCreated(receipt.getMdAttach())) {
             pdfGeneration.setDebtorMetadata(PdfMetadata.builder().statusCode(ALREADY_CREATED).build());
         } else {
-            ReceiptPDFTemplate onlyDebtorTemplate = buildOnlyDebtorTemplate(bizEvent);
+            ReceiptPDFTemplate onlyDebtorTemplate = buildTemplate(bizEvent, true);
 
             PdfMetadata generationResult = generateAndSavePDFReceipt(bizEvent, debtorCF, onlyDebtorTemplate);
             pdfGeneration.setDebtorMetadata(generationResult);
         }
-        //Generate payer's complete PDF
-        if (receiptAlreadyCreated(receipt.getMdAttachPayer())) {
-            pdfGeneration.setPayerMetadata(PdfMetadata.builder().statusCode(ALREADY_CREATED).build());
-        } else {
-            ReceiptPDFTemplate completeTemplate = buildCompleteReceipt(bizEvent);
 
-            PdfMetadata generationResult = generateAndSavePDFReceipt(bizEvent, payerCF, completeTemplate);
-            pdfGeneration.setPayerMetadata(generationResult);
-        }
         return pdfGeneration;
     }
 
@@ -205,100 +213,59 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
         return pdfEngineResponse;
     }
 
-    private ReceiptPDFTemplate buildOnlyDebtorTemplate(BizEvent bizEvent) {
+    private ReceiptPDFTemplate buildTemplate(BizEvent bizEvent, boolean onlyDebtor) {
         // TODO build template data
         return ReceiptPDFTemplate.builder()
                 .transaction(Transaction.builder()
-                        .id("F57E2F8E-25FF-4183-AB7B-4A5EC1A96644")
-                        .timestamp("2020-07-10 15:00:00.000")
-                        .amount(300.00)
+                        .id(BizEventToPdfMapper.getId(bizEvent))
+                        .timestamp(BizEventToPdfMapper.getTimestamp(bizEvent))
+                        .amount(BizEventToPdfMapper.getAmount(bizEvent))
                         .psp(PSP.builder()
-                                .name("Nexi")
+                                .name(BizEventToPdfMapper.getPspName(bizEvent))
                                 .fee(PSPFee.builder()
-                                        .amount(2.00)
+                                        .amount(BizEventToPdfMapper.getPspFee(bizEvent))
                                         .build())
                                 .build())
-                        .rrn("1234567890")
+                        .rrn(BizEventToPdfMapper.getRnn(bizEvent))
                         .paymentMethod(PaymentMethod.builder()
-                                .name("Visa *1234")
-                                .logo("https://...")
-                                .accountHolder("Marzia Roccaraso")
-                                .extraFee(false)
+                                .name(BizEventToPdfMapper.getPaymentMethodName(bizEvent))
+                                .logo(BizEventToPdfMapper.getPaymentMethodLogo(bizEvent))
+                                .accountHolder(BizEventToPdfMapper.getPaymentMethodAccountHolder(bizEvent))
+                                .extraFee(BizEventToPdfMapper.getExtraFee(bizEvent))
                                 .build())
-                        .authCode("9999999999")
+                        .authCode(BizEventToPdfMapper.getAuthCode(bizEvent))
+                        .requestedByDebtor(onlyDebtor)
                         .build())
+                .user(onlyDebtor ?
+                        null :
+                        User.builder()
+                                .data(UserData.builder()
+                                        .firstName(BizEventToPdfMapper.getUserFullName(bizEvent))
+                                        .lastName(null) //TODO only fullname
+                                        .taxCode(BizEventToPdfMapper.getUserTaxCode(bizEvent))
+                                        .build())
+                                .email(BizEventToPdfMapper.getUserMail(bizEvent))
+                                .build())
                 .cart(Cart.builder()
                         .items(Collections.singletonList(
                                 Item.builder()
                                         .refNumber(RefNumber.builder()
-                                                .type("codiceAvviso")
-                                                .value("123456789012345678")
+                                                .type(BizEventToPdfMapper.getRefNumberType())
+                                                .value(BizEventToPdfMapper.getRefNumberValue(bizEvent))
                                                 .build())
                                         .debtor(Debtor.builder()
-                                                .fullName("Giuseppe Bianchi")
-                                                .taxCode("BNCGSP70A12F205X")
+                                                .fullName(BizEventToPdfMapper.getDebtorFullName(bizEvent))
+                                                .taxCode(BizEventToPdfMapper.getDebtorTaxCode(bizEvent))
                                                 .build())
                                         .payee(Payee.builder()
-                                                .name("Comune di Controguerra")
-                                                .taxCode("82001760675")
+                                                .name(BizEventToPdfMapper.getPayeeName(bizEvent))
+                                                .taxCode(BizEventToPdfMapper.getPayeeTaxCode(bizEvent))
                                                 .build())
-                                        .subject("TARI 2022")
-                                        .amount(150.00)
+                                        .subject(BizEventToPdfMapper.getItemSubject(bizEvent))
+                                        .amount(BizEventToPdfMapper.getItemAmount(bizEvent))
                                         .build()
                         ))
-                        .build())
-                .build();
-    }
-
-    private ReceiptPDFTemplate buildCompleteReceipt(BizEvent bizEvent) {
-        // TODO build template data
-        return ReceiptPDFTemplate.builder()
-                .transaction(Transaction.builder()
-                        .id("F57E2F8E-25FF-4183-AB7B-4A5EC1A96644")
-                        .timestamp("2020-07-10 15:00:00.000")
-                        .amount(300.00)
-                        .psp(PSP.builder()
-                                .name("Nexi")
-                                .fee(PSPFee.builder()
-                                        .amount(2.00)
-                                        .build())
-                                .build())
-                        .rrn("1234567890")
-                        .paymentMethod(PaymentMethod.builder()
-                                .name("Visa *1234")
-                                .logo("https://...")
-                                .accountHolder("Marzia Roccaraso")
-                                .extraFee(false)
-                                .build())
-                        .authCode("9999999999")
-                        .build())
-                .user(User.builder()
-                        .data(UserData.builder()
-                                .firstName("Marzia")
-                                .lastName("Roccaraso")
-                                .taxCode("RCCMRZ88A52C409A")
-                                .build())
-                        .email("email@test.it")
-                        .build())
-                .cart(Cart.builder()
-                        .items(Collections.singletonList(
-                                Item.builder()
-                                        .refNumber(RefNumber.builder()
-                                                .type("codiceAvviso")
-                                                .value("123456789012345678")
-                                                .build())
-                                        .debtor(Debtor.builder()
-                                                .fullName("Giuseppe Bianchi")
-                                                .taxCode("BNCGSP70A12F205X")
-                                                .build())
-                                        .payee(Payee.builder()
-                                                .name("Comune di Controguerra")
-                                                .taxCode("82001760675")
-                                                .build())
-                                        .subject("TARI 2022")
-                                        .amount(150.00)
-                                        .build()
-                        ))
+                        .amountPartial(BizEventToPdfMapper.getItemAmount(bizEvent)) //Cart items total amount w/o fee
                         .build())
                 .build();
     }

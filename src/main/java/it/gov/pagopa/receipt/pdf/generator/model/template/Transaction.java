@@ -13,10 +13,10 @@ public class Transaction {
 
     private String id;
     private String timestamp;
-    private double amount;
+    private String amount;
     private PSP psp;
     private String rrn;
     private String authCode;
     private PaymentMethod paymentMethod;
-
+    private boolean requestedByDebtor;
 }

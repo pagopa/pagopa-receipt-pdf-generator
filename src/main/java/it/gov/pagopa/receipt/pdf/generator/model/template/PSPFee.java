@@ -11,6 +11,6 @@ import static com.fasterxml.jackson.annotation.JsonInclude.*;
 @JsonInclude(Include.NON_NULL)
 public class PSPFee {
 
-    private double amount;
+    private String amount;
 
 }

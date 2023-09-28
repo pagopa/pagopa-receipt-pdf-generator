@@ -15,6 +15,6 @@ public class Item {
     private Debtor debtor;
     private Payee payee;
     private String subject;
-    private double amount;
+    private String amount;
 
 }
