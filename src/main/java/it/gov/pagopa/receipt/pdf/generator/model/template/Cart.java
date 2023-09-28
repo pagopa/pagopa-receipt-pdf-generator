@@ -14,5 +14,6 @@ import static com.fasterxml.jackson.annotation.JsonInclude.*;
 public class Cart {
 
     private List<Item> items;
+    private String amountPartial;
 
 }
