@@ -53,7 +53,7 @@ public class GenerateReceiptPdfService {
                             receipt.getMdAttach().getUrl() == null ||
                             receipt.getMdAttach().getUrl().isEmpty())
             ) {
-                pdfGeneration.setDebtorMetadata(generatePdf(bizEvent, debtorCF, true));
+                pdfGeneration.setDebtorMetadata(generatePdf(bizEvent, true));
             }
         } else {
             //Generate debtor's partial PDF
@@ -62,7 +62,7 @@ public class GenerateReceiptPdfService {
                             receipt.getMdAttach().getUrl() == null ||
                             receipt.getMdAttach().getUrl().isEmpty())
             ) {
-                pdfGeneration.setDebtorMetadata(generatePdf(bizEvent, debtorCF, false));
+                pdfGeneration.setDebtorMetadata(generatePdf(bizEvent, false));
             }
             //Generate payer's complete PDF
             if (payerCF != null &&
@@ -70,7 +70,7 @@ public class GenerateReceiptPdfService {
                             receipt.getMdAttachPayer().getUrl() == null ||
                             receipt.getMdAttachPayer().getUrl().isEmpty())
             ) {
-                pdfGeneration.setPayerMetadata(generatePdf(bizEvent, payerCF, true));
+                pdfGeneration.setPayerMetadata(generatePdf(bizEvent, true));
             }
         }
 
@@ -81,11 +81,10 @@ public class GenerateReceiptPdfService {
      * Handles PDF generation and saving to storage
      *
      * @param bizEvent         Biz-event from queue message
-     * @param fiscalCode       Debtor or payer fiscal code
      * @param completeTemplate Boolean that indicates what template to use
      * @return PDF metadata retrieved from Blob Storage or relative error message
      */
-    private PdfMetadata generatePdf(BizEvent bizEvent, String fiscalCode, boolean completeTemplate) {
+    private PdfMetadata generatePdf(BizEvent bizEvent, boolean completeTemplate) {
         PdfEngineRequest request = new PdfEngineRequest();
         PdfMetadata response = new PdfMetadata();
 
@@ -110,7 +109,7 @@ public class GenerateReceiptPdfService {
 
             if (pdfEngineResponse.getStatusCode() == HttpStatus.SC_OK) {
                 //Save the PDF
-                String pdfFileName = bizEvent.getId() + fiscalCode;
+                String pdfFileName = bizEvent.getId() + "_" + (completeTemplate ? "p" : "d");
 
                 handleSaveToBlobStorage(pdfEngineResponse, response, pdfFileName);
 
