@@ -64,6 +64,7 @@ steps:
       scriptLocation: inlineScript
       inlineScript: |
         end="$(date -d '+1 day' +'%Y-%m-%d')"
+        echo $end
         export SAS_TOKEN="$(az storage queue generate-sas \
         -n pagopa-u-weu-receipts-queue-receipt-waiting-4-gen \
         --account-name pagopauweureceiptsfnsa \
