@@ -52,7 +52,7 @@ steps:
       docker pull grafana/k6
     displayName: Pull k6 image
   - script: |
-      curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+      curl -sL https://aka.ms/InstallAzureCLI | sudo bash
     displayName: Install Azure CLI
   - task: AzureCLI@2
     displayName: Login Azure
