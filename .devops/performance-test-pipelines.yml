@@ -52,7 +52,7 @@ steps:
       docker pull grafana/k6
     displayName: Pull k6 image
   - script: |
-      curl -L https://aka.ms/InstallAzureCli | bash
+      curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
     displayName: Install Azure CLI
   - task: AzureCLI@2
     displayName: Login Azure
@@ -61,6 +61,7 @@ steps:
       scriptType: bash
       scriptLocation: inlineScript
       inlineScript: |
+
         SAS_TOKEN = "$(az storage container generate-sas \
           --account-name ${{ variables.receiptQueueAccountName }} \
           --name ${{ variables.receiptQueueName }} \
