@@ -99,7 +99,7 @@ export default function () {
 		let responseQueue = sendMessageToQueue(eventMessage, receiptQueueURI, receiptQueuePrimaryKey);
 
 		console.log("SendMessageToQueue call, Status " + responseQueue.status);
-		console.log("RESPONSE QUEUE" + receiptQueueURI + " " + receiptQueuePrimaryKey +  " " + responseQueue.error + " " + responseQueue.errorMessage);
+		console.log("RESPONSE QUEUE" + " " + receiptQueuePrimaryKey);
 	
 		check(eventMessage, {
 			'SendMessageToQueue status is 200': (_response) => responseQueue.status === 200,
