@@ -58,9 +58,6 @@ steps:
       apt-get install apt-transport-https
       apt-get update
       apt-get install azure-cli
-      az
-      history
-      curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
     displayName: Install Azure CLI
   - task: AzureCLI@2
     displayName: Login Azure
