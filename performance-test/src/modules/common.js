@@ -41,7 +41,7 @@ export function createEvent(id) {
 		"debtor": {
 			"fullName": "John Doe",
 			"entityUniqueIdentifierType": "F",
-            "entityUniqueIdentifierValue": randomString(11, "0123456789"),
+            "entityUniqueIdentifierValue": "JHNDOE00A01F205S",
 			"streetName": "street",
 			"civicNumber": "12",
 			"postalCode": "89020",
@@ -103,8 +103,8 @@ export function createReceipt(id) {
 	{
 		"eventId": id,
 		"eventData": {
-			"payerFiscalCode": "AAAAAA00A00A000A",
-			"debtorFiscalCode": "AAAAAA00A00A000A"
+			"payerFiscalCode": "JHNDOE00A01F205S",
+			"debtorFiscalCode": "JHNDOE00A01F205S"
 		},
 		"status": "INSERTED",
 		"numRetry": 0,
