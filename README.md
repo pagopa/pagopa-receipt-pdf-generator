@@ -70,12 +70,11 @@ then replace env variables with correct values
 
 | VARIABLE                          | USAGE                                                                            |      DEFAULT VALUE      |
 |-----------------------------------|----------------------------------------------------------------------------------|:-----------------------:|
-| `RECEIPT_QUEUE_CONN_STRING`       | Connection string to the Receipt Queue                                           |                         |
+| `RECEIPTS_STORAGE_CONN_STRING`    | Connection string to the Receipt Storage                                         |                         |
 | `RECEIPT_QUEUE_TOPIC`             | Topic name of the Receipt Queue                                                  |                         |
 | `RECEIPT_QUEUE_MAX_RETRY`         | Number of retry to complete the generation process before being tagged as FAILED |           "5"           |
 | `RECEIPT_QUEUE_TOPIC_POISON`      | Topic name of the Receipt Poison Queue                                           |                         |
 | `BLOB_STORAGE_ACCOUNT_ENDPOINT`   | Endpoint to the Receipt Blob Storage                                             |                         |
-| `BLOB_STORAGE_CONN_STRING`        | Connection string of the Receipt Blob Storage                                    |                         |
 | `BLOB_STORAGE_CONTAINER_NAME`     | Container name of the Receipt container in the Blob Storage                      |                         |
 | `COSMOS_RECEIPTS_CONN_STRING`     | Connection string to the Receipt CosmosDB                                        |                         |
 | `COSMOS_RECEIPT_SERVICE_ENDPOINT` | Endpoint to the Receipt CosmosDB                                                 |                         |

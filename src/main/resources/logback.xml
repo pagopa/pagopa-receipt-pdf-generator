@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 
+    <property resource="application.properties" />
+
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
             <level>${CONSOLE_LOG_THRESHOLD}</level>
@@ -14,12 +16,12 @@
     <if condition='"TRUE".equalsIgnoreCase("${ENABLE_ECS_CONSOLE}")'>
         <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
             <encoder class="co.elastic.logging.logback.EcsEncoder">
-                <serviceName>${ECS_SERVICE_NAME}</serviceName>
-                <serviceVersion>${ECS_SERVICE_VERSION}</serviceVersion>
+                <serviceName>${name}</serviceName>
+                <serviceVersion>${version}</serviceVersion>
                 <serviceEnvironment>${ENV}</serviceEnvironment>
             </encoder>
         </appender>
-    </if>>
+    </if>
 
     <appender name="ASYNC_STDOUT"
               class="ch.qos.logback.classic.AsyncAppender">

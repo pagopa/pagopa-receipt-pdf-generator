@@ -22,6 +22,8 @@ import java.util.Properties;
  */
 public class Info {
 
+    private final Logger logger = LoggerFactory.getLogger(Info.class);
+
     /**
      * This function will be invoked when a Http Trigger occurs
      *
@@ -35,25 +37,23 @@ public class Info {
                     authLevel = AuthorizationLevel.ANONYMOUS) HttpRequestMessage<Optional<String>> request,
             final ExecutionContext context) {
 
-        org.slf4j.Logger logger = LoggerFactory.getLogger(getClass());
-
         return request.createResponseBuilder(HttpStatus.OK)
-                .body(getInfo(logger))
+                .body(getInfo())
                 .build();
     }
-    public synchronized AppInfo getInfo(Logger logger) {
+    public AppInfo getInfo() {
         String version = null;
         String name = null;
-        try (InputStream inputStream = this.getClass().getClassLoader().getResourceAsStream("application.properties")) {
-            Properties properties = new Properties();
-            if (inputStream != null) {
-                properties.load(inputStream);
-                version = properties.getProperty("version", null);
-                name = properties.getProperty("artifactId", null);
-            }
-        } catch (Exception e) {
-            logger.error("Impossible to retrieve information from pom.properties file.", e);
-        }
-        return AppInfo.builder().version(version).environment("azure-fn").name(name).build();
+         try (InputStream inputStream = this.getClass().getClassLoader().getResourceAsStream("application.properties")) {
+             Properties properties = new Properties();
+             if (inputStream != null) {
+                 properties.load(inputStream);
+                 version = properties.getProperty("version", null);
+                 name = properties.getProperty("name", null);
+             }
+         } catch (Exception e) {
+             logger.error("Impossible to retrieve information from pom.properties file.", e);
+         }
+         return AppInfo.builder().version(version).environment("azure-fn").name(name).build();
     }
 }

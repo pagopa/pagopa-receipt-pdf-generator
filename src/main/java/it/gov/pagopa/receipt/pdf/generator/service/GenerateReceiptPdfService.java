@@ -19,6 +19,7 @@ import it.gov.pagopa.receipt.pdf.generator.utils.TemplateMapperUtils;
 import lombok.NoArgsConstructor;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.URL;
@@ -27,6 +28,8 @@ import java.time.LocalDateTime;
 
 @NoArgsConstructor
 public class GenerateReceiptPdfService {
+
+    private final Logger logger = LoggerFactory.getLogger(GenerateReceiptPdfService.class);
 
     private static final int MAX_NUMBER_RETRY = Integer.parseInt(System.getenv().getOrDefault("COSMOS_RECEIPT_QUEUE_MAX_RETRY", "5"));
 
@@ -40,7 +43,7 @@ public class GenerateReceiptPdfService {
      * @param payerCF            Payer fiscal code
      * @return PdfGeneration object with the PDF metadata from the Blob Storage or relatives error messages
      */
-    public PdfGeneration handlePdfsGeneration(boolean generateOnlyDebtor, Receipt receipt, BizEvent bizEvent, String debtorCF, String payerCF, Logger logger) {
+    public PdfGeneration handlePdfsGeneration(boolean generateOnlyDebtor, Receipt receipt, BizEvent bizEvent, String debtorCF, String payerCF) {
         PdfGeneration pdfGeneration = new PdfGeneration();
 
         if (generateOnlyDebtor) {
@@ -50,7 +53,7 @@ public class GenerateReceiptPdfService {
                             receipt.getMdAttach().getUrl() == null ||
                             receipt.getMdAttach().getUrl().isEmpty())
             ) {
-                pdfGeneration.setDebtorMetadata(generatePdf(bizEvent, debtorCF, true, logger));
+                pdfGeneration.setDebtorMetadata(generatePdf(bizEvent, debtorCF, true));
             }
         } else {
             //Generate debtor's partial PDF
@@ -59,7 +62,7 @@ public class GenerateReceiptPdfService {
                             receipt.getMdAttach().getUrl() == null ||
                             receipt.getMdAttach().getUrl().isEmpty())
             ) {
-                pdfGeneration.setDebtorMetadata(generatePdf(bizEvent, debtorCF, false, logger));
+                pdfGeneration.setDebtorMetadata(generatePdf(bizEvent, debtorCF, false));
             }
             //Generate payer's complete PDF
             if (payerCF != null &&
@@ -67,7 +70,7 @@ public class GenerateReceiptPdfService {
                             receipt.getMdAttachPayer().getUrl() == null ||
                             receipt.getMdAttachPayer().getUrl().isEmpty())
             ) {
-                pdfGeneration.setPayerMetadata(generatePdf(bizEvent, payerCF, true, logger));
+                pdfGeneration.setPayerMetadata(generatePdf(bizEvent, payerCF, true));
             }
         }
 
@@ -82,7 +85,7 @@ public class GenerateReceiptPdfService {
      * @param completeTemplate Boolean that indicates what template to use
      * @return PDF metadata retrieved from Blob Storage or relative error message
      */
-    private PdfMetadata generatePdf(BizEvent bizEvent, String fiscalCode, boolean completeTemplate, Logger logger) {
+    private PdfMetadata generatePdf(BizEvent bizEvent, String fiscalCode, boolean completeTemplate) {
         PdfEngineRequest request = new PdfEngineRequest();
         PdfMetadata response = new PdfMetadata();
 
@@ -109,7 +112,7 @@ public class GenerateReceiptPdfService {
                 //Save the PDF
                 String pdfFileName = bizEvent.getId() + fiscalCode;
 
-                handleSaveToBlobStorage(pdfEngineResponse, response, pdfFileName, logger);
+                handleSaveToBlobStorage(pdfEngineResponse, response, pdfFileName);
 
             } else {
                 //Handle PDF generation error
@@ -118,9 +121,11 @@ public class GenerateReceiptPdfService {
             }
 
         } catch (Exception e) {
+            String errMsg = "File template not found, error: ";
+            logger.error(errMsg, e);
             //Handle file not found error
             response.setStatusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR);
-            response.setErrorMessage("File template not found, error: " + e);
+            response.setErrorMessage(errMsg + e);
         }
 
         return response;
@@ -132,7 +137,7 @@ public class GenerateReceiptPdfService {
      * @param response    Pdf metadata containing response
      * @param pdfFileName Filename composed of biz-event id and user fiscal code
      */
-    private void handleSaveToBlobStorage(PdfEngineResponse pdfEngineResponse, PdfMetadata response, String pdfFileName, Logger logger) {
+    private void handleSaveToBlobStorage(PdfEngineResponse pdfEngineResponse, PdfMetadata response, String pdfFileName) {
         BlobStorageResponse blobStorageResponse;
 
         ReceiptBlobClientImpl blobClient = ReceiptBlobClientImpl.getInstance();
@@ -158,12 +163,14 @@ public class GenerateReceiptPdfService {
             }
 
         } catch (Exception e) {
+            String errMsg = "Error saving pdf to blob storage : ";
+            logger.error(errMsg, e);
             //Handle Blob storage error
             response.setStatusCode(ReasonErrorCode.ERROR_BLOB_STORAGE.getCode());
-            response.setErrorMessage("Error saving pdf to blob storage : " + e);
+            response.setErrorMessage(errMsg + e);
         }
 
-        deleteTempFolderAndFile(tempPdfPath, tempDirectoryPath, logger);
+        deleteTempFolderAndFile(tempPdfPath, tempDirectoryPath);
     }
 
     /**
@@ -171,18 +178,14 @@ public class GenerateReceiptPdfService {
      *
      * @param tempPdfPath       Path to the temp PDF file
      * @param tempDirectoryPath Path to the temp directory containing the PDF file
-     * @param logger            Logger
      */
-    private static void deleteTempFolderAndFile(String tempPdfPath, String tempDirectoryPath, Logger logger) {
-        String logMsg;
-
+    private void deleteTempFolderAndFile(String tempPdfPath, String tempDirectoryPath) {
         File tempFile = new File(tempPdfPath);
         if (tempFile.exists()) {
             try {
                 Files.delete(tempFile.toPath());
             } catch (IOException e) {
-                logMsg = String.format("Error deleting temporary pdf file from file system: %s", e);
-                logger.warn(logMsg);
+                logger.warn("Error deleting temporary pdf file from file system", e);
             }
         }
 
@@ -191,8 +194,7 @@ public class GenerateReceiptPdfService {
             try {
                 Files.delete(tempDirectory.toPath());
             } catch (IOException e) {
-                logMsg = String.format("Error deleting temporary pdf directory from file system: %s", e);
-                logger.warn(logMsg);
+                logger.warn("Error deleting temporary pdf directory from file system", e);
             }
         }
     }
@@ -255,6 +257,7 @@ public class GenerateReceiptPdfService {
                                 responsePayerGen.getStatusCode() == HttpStatus.SC_OK))
         ) {
             receipt.setStatus(ReceiptStatusType.GENERATED);
+            receipt.setGenerated_at(System.currentTimeMillis());
         } else {
             ReceiptStatusType receiptStatusType;
             //Verify if the max number of retry have been passed
@@ -276,8 +279,7 @@ public class GenerateReceiptPdfService {
                     errorMessage,
                     bizEventMessage,
                     receipt,
-                    requeueMessage,
-                    logger
+                    requeueMessage
             );
         }
     }
@@ -313,7 +315,6 @@ public class GenerateReceiptPdfService {
      * @param bizEventMessage   BizEvent message from queue
      * @param receipt           Receipt to be saved on CosmosDB
      * @param requeueMessage    Output Binding to save the bizEventMessage
-     * @param logger            Logger
      */
     public void handleErrorGeneratingReceipt(
             ReceiptStatusType receiptStatusType,
@@ -321,8 +322,7 @@ public class GenerateReceiptPdfService {
             String errorMessage,
             String bizEventMessage,
             Receipt receipt,
-            OutputBinding<String> requeueMessage,
-            Logger logger) {
+            OutputBinding<String> requeueMessage) {
 
         receipt.setStatus(receiptStatusType);
         receipt.setNumRetry(receipt.getNumRetry() + 1);
@@ -332,7 +332,6 @@ public class GenerateReceiptPdfService {
 
         //Re-queue the message
         requeueMessage.setValue(bizEventMessage);
-        String logMessage = "Error generating PDF at " + LocalDateTime.now() + " : " + errorMessage;
-        logger.error(logMessage);
+        logger.error("Error generating PDF at {} : {}", LocalDateTime.now(), errorMessage);
     }
 }

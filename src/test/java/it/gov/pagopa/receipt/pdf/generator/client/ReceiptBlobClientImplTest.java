@@ -28,7 +28,7 @@ class ReceiptBlobClientImplTest {
         @SuppressWarnings("secrets:S6338")
         String mockKey = "mockKeymockKeymockKeymockKeymockKeymockKeymockKeymockKeymockKeymockKeymockKeymockKeyMK==";
         withEnvironmentVariables(
-                "BLOB_STORAGE_CONN_STRING", "DefaultEndpointsProtocol=https;AccountName=samplestorage;AccountKey="+mockKey+";EndpointSuffix=core.windows.net",
+                "RECEIPTS_STORAGE_CONN_STRING", "DefaultEndpointsProtocol=https;AccountName=samplestorage;AccountKey="+mockKey+";EndpointSuffix=core.windows.net",
                 "BLOB_STORAGE_ACCOUNT_ENDPOINT", "https://samplestorage.blob.core.windows.net"
         ).execute(() -> Assertions.assertDoesNotThrow(ReceiptBlobClientImpl::getInstance)
         );
