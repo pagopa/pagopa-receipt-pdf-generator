@@ -64,7 +64,7 @@ steps:
       scriptLocation: inlineScript
       inlineScript: |
 
-        SAS_TOKEN = "$(az storage container generate-sas \
+        SAS_TOKEN="$(az storage container generate-sas \
         --account-name ${{ variables.receiptQueueAccountName }} \
         --name ${{ variables.receiptQueueName }} \
         --permissions acdlrw \
