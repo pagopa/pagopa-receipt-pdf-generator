@@ -63,14 +63,12 @@ steps:
       scriptType: bash
       scriptLocation: inlineScript
       inlineScript: |
-
+        end="$(date -d '+1 day' +'%Y-%m-%d')"
         export SAS_TOKEN="$(az storage queue generate-sas \
+        -n pagopa-u-weu-receipts-queue-receipt-waiting-4-gen \
         --account-name pagopauweureceiptsfnsa \
-        --name pagopa-u-weu-receipts-queue-receipt-waiting-4-gen \
-        --permissions acdlrw \
-        --expiry "$(date -d '+1 day' +'%Y-%m-%d')" \
-        --auth-mode login \
-        --as-user)"
+        --permissions apru \
+        --expiry $end"
         echo "##vso[task.setvariable variable=SAS_TOKEN]$SAS_TOKEN"
   - script: |
       echo $(SAS_TOKEN)
