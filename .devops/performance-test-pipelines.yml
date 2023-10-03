@@ -56,7 +56,7 @@ steps:
       apt-get install azure-cli
       az version
     displayName: Install Azure CLI
-  - id: get_sas_token
+  - task: AzureCLI@2
     displayName: Login Azure
     task: AzureCLI@2
     inputs:
@@ -74,11 +74,11 @@ steps:
         --as-user)"
         echo "SAS_TOKEN=$SAS_TOKEN" >> $GITHUB_OUTPUT
   - script: |
-      echo ${{ steps.get_sas_token.outputs.SAS_TOKEN }}
+      echo $SAS_TOKEN
     displayName: Echo SAS_TOKEN
   - script: |      
       cd ./performance-test
-      sh ./run_performance_test.sh ${{ parameters.ENVIRONMENT }} ${{ parameters.TEST_TYPE }} ${{ parameters.SCRIPT }} ${{ parameters.DB_NAME }} ${{ steps.get_sas_token.outputs.SAS_TOKEN }} $RECEIPT_COSMOS_SUBSCRIPTION_KEY
+      sh ./run_performance_test.sh ${{ parameters.ENVIRONMENT }} ${{ parameters.TEST_TYPE }} ${{ parameters.SCRIPT }} ${{ parameters.DB_NAME }} $(SAS_TOKEN) $RECEIPT_COSMOS_SUBSCRIPTION_KEY
     displayName: Run k6 ${{ parameters.SCRIPT }} on ${{ parameters.ENVIRONMENT }}
     env:
       RECEIPT_QUEUE_SUBSCRIPTION_KEY: ${{ variables.receiptQueueSubscriptionKey }}
