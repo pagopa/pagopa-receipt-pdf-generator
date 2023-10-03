@@ -6,8 +6,7 @@
       "receiptDatabaseID":"db",
       "receiptContainerID":"receipts",
       "receiptQueueAccountName": "pagopadweureceiptsfnsa",
-      "receiptQueueName": "pagopa-d-weu-receipts-queue-receipt-waiting-4-gen",
-      "processTime":"3"
+      "receiptQueueName": "pagopa-d-weu-receipts-queue-receipt-waiting-4-gen"
     }
   ]
 }
