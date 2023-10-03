@@ -72,8 +72,11 @@ steps:
         --auth-mode login \
         --as-user)"
         echo "::set-env name=SAS_TOKEN::$SAS_TOKEN"
+        export FOO=bar
+        echo "::set-env name=FOO::$FOO"
   - script: |
       echo $SAS_TOKEN
+      echo $FOO
     displayName: Echo SAS_TOKEN
   - script: |      
       cd ./performance-test
