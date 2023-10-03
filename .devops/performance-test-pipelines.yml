@@ -71,7 +71,7 @@ steps:
         --expiry "$(date -d '+1 day' +'%Y-%m-%d')" \
         --auth-mode login \
         --as-user)"
-        echo "SAS_TOKEN=$SAS" >> $GITHUB_ENV
+        echo "SAS_TOKEN=$SAS" >> "$GITHUB_ENV"
   - script: |
       echo $SAS_TOKEN
     displayName: Echo SAS_TOKEN
