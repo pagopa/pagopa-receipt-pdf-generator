@@ -53,7 +53,7 @@ steps:
     displayName: Pull k6 image
   - script: |
       sudo rm -rf /etc/apt/trusted.gpg.d/microsoft.gpg 
-      sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys B53DC80D13EDEF05
+      sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys B53DC80D13EDEF05 | EB3E94ADBE1229CF
       sudo apt-get update
       curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
     displayName: Install Azure CLI
