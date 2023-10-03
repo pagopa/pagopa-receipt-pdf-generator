@@ -68,7 +68,7 @@ steps:
         --account-name ${{ variables.receiptQueueAccountName }} \
         --name ${{ variables.receiptQueueName }} \
         --permissions acdlrw \
-        --expiry "$(date -d '+1 day' +'%Y-%m-%d")' \
+        --expiry "$(date -d '+1 day' +'%Y-%m-%d')" \
         --auth-mode login \
         --as-user)"
 
