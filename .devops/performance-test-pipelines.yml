@@ -52,6 +52,7 @@ steps:
       docker pull grafana/k6
     displayName: Pull k6 image
   - script: |
+      sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys B53DC80D13EDEF05
       curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
     displayName: Install Azure CLI
   - task: AzureCLI@2
@@ -61,7 +62,6 @@ steps:
       scriptType: bash
       scriptLocation: inlineScript
       inlineScript: |
-        sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys B53DC80D13EDEF05
         SAS_TOKEN = "$(az storage container generate-sas \
           --account-name ${{ variables.receiptQueueAccountName }} \
           --name ${{ variables.receiptQueueName }} \
