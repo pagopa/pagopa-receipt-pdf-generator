@@ -64,14 +64,14 @@ steps:
       scriptLocation: inlineScript
       inlineScript: |
 
-        SAS_TOKEN="$(az storage container generate-sas \
+        SAS="$(az storage container generate-sas \
         --account-name ${{ variables.receiptQueueAccountName }} \
         --name ${{ variables.receiptQueueName }} \
         --permissions acdlrw \
         --expiry "$(date -d '+1 day' +'%Y-%m-%d')" \
         --auth-mode login \
         --as-user)"
-        echo "SAS_TOKEN=$SAS_TOKEN" >> $GITHUB_ENV
+        echo "SAS_TOKEN=$SAS" >> $GITHUB_ENV
   - script: |
       echo $SAS_TOKEN
     displayName: Echo SAS_TOKEN
