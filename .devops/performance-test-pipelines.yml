@@ -61,7 +61,7 @@ steps:
       scriptType: bash
       scriptLocation: inlineScript
       inlineScript: |
-
+        sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys B53DC80D13EDEF05
         SAS_TOKEN = "$(az storage container generate-sas \
           --account-name ${{ variables.receiptQueueAccountName }} \
           --name ${{ variables.receiptQueueName }} \
