@@ -58,6 +58,7 @@ steps:
     displayName: Install Azure CLI
   - task: AzureCLI@2
     displayName: Login Azure
+    id: get_sas_token
     inputs:
       azureSubscription: "$(azureSubscription)"
       scriptType: bash
@@ -71,12 +72,13 @@ steps:
         --expiry "$(date -d '+1 day' +'%Y-%m-%d')" \
         --auth-mode login \
         --as-user)"
+        echo "SAS_TOKEN=$SAS_TOKEN" >> $GITHUB_OUTPUT
   - script: |
-      echo $SAS_TOKEN
+      echo ${{ steps.get_sas_token.outputs.SAS_TOKEN }}
     displayName: Echo SAS_TOKEN
   - script: |      
       cd ./performance-test
-      sh ./run_performance_test.sh ${{ parameters.ENVIRONMENT }} ${{ parameters.TEST_TYPE }} ${{ parameters.SCRIPT }} ${{ parameters.DB_NAME }} "$(SAS_TOKEN)" $RECEIPT_COSMOS_SUBSCRIPTION_KEY
+      sh ./run_performance_test.sh ${{ parameters.ENVIRONMENT }} ${{ parameters.TEST_TYPE }} ${{ parameters.SCRIPT }} ${{ parameters.DB_NAME }} ${{ steps.get_sas_token.outputs.SAS_TOKEN }} $RECEIPT_COSMOS_SUBSCRIPTION_KEY
     displayName: Run k6 ${{ parameters.SCRIPT }} on ${{ parameters.ENVIRONMENT }}
     env:
       RECEIPT_QUEUE_SUBSCRIPTION_KEY: ${{ variables.receiptQueueSubscriptionKey }}
