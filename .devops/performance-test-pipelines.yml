@@ -64,7 +64,7 @@ steps:
       scriptLocation: inlineScript
       inlineScript: |
 
-        export SAS_TOKEN="$(az storage container generate-sas \
+        export SAS_TOKEN="$(az storage queue generate-sas \
         --account-name pagopauweureceiptsfnsa \
         --name pagopa-u-weu-receipts-queue-receipt-waiting-4-gen \
         --permissions acdlrw \
