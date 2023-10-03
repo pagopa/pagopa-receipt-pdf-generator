@@ -63,13 +63,15 @@ steps:
       scriptType: bash
       scriptLocation: inlineScript
       inlineScript: |
+
         SAS_TOKEN = "$(az storage container generate-sas \
-          --account-name ${{ variables.receiptQueueAccountName }} \
-          --name ${{ variables.receiptQueueName }} \
-          --permissions acdlrw \
-          --expiry "$(date -d '+1 day' +'%Y-%m-%d")' \
-          --auth-mode login \
-          --as-user)"
+        --account-name ${{ variables.receiptQueueAccountName }} \
+        --name ${{ variables.receiptQueueName }} \
+        --permissions acdlrw \
+        --expiry "$(date -d '+1 day' +'%Y-%m-%d")' \
+        --auth-mode login \
+        --as-user)"
+
   - script: |
       cd ./performance-test
       sh ./run_performance_test.sh ${{ parameters.ENVIRONMENT }} ${{ parameters.TEST_TYPE }} ${{ parameters.SCRIPT }} ${{ parameters.DB_NAME }} "$(SAS_TOKEN)" $RECEIPT_COSMOS_SUBSCRIPTION_KEY
