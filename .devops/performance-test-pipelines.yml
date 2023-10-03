@@ -68,7 +68,7 @@ steps:
         -n pagopa-u-weu-receipts-queue-receipt-waiting-4-gen \
         --account-name pagopauweureceiptsfnsa \
         --permissions apru \
-        --expiry $end"
+        --expiry $end)"
         echo "##vso[task.setvariable variable=SAS_TOKEN]$SAS_TOKEN"
   - script: |
       echo $(SAS_TOKEN)
