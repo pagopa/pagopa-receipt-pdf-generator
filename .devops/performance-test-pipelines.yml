@@ -52,10 +52,14 @@ steps:
       docker pull grafana/k6
     displayName: Pull k6 image
   - script: |
-      sudo rm -rf /etc/apt/trusted.gpg.d/microsoft.gpg 
-      sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys B53DC80D13EDEF05 
-      sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys EB3E94ADBE1229CF
-      sudo apt-get update
+      apt-get update
+      echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ wheezy main" |      tee /etc/apt/sources.list.d/azure-cli.list
+      apt-key adv --keyserver packages.microsoft.com --recv-keys 52E16F86FEE04B979B07E28DB02C46DF417A0893
+      apt-get install apt-transport-https
+      apt-get update
+      apt-get install azure-cli
+      az
+      history
       curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
     displayName: Install Azure CLI
   - task: AzureCLI@2
