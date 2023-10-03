@@ -71,17 +71,10 @@ steps:
         --expiry "$(date -d '+1 day' +'%Y-%m-%d')" \
         --auth-mode login \
         --as-user)"
-        echo "::set-env name=SAS_TOKEN::$SAS_TOKEN"
-        export FOO=bar
         echo "##vso[task.setvariable variable=SAS_TOKEN]$SAS_TOKEN"
-        echo "##vso[task.setvariable variable=FOO]$FOO"
-  - script: |
-      echo $(SAS_TOKEN)
-      echo $(FOO)
-    displayName: Echo SAS_TOKEN
   - script: |      
       cd ./performance-test
-      sh ./run_performance_test.sh ${{ parameters.ENVIRONMENT }} ${{ parameters.TEST_TYPE }} ${{ parameters.SCRIPT }} ${{ parameters.DB_NAME }} "$(SAS_TOKEN)" $RECEIPT_COSMOS_SUBSCRIPTION_KEY
+      sh ./run_performance_test.sh ${{ parameters.ENVIRONMENT }} ${{ parameters.TEST_TYPE }} ${{ parameters.SCRIPT }} ${{ parameters.DB_NAME }} $(SAS_TOKEN) $RECEIPT_COSMOS_SUBSCRIPTION_KEY
     displayName: Run k6 ${{ parameters.SCRIPT }} on ${{ parameters.ENVIRONMENT }}
     env:
       RECEIPT_QUEUE_SUBSCRIPTION_KEY: ${{ variables.receiptQueueSubscriptionKey }}
