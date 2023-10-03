@@ -56,9 +56,9 @@ steps:
       apt-get install azure-cli
       az version
     displayName: Install Azure CLI
-  - task: AzureCLI@2
+  - id: get_sas_token
     displayName: Login Azure
-    id: get_sas_token
+    task: AzureCLI@2
     inputs:
       azureSubscription: "$(azureSubscription)"
       scriptType: bash
