@@ -38,13 +38,13 @@ variables:
     receiptCosmosSubscriptionKey: "$(DEV_RECEIPT_COSMOS_DB_SUBSCRIPTION_KEY)"
     receiptQueueAccountName: "pagopadweureceiptsfnsa"
     receiptQueueName: "pagopa-d-weu-receipts-queue-receipt-waiting-4-gen"
-    azureSubscription: '$(TF_DEV_AZURE_SERVICE_CONNECTION)'
+    azureSubscription: "$(TF_DEV_AZURE_SERVICE_CONNECTION)"
     poolImage: "pagopa-dev-loadtest-linux"
   ${{ if eq(parameters['ENVIRONMENT'], 'uat') }}:
     receiptCosmosSubscriptionKey: "$(UAT_RECEIPT_COSMOS_DB_SUBSCRIPTION_KEY)"
     receiptQueueAccountName: "pagopauweureceiptsfnsa"
     receiptQueueName: "pagopa-u-weu-receipts-queue-receipt-waiting-4-gen"
-    azureSubscription: '$(TF_UAT_AZURE_SERVICE_CONNECTION)'
+    azureSubscription: "$(TF_UAT_AZURE_SERVICE_CONNECTION)"
     poolImage: "pagopa-uat-loadtest-linux"
 
 pool:
@@ -69,8 +69,8 @@ steps:
       inlineScript: |
         end="$(date -d '+1 day' +'%Y-%m-%d')"
         export SAS_TOKEN="$(az storage queue generate-sas \
-        -n pagopa-u-weu-receipts-queue-receipt-waiting-4-gen \
-        --account-name pagopauweureceiptsfnsa \
+        -n ${{ variables.receiptQueueName }} \
+        --account-name ${{ variables.receiptQueueAccountName }} \
         --permissions apru \
         --expiry $end)"
         echo "##vso[task.setvariable variable=SAS_TOKEN]$SAS_TOKEN"
@@ -80,4 +80,4 @@ steps:
     displayName: Run k6 ${{ parameters.SCRIPT }} on ${{ parameters.ENVIRONMENT }}
     env:
       RECEIPT_COSMOS_SUBSCRIPTION_KEY: ${{ variables.receiptCosmosSubscriptionKey }}
-      PROCESS_TIME: ${{ parameters.processTime}}
+      PROCESS_TIME: ${{ parameters.PROCESS_TIME }}
