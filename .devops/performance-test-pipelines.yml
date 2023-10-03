@@ -28,6 +28,10 @@ parameters:
     type: string
     values:
       - pagopa_receipt_pdf_generatork6
+  - name: "PROCESS_TIME"
+    displayName: "Process time"
+    type: number
+    default: 5
 
 variables:
   ${{ if eq(parameters['ENVIRONMENT'], 'dev') }}:
@@ -72,8 +76,8 @@ steps:
         echo "##vso[task.setvariable variable=SAS_TOKEN]$SAS_TOKEN"
   - script: |
       cd ./performance-test
-      sh ./run_performance_test.sh ${{ parameters.ENVIRONMENT }} ${{ parameters.TEST_TYPE }} ${{ parameters.SCRIPT }} ${{ parameters.DB_NAME }} $(SAS_TOKEN) $RECEIPT_COSMOS_SUBSCRIPTION_KEY
+      sh ./run_performance_test.sh ${{ parameters.ENVIRONMENT }} ${{ parameters.TEST_TYPE }} ${{ parameters.SCRIPT }} ${{ parameters.DB_NAME }} $(SAS_TOKEN) $RECEIPT_COSMOS_SUBSCRIPTION_KEY $PROCESS_TIME
     displayName: Run k6 ${{ parameters.SCRIPT }} on ${{ parameters.ENVIRONMENT }}
     env:
-      RECEIPT_QUEUE_SUBSCRIPTION_KEY: ${{ variables.receiptQueueSubscriptionKey }}
       RECEIPT_COSMOS_SUBSCRIPTION_KEY: ${{ variables.receiptCosmosSubscriptionKey }}
+      PROCESS_TIME: ${{ parameters.processTime}}

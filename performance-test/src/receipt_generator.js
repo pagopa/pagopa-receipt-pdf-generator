@@ -26,7 +26,7 @@ const receiptQueueName = `${vars.receiptQueueName}`;
 const receiptQueueURI = `https://${receiptQueueAccountName}.queue.core.windows.net/${receiptQueueName}/messages`;
 const receiptQueuePrimaryKey = `${__ENV.RECEIPT_QUEUE_SUBSCRIPTION_KEY}`;
 // boundary time (s) to process event: activate trigger, process function, upload event to datastore
-const processTime = `${vars.processTime}`;
+const processTime = `${__ENV.PROCESS_TIME ?? 3}`;
 
 export function setup() {
 	// 2. setup code (once)
