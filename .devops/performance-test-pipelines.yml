@@ -65,8 +65,8 @@ steps:
       inlineScript: |
 
         export SAS_TOKEN="$(az storage container generate-sas \
-        --account-name ${{ variables.receiptQueueAccountName }} \
-        --name ${{ variables.receiptQueueName }} \
+        --account-name pagopauweureceiptsfnsa \
+        --name pagopa-u-weu-receipts-queue-receipt-waiting-4-gen \
         --permissions acdlrw \
         --expiry "$(date -d '+1 day' +'%Y-%m-%d')" \
         --auth-mode login \
