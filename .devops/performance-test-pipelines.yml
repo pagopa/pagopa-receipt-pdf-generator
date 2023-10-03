@@ -73,6 +73,7 @@ steps:
         --as-user)"
 
   - script: |
+      echo $SAS_TOKEN
       cd ./performance-test
       sh ./run_performance_test.sh ${{ parameters.ENVIRONMENT }} ${{ parameters.TEST_TYPE }} ${{ parameters.SCRIPT }} ${{ parameters.DB_NAME }} "$(SAS_TOKEN)" $RECEIPT_COSMOS_SUBSCRIPTION_KEY
     displayName: Run k6 ${{ parameters.SCRIPT }} on ${{ parameters.ENVIRONMENT }}
