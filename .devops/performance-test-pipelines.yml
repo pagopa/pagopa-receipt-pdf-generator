@@ -58,7 +58,6 @@ steps:
     displayName: Install Azure CLI
   - task: AzureCLI@2
     displayName: Login Azure
-    task: AzureCLI@2
     inputs:
       azureSubscription: "$(azureSubscription)"
       scriptType: bash
