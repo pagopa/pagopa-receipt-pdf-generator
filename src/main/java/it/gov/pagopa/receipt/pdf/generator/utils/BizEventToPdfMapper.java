@@ -82,8 +82,12 @@ public class BizEventToPdfMapper {
             return event.getTransactionDetails().getTransaction().getRrn();
         }
 
-        //TODO ECOMMERCE ANALYSIS
-        //TODO NODO -> paymentToken / iur?
+        if (
+                event.getPaymentInfo() != null
+        ) {
+            return event.getPaymentInfo().getPaymentToken() != null ? event.getPaymentInfo().getPaymentToken() : event.getPaymentInfo().getIUR();
+        }
+
         return null;
     }
 
