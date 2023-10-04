@@ -1,12 +1,26 @@
 package it.gov.pagopa.receipt.pdf.generator.utils;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import it.gov.pagopa.receipt.pdf.generator.entity.event.BizEvent;
+
+import java.util.Map;
 
 public class BizEventToPdfMapper {
 
     /**
      * Hide from public usage.
      */
+
+    private static final Map<String, String> brandLogoMap;
+
+    static {
+        try {
+            brandLogoMap = ObjectMapperUtils.mapString(System.getenv("BRAND_LOGO_MAP"),Map.class);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private BizEventToPdfMapper() {
     }
 
@@ -115,6 +129,16 @@ public class BizEventToPdfMapper {
 
     public static String getPaymentMethodLogo(BizEvent event){
         //TODO analyse -> transactionDetails.wallet.info.brandLogo doesn't exist
+
+        if (event.getTransactionDetails() != null &&
+            event.getTransactionDetails().getWallet() != null &&
+            event.getTransactionDetails().getWallet().getInfo() != null
+        ) {
+            return brandLogoMap.getOrDefault(
+                    event.getTransactionDetails().getWallet()
+                            .getInfo().getBrand(),null
+            );
+        }
 
         return null;
     }
