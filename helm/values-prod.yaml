@@ -54,10 +54,10 @@ microservice-chart:
     allowPrivilegeEscalation: false
   resources:
     requests:
-      memory: "1024Mi"
+      memory: "1512Mi"
       cpu: "0.75"
     limits:
-      memory: "1024Mi"
+      memory: "1512Mi"
       cpu: "0.75"
   autoscaling:
     enable: true
@@ -76,6 +76,7 @@ microservice-chart:
           # Required
           type: Utilization # Allowed types are 'Utilization' or 'AverageValue'
           value: "70"
+  fileConfig: {}
   envConfig:
     ENV: "prod"
     WEBSITE_SITE_NAME: "pagopareceiptpdfgenerator" # required to show cloud role name in application insights
