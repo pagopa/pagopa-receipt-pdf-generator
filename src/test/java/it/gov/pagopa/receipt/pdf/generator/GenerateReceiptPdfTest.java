@@ -19,10 +19,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.Mock;
-import org.mockito.Spy;
+import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.File;
@@ -74,7 +71,7 @@ class GenerateReceiptPdfTest {
     private ArgumentCaptor<String> messageCaptor;
 
     @BeforeEach
-    public void createTemp() throws IOException {
+    public void createTemp() throws Exception {
         tempDirectoryDebtor = Files.createTempDirectory("temp").toFile();
         outputPdfDebtor = File.createTempFile("outputDebtor", ".tmp", new File("src/test/resources"));
     }
@@ -144,7 +141,7 @@ class GenerateReceiptPdfTest {
         OutputBinding<String> requeueMessage = (OutputBinding<String>) spy(OutputBinding.class);
 
         // test execution
-        withEnvironmentVariable("BRAND_LOGO_MAP", "\"{\"MASTER\":\"assets/mastercard.png\"}\"\n").execute(() ->
+        withEnvironmentVariable("BRAND_LOGO_MAP", "{\"MASTER\":\"assets/mastercard.png\"}\n").execute(() ->
                 assertDoesNotThrow(() -> function.processGenerateReceipt(BIZ_EVENT_MESSAGE_DIFFERENT_CF, documentdb, requeueMessage, context))
         );
         verify(documentdb).setValue(receiptCaptor.capture());
@@ -163,7 +160,7 @@ class GenerateReceiptPdfTest {
     }
 
     @Test
-    void runOkReceiptStatusInsertedSameFiscalCode() throws ReceiptNotFoundException {
+    void runOkReceiptStatusInsertedSameFiscalCode() throws Exception {
         ReceiptCosmosClientImpl cosmosClient = mock(ReceiptCosmosClientImpl.class);
         receiptMock.setStatus(ReceiptStatusType.INSERTED);
         EventData eventDataMock = mock(EventData.class);
@@ -198,7 +195,9 @@ class GenerateReceiptPdfTest {
         OutputBinding<String> requeueMessage = (OutputBinding<String>) spy(OutputBinding.class);
 
         // test execution
-        assertDoesNotThrow(() -> function.processGenerateReceipt(BIZ_EVENT_MESSAGE_SAME_CF, documentdb, requeueMessage, context));
+        withEnvironmentVariable("BRAND_LOGO_MAP", "{\"MASTER\":\"assets/mastercard.png\"}\n").execute(() ->
+                assertDoesNotThrow(() -> function.processGenerateReceipt(BIZ_EVENT_MESSAGE_SAME_CF, documentdb, requeueMessage, context))
+        );
 
         verify(documentdb).setValue(receiptCaptor.capture());
         Receipt capturedCosmos = receiptCaptor.getValue();
@@ -213,7 +212,7 @@ class GenerateReceiptPdfTest {
     }
 
     @Test
-    void runOkReceiptStatusRetrySameFiscalCode() throws ReceiptNotFoundException {
+    void runOkReceiptStatusRetrySameFiscalCode() throws Exception {
         ReceiptCosmosClientImpl cosmosClient = mock(ReceiptCosmosClientImpl.class);
         receiptMock.setStatus(ReceiptStatusType.RETRY);
         EventData eventDataMock = mock(EventData.class);
@@ -248,7 +247,9 @@ class GenerateReceiptPdfTest {
         OutputBinding<String> requeueMessage = (OutputBinding<String>) spy(OutputBinding.class);
 
         // test execution
-        assertDoesNotThrow(() -> function.processGenerateReceipt(BIZ_EVENT_MESSAGE_SAME_CF, documentdb, requeueMessage, context));
+        withEnvironmentVariable("BRAND_LOGO_MAP", "{\"MASTER\":\"assets/mastercard.png\"}\n").execute(() ->
+                assertDoesNotThrow(() -> function.processGenerateReceipt(BIZ_EVENT_MESSAGE_SAME_CF, documentdb, requeueMessage, context))
+        );
 
         verify(documentdb).setValue(receiptCaptor.capture());
         Receipt capturedCosmos = receiptCaptor.getValue();
@@ -263,7 +264,7 @@ class GenerateReceiptPdfTest {
     }
 
     @Test
-    void runKOReceiptNullDebtorFiscalCode() throws ReceiptNotFoundException {
+    void runKOReceiptNullDebtorFiscalCode() throws Exception {
         ReceiptCosmosClientImpl cosmosClient = mock(ReceiptCosmosClientImpl.class);
         receiptMock.setStatus(ReceiptStatusType.INSERTED);
         EventData eventDataMock = mock(EventData.class);
@@ -280,7 +281,9 @@ class GenerateReceiptPdfTest {
         OutputBinding<String> requeueMessage = (OutputBinding<String>) spy(OutputBinding.class);
 
         // test execution
-        assertDoesNotThrow(() -> function.processGenerateReceipt(BIZ_EVENT_MESSAGE_SAME_CF, documentdb, requeueMessage, context));
+        withEnvironmentVariable("BRAND_LOGO_MAP", "{\"MASTER\":\"assets/mastercard.png\"}\n").execute(() ->
+                assertDoesNotThrow(() -> function.processGenerateReceipt(BIZ_EVENT_MESSAGE_SAME_CF, documentdb, requeueMessage, context))
+        );
 
         verify(documentdb).setValue(receiptCaptor.capture());
         Receipt capturedCosmos = receiptCaptor.getValue();
@@ -445,7 +448,7 @@ class GenerateReceiptPdfTest {
     }
 
     @Test
-    void runKoPdfEngine500() throws ReceiptNotFoundException {
+    void runKoPdfEngine500() throws Exception {
         ReceiptCosmosClientImpl cosmosClient = mock(ReceiptCosmosClientImpl.class);
         receiptMock.setStatus(ReceiptStatusType.INSERTED);
         EventData eventDataMock = mock(EventData.class);
@@ -471,7 +474,9 @@ class GenerateReceiptPdfTest {
         OutputBinding<String> requeueMessage = (OutputBinding<String>) spy(OutputBinding.class);
 
         // test execution
-        assertDoesNotThrow(() -> function.processGenerateReceipt(BIZ_EVENT_MESSAGE_SAME_CF, documentdb, requeueMessage, context));
+        withEnvironmentVariable("BRAND_LOGO_MAP", "{\"MASTER\":\"assets/mastercard.png\"}\n").execute(() ->
+                assertDoesNotThrow(() -> function.processGenerateReceipt(BIZ_EVENT_MESSAGE_SAME_CF, documentdb, requeueMessage, context))
+        );
 
         verify(documentdb).setValue(receiptCaptor.capture());
         Receipt capturedCosmos = receiptCaptor.getValue();
@@ -486,7 +491,7 @@ class GenerateReceiptPdfTest {
     }
 
     @Test
-    void runKoBlobStorage() throws ReceiptNotFoundException {
+    void runKoBlobStorage() throws Exception {
         ReceiptCosmosClientImpl cosmosClient = mock(ReceiptCosmosClientImpl.class);
         receiptMock.setStatus(ReceiptStatusType.INSERTED);
         EventData eventDataMock = mock(EventData.class);
@@ -519,7 +524,9 @@ class GenerateReceiptPdfTest {
         OutputBinding<String> requeueMessage = (OutputBinding<String>) spy(OutputBinding.class);
 
         // test execution
-        assertDoesNotThrow(() -> function.processGenerateReceipt(BIZ_EVENT_MESSAGE_DIFFERENT_CF, documentdb, requeueMessage, context));
+        withEnvironmentVariable("BRAND_LOGO_MAP", "{\"MASTER\":\"assets/mastercard.png\"}\n").execute(() ->
+                assertDoesNotThrow(() -> function.processGenerateReceipt(BIZ_EVENT_MESSAGE_DIFFERENT_CF, documentdb, requeueMessage, context))
+        );
 
         verify(documentdb).setValue(receiptCaptor.capture());
         Receipt capturedCosmos = receiptCaptor.getValue();
@@ -583,7 +590,7 @@ class GenerateReceiptPdfTest {
     }
 
     @Test
-    void runKoTooManyRetry() throws ReceiptNotFoundException {
+    void runKoTooManyRetry() throws Exception {
         ReceiptCosmosClientImpl cosmosClient = mock(ReceiptCosmosClientImpl.class);
         receiptMock.setStatus(ReceiptStatusType.RETRY);
         EventData eventDataMock = mock(EventData.class);
@@ -608,7 +615,9 @@ class GenerateReceiptPdfTest {
         OutputBinding<String> requeueMessage = (OutputBinding<String>) spy(OutputBinding.class);
 
         // test execution
-        assertDoesNotThrow(() -> function.processGenerateReceipt(BIZ_EVENT_MESSAGE_SAME_CF, documentdb, requeueMessage, context));
+        withEnvironmentVariable("BRAND_LOGO_MAP", "{\"MASTER\":\"assets/mastercard.png\"}\n").execute(() ->
+                assertDoesNotThrow(() -> function.processGenerateReceipt(BIZ_EVENT_MESSAGE_SAME_CF, documentdb, requeueMessage, context))
+        );
 
         verify(documentdb).setValue(receiptCaptor.capture());
         Receipt capturedCosmos = receiptCaptor.getValue();
