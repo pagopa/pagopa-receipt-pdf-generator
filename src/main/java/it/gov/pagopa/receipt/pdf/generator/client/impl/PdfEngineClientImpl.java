@@ -46,7 +46,7 @@ public class PdfEngineClientImpl implements PdfEngineClient {
         this.httpClientBuilder = HttpClientBuilder.create();
     }
 
-    public PdfEngineClientImpl(HttpClientBuilder clientBuilder) {
+    PdfEngineClientImpl(HttpClientBuilder clientBuilder) {
         this.httpClientBuilder = clientBuilder;
     }
 

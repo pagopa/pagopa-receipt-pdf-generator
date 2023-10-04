@@ -83,8 +83,6 @@ then replace env variables with correct values
 | `COSMOS_RECEIPT_CONTAINER_NAME`   | Container name of the Receipt container in CosmosDB                              |                         |
 | `PDF_ENGINE_ENDPOINT`             | Endpoint to the PDF engine                                                       |                         |
 | `OCP_APIM_SUBSCRIPTION_KEY`       | Auth key for Azure to access the PDF Engine                                      |                         |
-| `COMPLETE_TEMPLATE_FILE_NAME `    | Filename of the complete template                                                | "complete_template.zip" |
-| `PARTIAL_TEMPLATE_FILE_NAME`      | Filename of the partial template                                                 | "partial_template.zip"  |
 
 > to doc details about AZ fn config
 > see [here](https://stackoverflow.com/questions/62669672/azure-functions-what-is-the-purpose-of-having-host-json-and-local-settings-jso)

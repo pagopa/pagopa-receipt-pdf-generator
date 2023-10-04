@@ -1,6 +1,5 @@
-package it.gov.pagopa.receipt.pdf.generator.client;
+package it.gov.pagopa.receipt.pdf.generator.client.impl;
 
-import it.gov.pagopa.receipt.pdf.generator.client.impl.PdfEngineClientImpl;
 import it.gov.pagopa.receipt.pdf.generator.model.request.PdfEngineRequest;
 import it.gov.pagopa.receipt.pdf.generator.model.response.PdfEngineResponse;
 import org.apache.http.HttpEntity;
