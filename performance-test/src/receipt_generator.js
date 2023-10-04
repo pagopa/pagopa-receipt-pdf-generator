@@ -19,6 +19,7 @@ const vars = varsArray[0];
 const receiptCosmosDBURI = `${vars.receiptCosmosDBURI}`;
 const receiptDatabaseID = `${vars.receiptDatabaseID}`;
 const receiptContainerID = `${vars.receiptContainerID}`;
+console.log("RECEIPT ENDPOINT " + receiptCosmosDBURI + " " + receiptDatabaseID + " " + receiptContainerID);
 const receiptCosmosDBPrimaryKey = `${__ENV.RECEIPT_COSMOS_DB_SUBSCRIPTION_KEY}`;
 //QUEUE
 const receiptQueueAccountName = `${vars.receiptQueueAccountName}`;
