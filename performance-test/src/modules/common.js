@@ -9,7 +9,7 @@ export function createEvent(id) {
     const idPA = randomString(11, "0123456789");
     const idPSP = randomString(11, "0123456789");
 	let json_event = {
-		"id": id,
+		"id": "receipt-perf-test-generator",
 		"version": "2",
 		"complete": "false",
 		"receiptId": "0095ff2bafec4bc0a719c9bf003aee4a",
@@ -101,7 +101,7 @@ export function createEvent(id) {
 export function createReceipt(id) {
     let receipt = 
 	{
-		"eventId": id,
+		"eventId": "receipt-perf-test-generator",
 		"eventData": {
 			"payerFiscalCode": "JHNDOE00A01F205S",
 			"debtorFiscalCode": "JHNDOE00A01F205S"
