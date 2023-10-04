@@ -5,7 +5,7 @@ export function sendMessageToQueue(message, url, accountKey){
         'x-ms-date': new Date().toUTCString()
     };
 
-    let body = `<QueueMessage><MessageText>${message}</MessageText></QueueMessage>`;
+    let body = `<QueueMessage><MessageText>${btoa(message)}</MessageText></QueueMessage>`;
     
     return http.post(`${url}?${accountKey}`, body, { headers });
 }
