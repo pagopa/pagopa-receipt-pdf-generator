@@ -11,8 +11,7 @@ import static com.fasterxml.jackson.annotation.JsonInclude.*;
 @JsonInclude(Include.NON_NULL)
 public class UserData {
 
-    private String firstName;
-    private String lastName;
+    private String fullName;
     private String taxCode;
 }
 

@@ -240,8 +240,7 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
                         null :
                         User.builder()
                                 .data(UserData.builder()
-                                        .firstName(BizEventToPdfMapper.getUserFullName(bizEvent))
-                                        .lastName(null) //TODO only fullname
+                                        .fullName(BizEventToPdfMapper.getUserFullName(bizEvent))
                                         .taxCode(BizEventToPdfMapper.getUserTaxCode(bizEvent))
                                         .build())
                                 .email(BizEventToPdfMapper.getUserMail(bizEvent))
