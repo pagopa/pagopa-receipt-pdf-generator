@@ -22,7 +22,7 @@ public class BizEventToPdfMapper {
 
     static {
         try {
-            brandLogoMap = ObjectMapperUtils.mapString(System.getenv("BRAND_LOGO_MAP"),Map.class);
+            brandLogoMap = ObjectMapperUtils.mapString(System.getenv().get("BRAND_LOGO_MAP"),Map.class);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
