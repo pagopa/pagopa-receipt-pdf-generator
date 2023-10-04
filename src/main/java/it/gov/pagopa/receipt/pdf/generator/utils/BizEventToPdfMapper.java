@@ -20,10 +20,9 @@ public class BizEventToPdfMapper {
         if (
                 event.getPaymentInfo() != null
         ) {
-            return event.getPaymentInfo().getPaymentToken();
+            return event.getPaymentInfo().getPaymentToken() != null ? event.getPaymentInfo().getPaymentToken() : event.getPaymentInfo().getIUR();
         }
 
-        //TODO IUR?
         return null;
     }
 
@@ -36,7 +35,7 @@ public class BizEventToPdfMapper {
             return event.getTransactionDetails().getTransaction().getCreationDate();
         }
 
-        return event.getPaymentInfo() != null ? event.getPaymentInfo().getPaymentDateTime() : "";
+        return event.getPaymentInfo() != null ? event.getPaymentInfo().getPaymentDateTime() : null;
     }
 
     public static String getAmount(BizEvent event){
@@ -47,7 +46,7 @@ public class BizEventToPdfMapper {
             return String.valueOf(event.getTransactionDetails().getTransaction().getAmount());
         }
 
-        return event.getPaymentInfo() != null ? event.getPaymentInfo().getAmount() : "";
+        return event.getPaymentInfo() != null ? event.getPaymentInfo().getAmount() : null;
     }
 
     public static String getPspName(BizEvent event){
