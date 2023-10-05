@@ -13,7 +13,8 @@ public class BizEventToPdfMapper {
     public static String getId(BizEvent event) {
         if (
                 event.getTransactionDetails() != null &&
-                        event.getTransactionDetails().getTransaction() != null
+                        event.getTransactionDetails().getTransaction() != null &&
+                        event.getTransactionDetails().getTransaction().getIdTransaction() != 0L
         ) {
             return String.valueOf(event.getTransactionDetails().getTransaction().getIdTransaction());
         }
@@ -41,7 +42,8 @@ public class BizEventToPdfMapper {
     public static String getAmount(BizEvent event){
         if(
                 event.getTransactionDetails() != null &&
-                        event.getTransactionDetails().getTransaction() != null
+                        event.getTransactionDetails().getTransaction() != null &&
+                        event.getTransactionDetails().getTransaction().getAmount() != 0L
         ){
             return String.valueOf(event.getTransactionDetails().getTransaction().getAmount());
         }
@@ -65,7 +67,8 @@ public class BizEventToPdfMapper {
     public static String getPspFee(BizEvent event){
         if(
                 event.getTransactionDetails() != null &&
-                        event.getTransactionDetails().getTransaction() != null
+                        event.getTransactionDetails().getTransaction() != null &&
+                        event.getTransactionDetails().getTransaction().getFee() != 0L
         ){
             return String.valueOf(event.getTransactionDetails().getTransaction().getFee());
         }
@@ -94,8 +97,7 @@ public class BizEventToPdfMapper {
     public static String getAuthCode(BizEvent event){
         if(
                 event.getTransactionDetails() != null &&
-                        event.getTransactionDetails().getTransaction() != null &&
-                        event.getTransactionDetails().getTransaction().getAuthorizationCode() != null
+                        event.getTransactionDetails().getTransaction() != null
         ){
             return event.getTransactionDetails().getTransaction().getAuthorizationCode();
         }
@@ -107,8 +109,7 @@ public class BizEventToPdfMapper {
         if(
                 event.getTransactionDetails() != null &&
                         event.getTransactionDetails().getWallet() != null &&
-                        event.getTransactionDetails().getWallet().getInfo() != null &&
-                        event.getTransactionDetails().getWallet().getInfo().getBrand() != null
+                        event.getTransactionDetails().getWallet().getInfo() != null
         ){
             return event.getTransactionDetails().getWallet().getInfo().getBrand();
         }
