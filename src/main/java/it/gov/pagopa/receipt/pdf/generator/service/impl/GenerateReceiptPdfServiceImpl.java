@@ -76,6 +76,8 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
                 }
             }
 
+        } else {
+            pdfGeneration.setGenerateOnlyDebtor(true);
         }
 
         //Generate debtor's partial PDF
@@ -213,7 +215,7 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
         return pdfEngineResponse;
     }
 
-    private ReceiptPDFTemplate buildTemplate(BizEvent bizEvent, boolean onlyDebtor) {
+    private ReceiptPDFTemplate buildTemplate(BizEvent bizEvent, boolean partialTemplate) {
         // TODO build template data
         return ReceiptPDFTemplate.builder()
                 .transaction(Transaction.builder()
@@ -234,9 +236,9 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
                                 .extraFee(BizEventToPdfMapper.getExtraFee(bizEvent))
                                 .build())
                         .authCode(BizEventToPdfMapper.getAuthCode(bizEvent))
-                        .requestedByDebtor(onlyDebtor)
+                        .requestedByDebtor(partialTemplate)
                         .build())
-                .user(onlyDebtor ?
+                .user(partialTemplate ?
                         null :
                         User.builder()
                                 .data(UserData.builder()
