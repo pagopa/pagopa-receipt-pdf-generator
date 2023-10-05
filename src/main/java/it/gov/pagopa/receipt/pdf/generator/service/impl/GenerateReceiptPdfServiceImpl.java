@@ -161,8 +161,8 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
 
     private PdfMetadata generateAndSavePDFReceipt(BizEvent bizEvent, String templateSuffix, ReceiptPDFTemplate completeTemplate) {
         try {
-            String dateFormatted = DateTimeFormatter.BASIC_ISO_DATE.format(LocalDate.now()).substring(2);
-            String blobName = TEMPLATE_PREFIX + "-" + dateFormatted + "-" + bizEvent.getId() + "-" + templateSuffix;
+            String dateFormatted = LocalDate.now().format(DateTimeFormatter.ofPattern("yyMMdd"));
+            String blobName = String.format("%s-%s-%s-%s", TEMPLATE_PREFIX, dateFormatted, bizEvent.getId(), templateSuffix);
             PdfEngineResponse pdfEngineResponse = generatePdf(completeTemplate);
             return saveToBlobStorage(pdfEngineResponse, blobName);
         } catch (PDFReceiptGenerationException e) {
