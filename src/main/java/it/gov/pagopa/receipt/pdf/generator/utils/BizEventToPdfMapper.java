@@ -2,7 +2,6 @@ package it.gov.pagopa.receipt.pdf.generator.utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import it.gov.pagopa.receipt.pdf.generator.entity.event.BizEvent;
-import it.gov.pagopa.receipt.pdf.generator.model.PSPInfo;
 import it.gov.pagopa.receipt.pdf.generator.model.template.PSP;
 import it.gov.pagopa.receipt.pdf.generator.model.template.PSPFee;
 
