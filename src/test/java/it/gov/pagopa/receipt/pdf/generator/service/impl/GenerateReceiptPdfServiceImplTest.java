@@ -550,17 +550,26 @@ class GenerateReceiptPdfServiceImplTest {
     }
 
     @Test
-    void verifyDifferentDebtorPayerFailBothReceiptMetadataNull() {
+    void verifyDifferentDebtorPayerFailPayerReceiptMetadataNull() {
         Receipt receipt = buildReceiptForVerify(false, false);
 
         PdfGeneration pdfGeneration = PdfGeneration.builder()
+                .debtorMetadata(PdfMetadata.builder()
+                        .statusCode(HttpStatus.SC_OK)
+                        .documentName(DEBTOR_DOCUMENT_NAME)
+                        .documentUrl(DEBTOR_DOCUMENT_URL)
+                        .build())
                 .generateOnlyDebtor(false)
                 .build();
 
         boolean result = sut.verifyAndUpdateReceipt(receipt, pdfGeneration);
 
         assertFalse(result);
-        assertNull(receipt.getMdAttach());
+        assertNotNull(receipt.getMdAttach());
+        assertNotNull(receipt.getMdAttach().getUrl());
+        assertNotNull(receipt.getMdAttach().getName());
+        assertEquals(DEBTOR_DOCUMENT_NAME, receipt.getMdAttach().getName());
+        assertEquals(DEBTOR_DOCUMENT_URL, receipt.getMdAttach().getUrl());
         assertNull(receipt.getMdAttachPayer());
         assertNull(receipt.getReasonErr());
     }

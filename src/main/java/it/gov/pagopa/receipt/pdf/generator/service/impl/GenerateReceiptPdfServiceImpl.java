@@ -82,19 +82,17 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
                 PdfMetadata generationResult = generateAndSavePDFReceipt(bizEvent, PAYER_TEMPLATE_SUFFIX, completeTemplate);
                 pdfGeneration.setDebtorMetadata(generationResult);
                 return pdfGeneration;
-            } else {
-
-                //Generate payer's complete PDF
-                if (receiptAlreadyCreated(receipt.getMdAttachPayer())) {
-                    pdfGeneration.setPayerMetadata(PdfMetadata.builder().statusCode(ALREADY_CREATED).build());
-                } else {
-                    ReceiptPDFTemplate completeTemplate = buildTemplate(bizEvent, false);
-
-                    PdfMetadata generationResult = generateAndSavePDFReceipt(bizEvent, PAYER_TEMPLATE_SUFFIX, completeTemplate);
-                    pdfGeneration.setPayerMetadata(generationResult);
-                }
             }
 
+            //Generate payer's complete PDF
+            if (receiptAlreadyCreated(receipt.getMdAttachPayer())) {
+                pdfGeneration.setPayerMetadata(PdfMetadata.builder().statusCode(ALREADY_CREATED).build());
+            } else {
+                ReceiptPDFTemplate completeTemplate = buildTemplate(bizEvent, false);
+
+                PdfMetadata generationResult = generateAndSavePDFReceipt(bizEvent, PAYER_TEMPLATE_SUFFIX, completeTemplate);
+                pdfGeneration.setPayerMetadata(generationResult);
+            }
         } else {
             pdfGeneration.setGenerateOnlyDebtor(true);
         }
@@ -118,32 +116,9 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
     @Override
     public boolean verifyAndUpdateReceipt(Receipt receipt, PdfGeneration pdfGeneration) {
         PdfMetadata debtorMetadata = pdfGeneration.getDebtorMetadata();
-        if (pdfGeneration.isGenerateOnlyDebtor()) {
-            if (debtorMetadata == null) {
-                logger.error("Unexpected result for debtor pdf receipt generation. Receipt id {}", receipt.getId());
-                return false;
-            }
-            if (debtorMetadata.getStatusCode() == ALREADY_CREATED) {
-                return true;
-            }
-            if (debtorMetadata.getStatusCode() == HttpStatus.SC_OK) {
-                ReceiptMetadata receiptMetadata = new ReceiptMetadata();
-                receiptMetadata.setName(debtorMetadata.getDocumentName());
-                receiptMetadata.setUrl(debtorMetadata.getDocumentUrl());
-
-                receipt.setMdAttach(receiptMetadata);
-                return true;
-            }
-            ReasonError reasonError = new ReasonError(debtorMetadata.getStatusCode(), debtorMetadata.getErrorMessage());
-            receipt.setReasonErr(reasonError);
-            return false;
-        }
-
-        // No single receipt
-        PdfMetadata payerMetadata = pdfGeneration.getPayerMetadata();
         boolean result = true;
-        if (debtorMetadata == null || payerMetadata == null) {
-            logger.error("Unexpected result for both payer and debtor pdf receipt generation. Receipt id {}", receipt.getId());
+        if (debtorMetadata == null) {
+            logger.error("Unexpected result for debtor pdf receipt generation. Receipt id {}", receipt.getId());
             return false;
         }
 
@@ -158,6 +133,17 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
             receipt.setReasonErr(reasonError);
             result = false;
         }
+
+        if (pdfGeneration.isGenerateOnlyDebtor()) {
+            return result;
+        }
+
+        PdfMetadata payerMetadata = pdfGeneration.getPayerMetadata();
+        if (payerMetadata == null) {
+            logger.error("Unexpected result for payer pdf receipt generation. Receipt id {}", receipt.getId());
+            return false;
+        }
+
         if (payerMetadata.getStatusCode() == HttpStatus.SC_OK) {
             ReceiptMetadata receiptMetadata = new ReceiptMetadata();
             receiptMetadata.setName(payerMetadata.getDocumentName());
