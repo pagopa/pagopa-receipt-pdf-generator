@@ -1,0 +1,10 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: template-maps
+  namespace: receipts
+data:
+  brand-logo-map: |
+    {"MASTER":"assets/mastercard.png"}"
+  psp-info-map: |
+    {"Nexi":{"logo":"assets/nexi-logo.png","name":"Nexi","companyName":"Nexi Payments S.p.A.","address":"Corso Sempione","buildingNumber":"55","postalCode":"20149","city":"Milano","province":"MI","fee":{"amount":"2,00"}}}
