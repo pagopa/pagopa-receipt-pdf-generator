@@ -33,7 +33,7 @@ class GenerateReceiptPdfServiceImplTest {
 
     private static final String VALID_CF_DEBTOR = "JHNDOE00A01F205N";
     private static final String VALID_CF_PAYER = "PLMGHN00A01F406L";
-    private static final String BIZ_EVENT_ID = "variant062-a330-4210-9c67-465b7d641aVS";
+    private static final String BIZ_EVENT_ID = "062-a330-4210-9c67-465b7d641aVS";
     private static final String DEBTOR_DOCUMENT_NAME = "debtorDocumentName";
     private static final String DEBTOR_DOCUMENT_URL = "debtorDocumentUrl";
     private static final String PAYER_DOCUMENT_NAME = "payerDocumentName";

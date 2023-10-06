@@ -7,6 +7,7 @@ import com.microsoft.azure.functions.annotation.CosmosDBOutput;
 import com.microsoft.azure.functions.annotation.FunctionName;
 import com.microsoft.azure.functions.annotation.QueueOutput;
 import com.microsoft.azure.functions.annotation.QueueTrigger;
+import it.gov.pagopa.receipt.pdf.generator.client.ReceiptCosmosClient;
 import it.gov.pagopa.receipt.pdf.generator.client.impl.ReceiptCosmosClientImpl;
 import it.gov.pagopa.receipt.pdf.generator.entity.event.BizEvent;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.ReasonError;
@@ -32,6 +33,19 @@ public class GenerateReceiptPdf {
     private final Logger logger = LoggerFactory.getLogger(GenerateReceiptPdf.class);
 
     private static final int MAX_NUMBER_RETRY = Integer.parseInt(System.getenv().getOrDefault("COSMOS_RECEIPT_QUEUE_MAX_RETRY", "5"));
+
+    private final GenerateReceiptPdfService generateReceiptPdfService;
+    private final ReceiptCosmosClient receiptCosmosClient;
+
+    public GenerateReceiptPdf() {
+        this.generateReceiptPdfService = new GenerateReceiptPdfServiceImpl();
+        this.receiptCosmosClient = ReceiptCosmosClientImpl.getInstance();
+    }
+
+    GenerateReceiptPdf(GenerateReceiptPdfService generateReceiptPdfService, ReceiptCosmosClient receiptCosmosClient) {
+        this.generateReceiptPdfService = generateReceiptPdfService;
+        this.receiptCosmosClient = receiptCosmosClient;
+    }
 
     /**
      * This function will be invoked when a Queue trigger occurs
@@ -99,7 +113,7 @@ public class GenerateReceiptPdf {
         Receipt receipt = getReceipt(context, bizEvent);
 
         //Verify receipt status
-        if (isReceiptValid(receipt)) {
+        if (isReceiptInInValidState(receipt)) {
             logger.info("[{}] Receipt with id {} not in INSERTED or RETRY (status: {}) or have null event data (eventData is null: {})",
                     context.getFunctionName(),
                     receipt.getEventId(),
@@ -107,9 +121,6 @@ public class GenerateReceiptPdf {
                     receipt.getEventData() == null);
             return;
         }
-
-        GenerateReceiptPdfService service = new GenerateReceiptPdfServiceImpl();
-
         //Verify if debtor's and payer's fiscal code are the same
         String debtorCF = receipt.getEventData().getDebtorFiscalCode();
 
@@ -120,10 +131,10 @@ public class GenerateReceiptPdf {
                     bizEvent.getId());
 
             //Generate and save PDF
-            PdfGeneration pdfGeneration = service.generateReceipts(receipt, bizEvent);
+            PdfGeneration pdfGeneration = generateReceiptPdfService.generateReceipts(receipt, bizEvent);
 
             //Verify PDF generation success
-            boolean success = service.verifyAndUpdateReceipt(receipt, pdfGeneration);
+            boolean success = generateReceiptPdfService.verifyAndUpdateReceipt(receipt, pdfGeneration);
             if (success) {
                 receipt.setStatus(ReceiptStatusType.GENERATED);
                 receipt.setGenerated_at(System.currentTimeMillis());
@@ -162,14 +173,13 @@ public class GenerateReceiptPdf {
         documentdb.setValue(receipt);
     }
 
-    private boolean isReceiptValid(Receipt receipt) {
+    private boolean isReceiptInInValidState(Receipt receipt) {
         return receipt.getEventData() == null
                 || (!receipt.getStatus().equals(ReceiptStatusType.INSERTED) && !receipt.getStatus().equals(ReceiptStatusType.RETRY));
     }
 
     private Receipt getReceipt(ExecutionContext context, BizEvent bizEvent) throws ReceiptNotFoundException {
         Receipt receipt;
-        ReceiptCosmosClientImpl receiptCosmosClient = ReceiptCosmosClientImpl.getInstance();
         //Retrieve receipt from CosmosDB
         try {
             receipt = receiptCosmosClient.getReceiptDocument(bizEvent.getId());
