@@ -114,7 +114,7 @@ public class GenerateReceiptPdf {
 
         //Verify receipt status
         if (isReceiptInInValidState(receipt)) {
-            logger.info("[{}] Receipt with id {} not in INSERTED or RETRY (status: {}) or have null event data (eventData is null: {})",
+            logger.info("[{}] Receipt with id {} is discarded from generation because it is not in INSERTED or RETRY (status: {}) or have null event data (eventData is null: {})",
                     context.getFunctionName(),
                     receipt.getEventId(),
                     receipt.getStatus(),
@@ -190,7 +190,7 @@ public class GenerateReceiptPdf {
 
         if (receipt == null) {
             String errorMsg = "[{}] Receipt retrieved with the biz-event id {} is null";
-            logger.debug(errorMsg, context.getFunctionName(), bizEvent.getId());
+            logger.error(errorMsg, context.getFunctionName(), bizEvent.getId());
             throw new ReceiptNotFoundException(errorMsg);
         }
         return receipt;
