@@ -121,44 +121,9 @@ public class GenerateReceiptPdf {
                     receipt.getEventData() == null);
             return;
         }
-        //Verify if debtor's and payer's fiscal code are the same
+
         String debtorCF = receipt.getEventData().getDebtorFiscalCode();
-
-        if (debtorCF != null) {
-            logger.info("[{}] Generating pdf for Receipt with id {} and bizEvent with id {}",
-                    context.getFunctionName(),
-                    receipt.getId(),
-                    bizEvent.getId());
-
-            //Generate and save PDF
-            PdfGeneration pdfGeneration = generateReceiptPdfService.generateReceipts(receipt, bizEvent);
-
-            //Verify PDF generation success
-            boolean success = generateReceiptPdfService.verifyAndUpdateReceipt(receipt, pdfGeneration);
-            if (success) {
-                receipt.setStatus(ReceiptStatusType.GENERATED);
-                receipt.setGenerated_at(System.currentTimeMillis());
-                logger.info("[{}] Receipt with id {} being saved with status {}",
-                        context.getFunctionName(),
-                        receipt.getEventId(),
-                        receipt.getStatus());
-            } else {
-                ReceiptStatusType receiptStatusType;
-                //Verify if the max number of retry have been passed
-                if (receipt.getNumRetry() > MAX_NUMBER_RETRY) {
-                    receiptStatusType = ReceiptStatusType.FAILED;
-                } else {
-                    receiptStatusType = ReceiptStatusType.RETRY;
-                    receipt.setNumRetry(receipt.getNumRetry() + 1);
-                    requeueMessage.setValue(bizEventMessage);
-                }
-                receipt.setStatus(receiptStatusType);
-                logger.error("[{}] Error generating receipt for Receipt {} will be saved with status {}",
-                        context.getFunctionName(),
-                        receipt.getId(),
-                        receiptStatusType);
-            }
-        } else {
+        if (debtorCF == null) {
             String errorMessage = String.format(
                     "Error processing receipt with id %s : debtor's fiscal code is null",
                     receipt.getEventId()
@@ -168,8 +133,42 @@ public class GenerateReceiptPdf {
             ReasonError reasonError = new ReasonError(HttpStatus.SC_INTERNAL_SERVER_ERROR, errorMessage);
             receipt.setReasonErr(reasonError);
             logger.error("[{}] Error generating PDF: {}", context.getFunctionName(), errorMessage);
+            documentdb.setValue(receipt);
+            return;
         }
 
+        logger.info("[{}] Generating pdf for Receipt with id {} and bizEvent with id {}",
+                context.getFunctionName(),
+                receipt.getId(),
+                bizEvent.getId());
+        //Generate and save PDF
+        PdfGeneration pdfGeneration = generateReceiptPdfService.generateReceipts(receipt, bizEvent);
+
+        //Verify PDF generation success
+        boolean success = generateReceiptPdfService.verifyAndUpdateReceipt(receipt, pdfGeneration);
+        if (success) {
+            receipt.setStatus(ReceiptStatusType.GENERATED);
+            receipt.setGenerated_at(System.currentTimeMillis());
+            logger.info("[{}] Receipt with id {} being saved with status {}",
+                    context.getFunctionName(),
+                    receipt.getEventId(),
+                    receipt.getStatus());
+        } else {
+            ReceiptStatusType receiptStatusType;
+            //Verify if the max number of retry have been passed
+            if (receipt.getNumRetry() > MAX_NUMBER_RETRY) {
+                receiptStatusType = ReceiptStatusType.FAILED;
+            } else {
+                receiptStatusType = ReceiptStatusType.RETRY;
+                receipt.setNumRetry(receipt.getNumRetry() + 1);
+                requeueMessage.setValue(bizEventMessage);
+            }
+            receipt.setStatus(receiptStatusType);
+            logger.error("[{}] Error generating receipt for Receipt {} will be saved with status {}",
+                    context.getFunctionName(),
+                    receipt.getId(),
+                    receiptStatusType);
+        }
         documentdb.setValue(receipt);
     }
 
