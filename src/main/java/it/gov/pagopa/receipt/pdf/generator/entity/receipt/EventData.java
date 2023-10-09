@@ -1,17 +1,18 @@
 package it.gov.pagopa.receipt.pdf.generator.entity.receipt;
 
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.List;
 
 @Getter
 @Setter
+@Builder
 @NoArgsConstructor
+@AllArgsConstructor
 public class EventData {
     private String payerFiscalCode;
     private String debtorFiscalCode;
     private String transactionCreationDate;
+    private String amount;
     private List<CartItem> cart;
 }

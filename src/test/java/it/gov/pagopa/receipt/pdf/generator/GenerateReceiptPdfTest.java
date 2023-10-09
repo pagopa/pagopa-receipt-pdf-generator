@@ -2,637 +2,374 @@ package it.gov.pagopa.receipt.pdf.generator;
 
 import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.OutputBinding;
-import it.gov.pagopa.receipt.pdf.generator.client.impl.PdfEngineClientImpl;
-import it.gov.pagopa.receipt.pdf.generator.client.impl.ReceiptBlobClientImpl;
-import it.gov.pagopa.receipt.pdf.generator.client.impl.ReceiptCosmosClientImpl;
+import it.gov.pagopa.receipt.pdf.generator.client.ReceiptCosmosClient;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.EventData;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.Receipt;
-import it.gov.pagopa.receipt.pdf.generator.entity.receipt.enumeration.ReasonErrorCode;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.enumeration.ReceiptStatusType;
 import it.gov.pagopa.receipt.pdf.generator.exception.BizEventNotValidException;
 import it.gov.pagopa.receipt.pdf.generator.exception.ReceiptNotFoundException;
-import it.gov.pagopa.receipt.pdf.generator.model.response.BlobStorageResponse;
-import it.gov.pagopa.receipt.pdf.generator.model.response.PdfEngineResponse;
+import it.gov.pagopa.receipt.pdf.generator.model.PdfGeneration;
+import it.gov.pagopa.receipt.pdf.generator.service.GenerateReceiptPdfService;
+import lombok.SneakyThrows;
 import org.apache.http.HttpStatus;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.Field;
-import java.nio.file.Files;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
-import static uk.org.webcompere.systemstubs.SystemStubs.withEnvironmentVariable;
-import static uk.org.webcompere.systemstubs.SystemStubs.withEnvironmentVariables;
 
 @ExtendWith(MockitoExtension.class)
 class GenerateReceiptPdfTest {
 
-    private final String BIZ_EVENT_MESSAGE_SAME_CF = "{\"id\":\"variant062-a330-4210-9c67-465b7d641aVS\",\"version\":\"2\",\"idPaymentManager\":null,\"complete\":\"false\",\"receiptId\":\"9a9bad2caf604b86a339476373c659b0\",\"missingInfo\":[\"idPaymentManager\",\"psp.pspPartitaIVA\",\"paymentInfo.primaryCiIncurredFee\",\"paymentInfo.idBundle\",\"paymentInfo.idCiBundle\",\"paymentInfo.metadata\"],\"debtorPosition\":{\"modelType\":\"2\",\"noticeNumber\":\"302119891614290410\",\"iuv\":\"02119891614290410\"},\"creditor\":{\"idPA\":\"66666666666\",\"idBrokerPA\":\"66666666666\",\"idStation\":\"66666666666_01\",\"companyName\":\"PA paolo\",\"officeName\":\"office PA\"},\"psp\":{\"idPsp\":\"60000000001\",\"idBrokerPsp\":\"60000000001\",\"idChannel\":\"60000000001_01\",\"psp\":\"PSP Paolo\",\"pspPartitaIVA\":null,\"pspFiscalCode\":\"CF60000000006\",\"channelDescription\":\"app\"},\"debtor\":{\"fullName\":\"John Doe\",\"entityUniqueIdentifierType\":\"F\",\"entityUniqueIdentifierValue\":\"JHNDOE00A01F205N\",\"streetName\":\"street\",\"civicNumber\":\"12\",\"postalCode\":\"89020\",\"city\":\"city\",\"stateProvinceRegion\":\"MI\",\"country\":\"IT\",\"eMail\":\"john.doe@test.it\"},\"payer\":{\"fullName\":\"John Doe\",\"entityUniqueIdentifierType\":\"F\",\"entityUniqueIdentifierValue\":\"JHNDOE00A01F205N\",\"streetName\":\"street\",\"civicNumber\":\"12\",\"postalCode\":\"89020\",\"city\":\"city\",\"stateProvinceRegion\":\"MI\",\"country\":\"IT\",\"eMail\":\"john.doe@test.it\"},\"paymentInfo\":{\"paymentDateTime\":\"2023-04-12T16:21:39.022486\",\"applicationDate\":\"2021-10-01\",\"transferDate\":\"2021-10-02\",\"dueDate\":\"2021-07-31\",\"paymentToken\":\"9a9bad2caf604b86a339476373c659b0\",\"amount\":\"7000\",\"fee\":\"200\",\"primaryCiIncurredFee\":null,\"idBundle\":null,\"idCiBundle\":null,\"totalNotice\":\"1\",\"paymentMethod\":\"creditCard\",\"touchpoint\":\"app\",\"remittanceInformation\":\"TARI 2021\",\"description\":\"TARI 2021\",\"metadata\":null},\"transferList\":[{\"idTransfer\":\"1\",\"fiscalCodePA\":\"77777777777\",\"companyName\":\"Pa Salvo\",\"amount\":\"7000\",\"transferCategory\":\"0101101IM\",\"remittanceInformation\":\"TARI Comune EC_TE\",\"metadata\":null,\"mbdattachment\":null,\"iban\":\"IT96R0123454321000000012345\"}],\"transactionDetails\":{\"transaction\":{\"psp\":{\"businessName\":\"Nexi\"}},\"wallet\":{\"info\":{\"brand\":\"MASTER\"}}},\"timestamp\":1686919660002,\"properties\":{},\"eventStatus\":\"DONE\",\"eventRetryEnrichmentCount\":0,\"eventTriggeredBySchedule\":false,\"eventErrorMessage\":null}";
-    private final String BIZ_EVENT_MESSAGE_DIFFERENT_CF = "{\"id\":\"variant061-a330-4210-9c67-465b7d641aVS\",\"version\":\"2\",\"idPaymentManager\":null,\"complete\":\"false\",\"receiptId\":\"9a9bad2caf604b86a339476373c659b0\",\"missingInfo\":[\"idPaymentManager\",\"psp.pspPartitaIVA\",\"paymentInfo.primaryCiIncurredFee\",\"paymentInfo.idBundle\",\"paymentInfo.idCiBundle\",\"paymentInfo.metadata\"],\"debtorPosition\":{\"modelType\":\"2\",\"noticeNumber\":\"302119891614290410\",\"iuv\":\"02119891614290410\"},\"creditor\":{\"idPA\":\"66666666666\",\"idBrokerPA\":\"66666666666\",\"idStation\":\"66666666666_01\",\"companyName\":\"PA paolo\",\"officeName\":\"office PA\"},\"psp\":{\"idPsp\":\"60000000001\",\"idBrokerPsp\":\"60000000001\",\"idChannel\":\"60000000001_01\",\"psp\":\"PSP Paolo\",\"pspPartitaIVA\":null,\"pspFiscalCode\":\"CF60000000006\",\"channelDescription\":\"app\"},\"debtor\":{\"fullName\":\"John Doe\",\"entityUniqueIdentifierType\":\"F\",\"entityUniqueIdentifierValue\":\"JHNDOE00A01F205N\",\"streetName\":\"street\",\"civicNumber\":\"12\",\"postalCode\":\"89020\",\"city\":\"city\",\"stateProvinceRegion\":\"MI\",\"country\":\"IT\",\"eMail\":\"john.doe@test.it\"},\"payer\":{\"fullName\":\"Collins Dinners\",\"entityUniqueIdentifierType\":\"F\",\"entityUniqueIdentifierValue\":\"COLDIN00A01F205N\",\"streetName\":\"street\",\"civicNumber\":\"12\",\"postalCode\":\"89020\",\"city\":\"city\",\"stateProvinceRegion\":\"MI\",\"country\":\"IT\",\"eMail\":\"john.doe@test.it\"},\"paymentInfo\":{\"paymentDateTime\":\"2023-04-12T16:21:39.022486\",\"applicationDate\":\"2021-10-01\",\"transferDate\":\"2021-10-02\",\"dueDate\":\"2021-07-31\",\"paymentToken\":\"9a9bad2caf604b86a339476373c659b0\",\"amount\":\"7000\",\"fee\":\"200\",\"primaryCiIncurredFee\":null,\"idBundle\":null,\"idCiBundle\":null,\"totalNotice\":\"1\",\"paymentMethod\":\"creditCard\",\"touchpoint\":\"app\",\"remittanceInformation\":\"TARI 2021\",\"description\":\"TARI 2021\",\"metadata\":null},\"transferList\":[{\"idTransfer\":\"1\",\"fiscalCodePA\":\"77777777777\",\"companyName\":\"Pa Salvo\",\"amount\":\"7000\",\"transferCategory\":\"0101101IM\",\"remittanceInformation\":\"TARI Comune EC_TE\",\"metadata\":null,\"mbdattachment\":null,\"iban\":\"IT96R0123454321000000012345\"}],\"transactionDetails\":null,\"timestamp\":1686919035121,\"properties\":{},\"eventStatus\":\"DONE\",\"eventRetryEnrichmentCount\":0,\"eventTriggeredBySchedule\":false,\"eventErrorMessage\":null}";
+    private static final String BIZ_EVENT_VALID_MESSAGE = "{\"id\":\"062-a330-4210-9c67-465b7d641aVS\",\"version\":\"2\",\"idPaymentManager\":null,\"complete\":\"false\",\"receiptId\":\"9a9bad2caf604b86a339476373c659b0\",\"missingInfo\":[\"idPaymentManager\",\"psp.pspPartitaIVA\",\"paymentInfo.primaryCiIncurredFee\",\"paymentInfo.idBundle\",\"paymentInfo.idCiBundle\",\"paymentInfo.metadata\"],\"debtorPosition\":{\"modelType\":\"2\",\"noticeNumber\":\"302119891614290410\",\"iuv\":\"02119891614290410\"},\"creditor\":{\"idPA\":\"66666666666\",\"idBrokerPA\":\"66666666666\",\"idStation\":\"66666666666_01\",\"companyName\":\"PA paolo\",\"officeName\":\"office PA\"},\"psp\":{\"idPsp\":\"60000000001\",\"idBrokerPsp\":\"60000000001\",\"idChannel\":\"60000000001_01\",\"psp\":\"PSP Paolo\",\"pspPartitaIVA\":null,\"pspFiscalCode\":\"CF60000000006\",\"channelDescription\":\"app\"},\"debtor\":{\"fullName\":\"John Doe\",\"entityUniqueIdentifierType\":\"F\",\"entityUniqueIdentifierValue\":\"JHNDOE00A01F205N\",\"streetName\":\"street\",\"civicNumber\":\"12\",\"postalCode\":\"89020\",\"city\":\"city\",\"stateProvinceRegion\":\"MI\",\"country\":\"IT\",\"eMail\":\"john.doe@test.it\"},\"payer\":{\"fullName\":\"John Doe\",\"entityUniqueIdentifierType\":\"F\",\"entityUniqueIdentifierValue\":\"JHNDOE00A01F205N\",\"streetName\":\"street\",\"civicNumber\":\"12\",\"postalCode\":\"89020\",\"city\":\"city\",\"stateProvinceRegion\":\"MI\",\"country\":\"IT\",\"eMail\":\"john.doe@test.it\"},\"paymentInfo\":{\"paymentDateTime\":\"2023-04-12T16:21:39.022486\",\"applicationDate\":\"2021-10-01\",\"transferDate\":\"2021-10-02\",\"dueDate\":\"2021-07-31\",\"paymentToken\":\"9a9bad2caf604b86a339476373c659b0\",\"amount\":\"7000\",\"fee\":\"200\",\"primaryCiIncurredFee\":null,\"idBundle\":null,\"idCiBundle\":null,\"totalNotice\":\"1\",\"paymentMethod\":\"creditCard\",\"touchpoint\":\"app\",\"remittanceInformation\":\"TARI 2021\",\"description\":\"TARI 2021\",\"metadata\":null},\"transferList\":[{\"idTransfer\":\"1\",\"fiscalCodePA\":\"77777777777\",\"companyName\":\"Pa Salvo\",\"amount\":\"7000\",\"transferCategory\":\"0101101IM\",\"remittanceInformation\":\"TARI Comune EC_TE\",\"metadata\":null,\"mbdattachment\":null,\"iban\":\"IT96R0123454321000000012345\"}],\"transactionDetails\":null,\"timestamp\":1686919660002,\"properties\":{},\"eventStatus\":\"DONE\",\"eventRetryEnrichmentCount\":0,\"eventTriggeredBySchedule\":false,\"eventErrorMessage\":null}";
+    private static final String BIZ_EVENT_INVALID_MESSAGE = "invalid message";
+    private static final long ORIGINAL_GENERATED_AT = 0L;
 
-    private final String BIZ_EVENT_INVALID_MESSAGE = "invalid message";
+    private GenerateReceiptPdfService generateReceiptPdfServiceMock;
+    private ReceiptCosmosClient receiptCosmosClientMock;
+    private OutputBinding<Receipt> documentReceiptsMock;
+    private OutputBinding<String> requeueMessageMock;
+    private ExecutionContext executionContextMock;
 
-    private final String VALID_PAYER_CF = "a valid payer fiscal code";
-    private final String VALID_DEBTOR_CF = "a valid debtor fiscal code";
-    private final String VALID_BLOB_URL = "a valid debtor blob url";
-    private final String VALID_BLOB_NAME = "a valid debtor blob name";
-
-    private final String PDF_ENGINE_ERROR_MESSAGE = "pdf engine error message";
-
-    private static File outputPdfDebtor;
-    private static File tempDirectoryDebtor;
-
-    @Spy
-    private GenerateReceiptPdf function;
-
-    @Spy
-    private Receipt receiptMock;
-
-    @Mock
-    private PdfEngineResponse pdfEngineResponse;
-
-    @Mock
-    private BlobStorageResponse blobStorageResponse;
-
-    @Mock
-    private ExecutionContext context;
-
-    @Captor
-    private ArgumentCaptor<Receipt> receiptCaptor;
-
-    @Captor
-    private ArgumentCaptor<String> messageCaptor;
+    private GenerateReceiptPdf sut;
 
     @BeforeEach
-    public void createTemp() throws Exception {
-        tempDirectoryDebtor = Files.createTempDirectory("temp").toFile();
-        outputPdfDebtor = File.createTempFile("outputDebtor", ".tmp", new File("src/test/resources"));
-    }
+    void setUp() {
+        generateReceiptPdfServiceMock = mock(GenerateReceiptPdfService.class);
+        receiptCosmosClientMock = mock(ReceiptCosmosClient.class);
+        documentReceiptsMock = (OutputBinding<Receipt>) spy(OutputBinding.class);
+        requeueMessageMock = (OutputBinding<String>) spy(OutputBinding.class);
+        executionContextMock = mock(ExecutionContext.class);
 
-    @AfterEach
-    public void teardown() throws IOException, NoSuchFieldException, IllegalAccessException {
-        // reset singleton
-        tearDownInstance(ReceiptCosmosClientImpl.class);
-        tearDownInstance(ReceiptBlobClientImpl.class);
-        tearDownInstance(PdfEngineClientImpl.class);
-
-        if(tempDirectoryDebtor.exists()){
-            Files.delete(tempDirectoryDebtor.toPath());
-        }
-        if(outputPdfDebtor.exists()){
-            Files.delete(outputPdfDebtor.toPath());
-        }
-        assertFalse(tempDirectoryDebtor.exists());
-        assertFalse(outputPdfDebtor.exists());
-    }
-
-    private <T> void tearDownInstance(Class<T> classInstanced) throws IllegalAccessException, NoSuchFieldException {
-        Field instance = classInstanced.getDeclaredField("instance");
-
-        instance.setAccessible(true);
-        instance.set(null, null);
+        sut = spy(new GenerateReceiptPdf(generateReceiptPdfServiceMock, receiptCosmosClientMock));
     }
 
     @Test
-    void runOkReceiptStatusInsertedDifferentFiscalCode() throws Exception {
-        ReceiptCosmosClientImpl cosmosClient = mock(ReceiptCosmosClientImpl.class);
-        receiptMock.setStatus(ReceiptStatusType.INSERTED);
-        EventData eventDataMock = mock(EventData.class);
-        when(eventDataMock.getDebtorFiscalCode()).thenReturn(VALID_DEBTOR_CF);
-        when(eventDataMock.getPayerFiscalCode()).thenReturn(VALID_PAYER_CF);
-        receiptMock.setEventData(eventDataMock);
-        when(cosmosClient.getReceiptDocument(any())).thenReturn(receiptMock);
+    @SneakyThrows
+    void generatePDFReceiptWithStatusInsertedSuccess() {
+        int numRetry = 0;
+        Receipt receipt = buildReceiptWithStatus(ReceiptStatusType.INSERTED, numRetry);
 
-        GenerateReceiptPdfTest.setMock(ReceiptCosmosClientImpl.class, cosmosClient);
+        doReturn(receipt).when(receiptCosmosClientMock).getReceiptDocument(anyString());
+        doReturn(new PdfGeneration()).when(generateReceiptPdfServiceMock).generateReceipts(any(), any());
+        doReturn(true).when(generateReceiptPdfServiceMock).verifyAndUpdateReceipt(any(), any());
 
-        PdfEngineClientImpl pdfEngineClient = mock(PdfEngineClientImpl.class);
-        when(pdfEngineResponse.getStatusCode()).thenReturn(HttpStatus.SC_OK);
+        sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, requeueMessageMock, executionContextMock);
 
-        File tempDirectoryPayer = Files.createTempDirectory("temp").toFile();
-        File outputPdfPayer = File.createTempFile("outputPayer", ".tmp", tempDirectoryPayer);
-        when(pdfEngineResponse.getTempDirectoryPath())
-                .thenReturn(tempDirectoryDebtor.getAbsolutePath(), tempDirectoryPayer.getAbsolutePath());
-        when(pdfEngineResponse.getTempPdfPath())
-                .thenReturn(outputPdfDebtor.getAbsolutePath(), outputPdfPayer.getAbsolutePath());
+        assertEquals(ReceiptStatusType.GENERATED, receipt.getStatus());
+        assertNotEquals(ORIGINAL_GENERATED_AT, receipt.getGenerated_at());
+        assertEquals(numRetry, receipt.getNumRetry());
+        assertNull(receipt.getReasonErr());
 
-        when(pdfEngineClient.generatePDF(any())).thenReturn(pdfEngineResponse);
-
-        GenerateReceiptPdfTest.setMock(PdfEngineClientImpl.class, pdfEngineClient);
-
-        ReceiptBlobClientImpl blobClient = mock(ReceiptBlobClientImpl.class);
-        when(blobStorageResponse.getStatusCode()).thenReturn(com.microsoft.azure.functions.HttpStatus.CREATED.value());
-        when(blobStorageResponse.getDocumentUrl()).thenReturn(VALID_BLOB_URL);
-        when(blobStorageResponse.getDocumentName()).thenReturn(VALID_BLOB_NAME);
-        when(blobClient.savePdfToBlobStorage(any(), anyString())).thenReturn(blobStorageResponse);
-
-        GenerateReceiptPdfTest.setMock(ReceiptBlobClientImpl.class, blobClient);
-
-        @SuppressWarnings("unchecked")
-        OutputBinding<Receipt> documentdb = (OutputBinding<Receipt>) spy(OutputBinding.class);
-
-        @SuppressWarnings("unchecked")
-        OutputBinding<String> requeueMessage = (OutputBinding<String>) spy(OutputBinding.class);
-
-        // test execution
-        withEnvironmentVariables().set("BRAND_LOGO_MAP", "{\"MASTER\":\"assets/mastercard.png\"}\n").set("PSP_INFO_MAP","{\"Nexi\":{\"logo\":\"assets/nexi_logo.png\"}}\n").execute(() ->
-                assertDoesNotThrow(() -> function.processGenerateReceipt(BIZ_EVENT_MESSAGE_DIFFERENT_CF, documentdb, requeueMessage, context))
-        );
-        verify(documentdb).setValue(receiptCaptor.capture());
-        Receipt capturedCosmos = receiptCaptor.getValue();
-
-        assertEquals(ReceiptStatusType.GENERATED, capturedCosmos.getStatus());
-        assertEquals(VALID_DEBTOR_CF, capturedCosmos.getEventData().getDebtorFiscalCode());
-        assertEquals(VALID_PAYER_CF, capturedCosmos.getEventData().getPayerFiscalCode());
-        assertEquals(VALID_BLOB_URL, capturedCosmos.getMdAttach().getUrl());
-        assertEquals(VALID_BLOB_NAME, capturedCosmos.getMdAttach().getName());
-        assertEquals(VALID_BLOB_URL, capturedCosmos.getMdAttachPayer().getUrl());
-        assertEquals(VALID_BLOB_NAME, capturedCosmos.getMdAttachPayer().getName());
-
-        assertFalse(tempDirectoryPayer.exists());
-        assertFalse(outputPdfPayer.exists());
+        verify(receiptCosmosClientMock).getReceiptDocument(anyString());
+        verify(generateReceiptPdfServiceMock).generateReceipts(any(), any());
+        verify(generateReceiptPdfServiceMock).verifyAndUpdateReceipt(any(), any());
+        verify(documentReceiptsMock).setValue(any());
+        verify(requeueMessageMock, never()).setValue(any());
     }
 
     @Test
-    void runOkReceiptStatusInsertedSameFiscalCode() throws Exception {
-        ReceiptCosmosClientImpl cosmosClient = mock(ReceiptCosmosClientImpl.class);
-        receiptMock.setStatus(ReceiptStatusType.INSERTED);
-        EventData eventDataMock = mock(EventData.class);
-        when(eventDataMock.getDebtorFiscalCode()).thenReturn(VALID_DEBTOR_CF);
-        when(eventDataMock.getPayerFiscalCode()).thenReturn(VALID_DEBTOR_CF);
-        receiptMock.setEventData(eventDataMock);
-        when(cosmosClient.getReceiptDocument(any())).thenReturn(receiptMock);
+    @SneakyThrows
+    void generatePDFReceiptWithStatusRetrySuccess() {
+        int numRetry = 0;
+        Receipt receipt = buildReceiptWithStatus(ReceiptStatusType.RETRY, numRetry);
 
-        GenerateReceiptPdfTest.setMock(ReceiptCosmosClientImpl.class, cosmosClient);
+        doReturn(receipt).when(receiptCosmosClientMock).getReceiptDocument(anyString());
+        doReturn(new PdfGeneration()).when(generateReceiptPdfServiceMock).generateReceipts(any(), any());
+        doReturn(true).when(generateReceiptPdfServiceMock).verifyAndUpdateReceipt(any(), any());
 
-        PdfEngineClientImpl pdfEngineClient = mock(PdfEngineClientImpl.class);
-        when(pdfEngineResponse.getStatusCode()).thenReturn(HttpStatus.SC_OK);
-        when(pdfEngineResponse.getTempDirectoryPath()).thenReturn(tempDirectoryDebtor.getAbsolutePath());
-        when(pdfEngineResponse.getTempPdfPath()).thenReturn(outputPdfDebtor.getAbsolutePath());
+        sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, requeueMessageMock, executionContextMock);
 
-        when(pdfEngineClient.generatePDF(any())).thenReturn(pdfEngineResponse);
+        assertEquals(ReceiptStatusType.GENERATED, receipt.getStatus());
+        assertNotEquals(ORIGINAL_GENERATED_AT, receipt.getGenerated_at());
+        assertEquals(numRetry, receipt.getNumRetry());
+        assertNull(receipt.getReasonErr());
 
-        GenerateReceiptPdfTest.setMock(PdfEngineClientImpl.class, pdfEngineClient);
-
-        ReceiptBlobClientImpl blobClient = mock(ReceiptBlobClientImpl.class);
-        when(blobStorageResponse.getStatusCode()).thenReturn(com.microsoft.azure.functions.HttpStatus.CREATED.value());
-        when(blobStorageResponse.getDocumentUrl()).thenReturn(VALID_BLOB_URL);
-        when(blobStorageResponse.getDocumentName()).thenReturn(VALID_BLOB_NAME);
-        when(blobClient.savePdfToBlobStorage(any(), anyString())).thenReturn(blobStorageResponse);
-
-        GenerateReceiptPdfTest.setMock(ReceiptBlobClientImpl.class, blobClient);
-
-        @SuppressWarnings("unchecked")
-        OutputBinding<Receipt> documentdb = (OutputBinding<Receipt>) spy(OutputBinding.class);
-
-        @SuppressWarnings("unchecked")
-        OutputBinding<String> requeueMessage = (OutputBinding<String>) spy(OutputBinding.class);
-
-        // test execution
-        withEnvironmentVariables().set("BRAND_LOGO_MAP", "{\"MASTER\":\"assets/mastercard.png\"}\n").set("PSP_INFO_MAP","{\"Nexi\":{\"logo\":\"assets/nexi_logo.png\"}}\n").execute(() ->
-                assertDoesNotThrow(() -> function.processGenerateReceipt(BIZ_EVENT_MESSAGE_SAME_CF, documentdb, requeueMessage, context))
-        );
-
-        verify(documentdb).setValue(receiptCaptor.capture());
-        Receipt capturedCosmos = receiptCaptor.getValue();
-
-        assertEquals(ReceiptStatusType.GENERATED, capturedCosmos.getStatus());
-        assertEquals(VALID_BLOB_URL, capturedCosmos.getMdAttach().getUrl());
-        assertEquals(VALID_BLOB_NAME, capturedCosmos.getMdAttach().getName());
-        assertTrue(capturedCosmos.getMdAttachPayer() == null ||
-                capturedCosmos.getMdAttachPayer().getUrl() == null ||
-                capturedCosmos.getMdAttachPayer().getUrl().isEmpty()
-        );
+        verify(receiptCosmosClientMock).getReceiptDocument(anyString());
+        verify(generateReceiptPdfServiceMock).generateReceipts(any(), any());
+        verify(generateReceiptPdfServiceMock).verifyAndUpdateReceipt(any(), any());
+        verify(documentReceiptsMock).setValue(any());
+        verify(requeueMessageMock, never()).setValue(any());
     }
 
     @Test
-    void runOkReceiptStatusRetrySameFiscalCode() throws Exception {
-        ReceiptCosmosClientImpl cosmosClient = mock(ReceiptCosmosClientImpl.class);
-        receiptMock.setStatus(ReceiptStatusType.RETRY);
-        EventData eventDataMock = mock(EventData.class);
-        when(eventDataMock.getDebtorFiscalCode()).thenReturn(VALID_DEBTOR_CF);
-        when(eventDataMock.getPayerFiscalCode()).thenReturn(VALID_DEBTOR_CF);
-        receiptMock.setEventData(eventDataMock);
-        when(cosmosClient.getReceiptDocument(any())).thenReturn(receiptMock);
+    @SneakyThrows
+    void generatePDFFailParsingBizEventMessage() {
+        assertThrows(BizEventNotValidException.class,
+                () -> sut.processGenerateReceipt(BIZ_EVENT_INVALID_MESSAGE, documentReceiptsMock, requeueMessageMock, executionContextMock));
 
-        GenerateReceiptPdfTest.setMock(ReceiptCosmosClientImpl.class, cosmosClient);
-
-        PdfEngineClientImpl pdfEngineClient = mock(PdfEngineClientImpl.class);
-        when(pdfEngineResponse.getStatusCode()).thenReturn(HttpStatus.SC_OK);
-        when(pdfEngineResponse.getTempDirectoryPath()).thenReturn(tempDirectoryDebtor.getAbsolutePath());
-        when(pdfEngineResponse.getTempPdfPath()).thenReturn(outputPdfDebtor.getAbsolutePath());
-
-        when(pdfEngineClient.generatePDF(any())).thenReturn(pdfEngineResponse);
-
-        GenerateReceiptPdfTest.setMock(PdfEngineClientImpl.class, pdfEngineClient);
-
-        ReceiptBlobClientImpl blobClient = mock(ReceiptBlobClientImpl.class);
-        when(blobStorageResponse.getStatusCode()).thenReturn(com.microsoft.azure.functions.HttpStatus.CREATED.value());
-        when(blobStorageResponse.getDocumentUrl()).thenReturn(VALID_BLOB_URL);
-        when(blobStorageResponse.getDocumentName()).thenReturn(VALID_BLOB_NAME);
-        when(blobClient.savePdfToBlobStorage(any(), anyString())).thenReturn(blobStorageResponse);
-
-        GenerateReceiptPdfTest.setMock(ReceiptBlobClientImpl.class, blobClient);
-
-        @SuppressWarnings("unchecked")
-        OutputBinding<Receipt> documentdb = (OutputBinding<Receipt>) spy(OutputBinding.class);
-
-        @SuppressWarnings("unchecked")
-        OutputBinding<String> requeueMessage = (OutputBinding<String>) spy(OutputBinding.class);
-
-        // test execution
-        withEnvironmentVariables().set("BRAND_LOGO_MAP", "{\"MASTER\":\"assets/mastercard.png\"}\n").set("PSP_INFO_MAP","{\"Nexi\":{\"logo\":\"assets/nexi_logo.png\"}}\n").execute(() ->
-                assertDoesNotThrow(() -> function.processGenerateReceipt(BIZ_EVENT_MESSAGE_SAME_CF, documentdb, requeueMessage, context))
-        );
-
-        verify(documentdb).setValue(receiptCaptor.capture());
-        Receipt capturedCosmos = receiptCaptor.getValue();
-
-        assertEquals(ReceiptStatusType.GENERATED, capturedCosmos.getStatus());
-        assertEquals(VALID_BLOB_URL, capturedCosmos.getMdAttach().getUrl());
-        assertEquals(VALID_BLOB_NAME, capturedCosmos.getMdAttach().getName());
-        assertTrue(capturedCosmos.getMdAttachPayer() == null ||
-                capturedCosmos.getMdAttachPayer().getUrl() == null ||
-                capturedCosmos.getMdAttachPayer().getUrl().isEmpty()
-        );
+        verify(receiptCosmosClientMock, never()).getReceiptDocument(anyString());
+        verify(generateReceiptPdfServiceMock, never()).generateReceipts(any(), any());
+        verify(generateReceiptPdfServiceMock, never()).verifyAndUpdateReceipt(any(), any());
+        verify(documentReceiptsMock, never()).setValue(any());
+        verify(requeueMessageMock, never()).setValue(any());
     }
 
     @Test
-    void runKOReceiptNullDebtorFiscalCode() throws Exception {
-        ReceiptCosmosClientImpl cosmosClient = mock(ReceiptCosmosClientImpl.class);
-        receiptMock.setStatus(ReceiptStatusType.INSERTED);
-        EventData eventDataMock = mock(EventData.class);
-        when(eventDataMock.getDebtorFiscalCode()).thenReturn(null);
-        receiptMock.setEventData(eventDataMock);
-        when(cosmosClient.getReceiptDocument(any())).thenReturn(receiptMock);
+    @SneakyThrows
+    void generatePDFFailReceiptCosmosClientThrowsException() {
+        doThrow(ReceiptNotFoundException.class).when(receiptCosmosClientMock).getReceiptDocument(anyString());
 
-        GenerateReceiptPdfTest.setMock(ReceiptCosmosClientImpl.class, cosmosClient);
+        assertThrows(ReceiptNotFoundException.class,
+                () -> sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, requeueMessageMock, executionContextMock));
 
-        @SuppressWarnings("unchecked")
-        OutputBinding<Receipt> documentdb = (OutputBinding<Receipt>) spy(OutputBinding.class);
-
-        @SuppressWarnings("unchecked")
-        OutputBinding<String> requeueMessage = (OutputBinding<String>) spy(OutputBinding.class);
-
-        // test execution
-        withEnvironmentVariables().set("BRAND_LOGO_MAP", "{\"MASTER\":\"assets/mastercard.png\"}\n").set("PSP_INFO_MAP","{\"Nexi\":{\"logo\":\"assets/nexi_logo.png\"}}\n").execute(() ->
-                assertDoesNotThrow(() -> function.processGenerateReceipt(BIZ_EVENT_MESSAGE_SAME_CF, documentdb, requeueMessage, context))
-        );
-
-        verify(documentdb).setValue(receiptCaptor.capture());
-        Receipt capturedCosmos = receiptCaptor.getValue();
-
-        assertEquals(ReceiptStatusType.FAILED, capturedCosmos.getStatus());
-        assertNotNull(capturedCosmos.getReasonErr());
-        assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, capturedCosmos.getReasonErr().getCode());
-        assertNull(capturedCosmos.getMdAttachPayer());
-        assertNull(capturedCosmos.getMdAttach());
+        verify(receiptCosmosClientMock).getReceiptDocument(anyString());
+        verify(generateReceiptPdfServiceMock, never()).generateReceipts(any(), any());
+        verify(generateReceiptPdfServiceMock, never()).verifyAndUpdateReceipt(any(), any());
+        verify(documentReceiptsMock, never()).setValue(any());
+        verify(requeueMessageMock, never()).setValue(any());
     }
 
     @Test
-    void runDiscarded() throws ReceiptNotFoundException {
-        ReceiptCosmosClientImpl cosmosClient = mock(ReceiptCosmosClientImpl.class);
-        receiptMock.setStatus(ReceiptStatusType.NOT_QUEUE_SENT);
-        EventData eventDataMock = mock(EventData.class);
+    @SneakyThrows
+    void generatePDFFailReceiptCosmosClientReturnNull() {
+        doReturn(null).when(receiptCosmosClientMock).getReceiptDocument(anyString());
 
-        receiptMock.setEventData(eventDataMock);
-        when(cosmosClient.getReceiptDocument(any())).thenReturn(receiptMock);
+        assertThrows(ReceiptNotFoundException.class,
+                () -> sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, requeueMessageMock, executionContextMock));
 
-        GenerateReceiptPdfTest.setMock(ReceiptCosmosClientImpl.class, cosmosClient);
-
-        @SuppressWarnings("unchecked")
-        OutputBinding<Receipt> documentdb = (OutputBinding<Receipt>) spy(OutputBinding.class);
-
-        @SuppressWarnings("unchecked")
-        OutputBinding<String> requeueMessage = (OutputBinding<String>) spy(OutputBinding.class);
-
-        // test execution
-        assertDoesNotThrow(() -> function.processGenerateReceipt(BIZ_EVENT_MESSAGE_SAME_CF, documentdb, requeueMessage, context));
-
-        verify(documentdb, never()).setValue(any());
+        verify(receiptCosmosClientMock).getReceiptDocument(anyString());
+        verify(generateReceiptPdfServiceMock, never()).generateReceipts(any(), any());
+        verify(generateReceiptPdfServiceMock, never()).verifyAndUpdateReceipt(any(), any());
+        verify(documentReceiptsMock, never()).setValue(any());
+        verify(requeueMessageMock, never()).setValue(any());
     }
 
     @Test
-    void runReceiptNotFound() throws ReceiptNotFoundException {
-        ReceiptCosmosClientImpl cosmosClient = mock(ReceiptCosmosClientImpl.class);
-        when(cosmosClient.getReceiptDocument(any()))
-                .thenThrow(ReceiptNotFoundException.class);
-        GenerateReceiptPdfTest.setMock(ReceiptCosmosClientImpl.class, cosmosClient);
+    @SneakyThrows
+    void generatePDFDiscardedReceiptWithNullEventData() {
+        doReturn(new Receipt()).when(receiptCosmosClientMock).getReceiptDocument(anyString());
 
-        @SuppressWarnings("unchecked")
-        OutputBinding<Receipt> documentdb = (OutputBinding<Receipt>) spy(OutputBinding.class);
+        sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, requeueMessageMock, executionContextMock);
 
-        @SuppressWarnings("unchecked")
-        OutputBinding<String> requeueMessage = (OutputBinding<String>) spy(OutputBinding.class);
-
-        // test execution
-        Assertions.assertThrows(ReceiptNotFoundException.class,
-                () -> function.processGenerateReceipt(BIZ_EVENT_MESSAGE_SAME_CF, documentdb, requeueMessage, context));
+        verify(receiptCosmosClientMock).getReceiptDocument(anyString());
+        verify(generateReceiptPdfServiceMock, never()).generateReceipts(any(), any());
+        verify(generateReceiptPdfServiceMock, never()).verifyAndUpdateReceipt(any(), any());
+        verify(documentReceiptsMock, never()).setValue(any());
+        verify(requeueMessageMock, never()).setValue(any());
     }
 
     @Test
-    void runReceiptIsNull() throws ReceiptNotFoundException {
-        ReceiptCosmosClientImpl cosmosClient = mock(ReceiptCosmosClientImpl.class);
-        when(cosmosClient.getReceiptDocument(any()))
-                .thenReturn(null);
-        GenerateReceiptPdfTest.setMock(ReceiptCosmosClientImpl.class, cosmosClient);
+    @SneakyThrows
+    void generatePDFDiscardedReceiptWithFailedStatus() {
+        Receipt receipt = buildReceiptWithStatus(ReceiptStatusType.FAILED, 0);
 
-        @SuppressWarnings("unchecked")
-        OutputBinding<Receipt> documentdb = (OutputBinding<Receipt>) spy(OutputBinding.class);
+        doReturn(receipt).when(receiptCosmosClientMock).getReceiptDocument(anyString());
 
-        @SuppressWarnings("unchecked")
-        OutputBinding<String> requeueMessage = (OutputBinding<String>) spy(OutputBinding.class);
+        sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, requeueMessageMock, executionContextMock);
 
-        // test execution
-        Assertions.assertThrows(ReceiptNotFoundException.class,
-                () -> function.processGenerateReceipt(BIZ_EVENT_MESSAGE_SAME_CF, documentdb, requeueMessage, context));
+        verify(receiptCosmosClientMock).getReceiptDocument(anyString());
+        verify(generateReceiptPdfServiceMock, never()).generateReceipts(any(), any());
+        verify(generateReceiptPdfServiceMock, never()).verifyAndUpdateReceipt(any(), any());
+        verify(documentReceiptsMock, never()).setValue(any());
+        verify(requeueMessageMock, never()).setValue(any());
     }
 
     @Test
-    void runKoInvalidBizEventMessage() {
-        @SuppressWarnings("unchecked")
-        OutputBinding<Receipt> documentdb = (OutputBinding<Receipt>) spy(OutputBinding.class);
+    @SneakyThrows
+    void generatePDFDiscardedReceiptWithGeneratedStatus() {
+        Receipt receipt = buildReceiptWithStatus(ReceiptStatusType.GENERATED, 0);
 
-        @SuppressWarnings("unchecked")
-        OutputBinding<String> requeueMessage = (OutputBinding<String>) spy(OutputBinding.class);
+        doReturn(receipt).when(receiptCosmosClientMock).getReceiptDocument(anyString());
 
-        assertThrows(BizEventNotValidException.class, () -> function.processGenerateReceipt(BIZ_EVENT_INVALID_MESSAGE, documentdb, requeueMessage, context));
+        sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, requeueMessageMock, executionContextMock);
+
+        verify(receiptCosmosClientMock).getReceiptDocument(anyString());
+        verify(generateReceiptPdfServiceMock, never()).generateReceipts(any(), any());
+        verify(generateReceiptPdfServiceMock, never()).verifyAndUpdateReceipt(any(), any());
+        verify(documentReceiptsMock, never()).setValue(any());
+        verify(requeueMessageMock, never()).setValue(any());
     }
 
     @Test
-    void runKoPdfEngine400() throws ReceiptNotFoundException {
-        ReceiptCosmosClientImpl cosmosClient = mock(ReceiptCosmosClientImpl.class);
-        receiptMock.setStatus(ReceiptStatusType.INSERTED);
-        EventData eventDataMock = mock(EventData.class);
-        when(eventDataMock.getDebtorFiscalCode()).thenReturn(VALID_DEBTOR_CF);
-        when(eventDataMock.getPayerFiscalCode()).thenReturn(VALID_DEBTOR_CF);
-        receiptMock.setEventData(eventDataMock);
-        receiptMock.setNumRetry(0);
-        when(cosmosClient.getReceiptDocument(any())).thenReturn(receiptMock);
+    @SneakyThrows
+    void generatePDFDiscardedReceiptWithNotQueueSentStatus() {
+        Receipt receipt = buildReceiptWithStatus(ReceiptStatusType.NOT_QUEUE_SENT, 0);
 
-        GenerateReceiptPdfTest.setMock(ReceiptCosmosClientImpl.class, cosmosClient);
+        doReturn(receipt).when(receiptCosmosClientMock).getReceiptDocument(anyString());
 
-        PdfEngineClientImpl pdfEngineClient = mock(PdfEngineClientImpl.class);
-        when(pdfEngineResponse.getStatusCode()).thenReturn(HttpStatus.SC_BAD_REQUEST);
-        when(pdfEngineResponse.getErrorMessage()).thenReturn(PDF_ENGINE_ERROR_MESSAGE);
-        when(pdfEngineClient.generatePDF(any())).thenReturn(pdfEngineResponse);
+        sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, requeueMessageMock, executionContextMock);
 
-        GenerateReceiptPdfTest.setMock(PdfEngineClientImpl.class, pdfEngineClient);
-
-        @SuppressWarnings("unchecked")
-        OutputBinding<Receipt> documentdb = (OutputBinding<Receipt>) spy(OutputBinding.class);
-
-        @SuppressWarnings("unchecked")
-        OutputBinding<String> requeueMessage = (OutputBinding<String>) spy(OutputBinding.class);
-
-        // test execution
-        assertDoesNotThrow(() -> function.processGenerateReceipt(BIZ_EVENT_MESSAGE_SAME_CF, documentdb, requeueMessage, context));
-
-        verify(documentdb).setValue(receiptCaptor.capture());
-        Receipt capturedCosmos = receiptCaptor.getValue();
-
-        verify(requeueMessage).setValue(messageCaptor.capture());
-        String capturedMessage = messageCaptor.getValue();
-
-        assertEquals(BIZ_EVENT_MESSAGE_SAME_CF, capturedMessage);
-        assertEquals(ReceiptStatusType.RETRY, capturedCosmos.getStatus());
-        assertEquals(PDF_ENGINE_ERROR_MESSAGE, capturedCosmos.getReasonErr().getMessage());
-
+        verify(receiptCosmosClientMock).getReceiptDocument(anyString());
+        verify(generateReceiptPdfServiceMock, never()).generateReceipts(any(), any());
+        verify(generateReceiptPdfServiceMock, never()).verifyAndUpdateReceipt(any(), any());
+        verify(documentReceiptsMock, never()).setValue(any());
+        verify(requeueMessageMock, never()).setValue(any());
     }
 
     @Test
-    void runKoPdfEngine401() throws ReceiptNotFoundException {
-        ReceiptCosmosClientImpl cosmosClient = mock(ReceiptCosmosClientImpl.class);
-        receiptMock.setStatus(ReceiptStatusType.INSERTED);
-        EventData eventDataMock = mock(EventData.class);
-        when(eventDataMock.getDebtorFiscalCode()).thenReturn(VALID_DEBTOR_CF);
-        when(eventDataMock.getPayerFiscalCode()).thenReturn(VALID_DEBTOR_CF);
-        receiptMock.setEventData(eventDataMock);
-        receiptMock.setNumRetry(0);
-        when(cosmosClient.getReceiptDocument(any())).thenReturn(receiptMock);
+    @SneakyThrows
+    void generatePDFDiscardedReceiptWithIoNotifiedStatus() {
+        Receipt receipt = buildReceiptWithStatus(ReceiptStatusType.IO_NOTIFIED, 0);
 
-        GenerateReceiptPdfTest.setMock(ReceiptCosmosClientImpl.class, cosmosClient);
+        doReturn(receipt).when(receiptCosmosClientMock).getReceiptDocument(anyString());
 
-        PdfEngineClientImpl pdfEngineClient = mock(PdfEngineClientImpl.class);
-        when(pdfEngineResponse.getStatusCode()).thenReturn(com.microsoft.azure.functions.HttpStatus.UNAUTHORIZED.value());
-        when(pdfEngineResponse.getErrorMessage()).thenReturn(PDF_ENGINE_ERROR_MESSAGE);
-        when(pdfEngineClient.generatePDF(any())).thenReturn(pdfEngineResponse);
+        sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, requeueMessageMock, executionContextMock);
 
-        GenerateReceiptPdfTest.setMock(PdfEngineClientImpl.class, pdfEngineClient);
-
-        @SuppressWarnings("unchecked")
-        OutputBinding<Receipt> documentdb = (OutputBinding<Receipt>) spy(OutputBinding.class);
-
-        @SuppressWarnings("unchecked")
-        OutputBinding<String> requeueMessage = (OutputBinding<String>) spy(OutputBinding.class);
-
-        // test execution
-        assertDoesNotThrow(() -> function.processGenerateReceipt(BIZ_EVENT_MESSAGE_SAME_CF, documentdb, requeueMessage, context));
-
-        verify(documentdb).setValue(receiptCaptor.capture());
-        Receipt capturedCosmos = receiptCaptor.getValue();
-
-        verify(requeueMessage).setValue(messageCaptor.capture());
-        String capturedMessage = messageCaptor.getValue();
-
-        assertEquals(BIZ_EVENT_MESSAGE_SAME_CF, capturedMessage);
-        assertEquals(ReceiptStatusType.RETRY, capturedCosmos.getStatus());
-        assertEquals(ReasonErrorCode.ERROR_PDF_ENGINE.getCustomCode(com.microsoft.azure.functions.HttpStatus.UNAUTHORIZED.value()), capturedCosmos.getReasonErr().getCode());
-        assertEquals(PDF_ENGINE_ERROR_MESSAGE, capturedCosmos.getReasonErr().getMessage());
+        verify(receiptCosmosClientMock).getReceiptDocument(anyString());
+        verify(generateReceiptPdfServiceMock, never()).generateReceipts(any(), any());
+        verify(generateReceiptPdfServiceMock, never()).verifyAndUpdateReceipt(any(), any());
+        verify(documentReceiptsMock, never()).setValue(any());
+        verify(requeueMessageMock, never()).setValue(any());
     }
 
     @Test
-    void runKoPdfEngine500() throws Exception {
-        ReceiptCosmosClientImpl cosmosClient = mock(ReceiptCosmosClientImpl.class);
-        receiptMock.setStatus(ReceiptStatusType.INSERTED);
-        EventData eventDataMock = mock(EventData.class);
-        when(eventDataMock.getDebtorFiscalCode()).thenReturn(VALID_DEBTOR_CF);
-        when(eventDataMock.getPayerFiscalCode()).thenReturn(VALID_DEBTOR_CF);
-        receiptMock.setEventData(eventDataMock);
-        receiptMock.setNumRetry(0);
-        when(cosmosClient.getReceiptDocument(any())).thenReturn(receiptMock);
+    @SneakyThrows
+    void generatePDFDiscardedReceiptWithIOErrorToNotifyStatus() {
+        Receipt receipt = buildReceiptWithStatus(ReceiptStatusType.IO_ERROR_TO_NOTIFY, 0);
 
-        GenerateReceiptPdfTest.setMock(ReceiptCosmosClientImpl.class, cosmosClient);
+        doReturn(receipt).when(receiptCosmosClientMock).getReceiptDocument(anyString());
 
-        PdfEngineClientImpl pdfEngineClient = mock(PdfEngineClientImpl.class);
-        when(pdfEngineResponse.getStatusCode()).thenReturn(HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        when(pdfEngineResponse.getErrorMessage()).thenReturn(PDF_ENGINE_ERROR_MESSAGE);
-        when(pdfEngineClient.generatePDF(any())).thenReturn(pdfEngineResponse);
+        sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, requeueMessageMock, executionContextMock);
 
-        GenerateReceiptPdfTest.setMock(PdfEngineClientImpl.class, pdfEngineClient);
-
-        @SuppressWarnings("unchecked")
-        OutputBinding<Receipt> documentdb = (OutputBinding<Receipt>) spy(OutputBinding.class);
-
-        @SuppressWarnings("unchecked")
-        OutputBinding<String> requeueMessage = (OutputBinding<String>) spy(OutputBinding.class);
-
-        // test execution
-        withEnvironmentVariables().set("BRAND_LOGO_MAP", "{\"MASTER\":\"assets/mastercard.png\"}\n").set("PSP_INFO_MAP","{\"Nexi\":{\"logo\":\"assets/nexi_logo.png\"}}\n").execute(() ->
-                assertDoesNotThrow(() -> function.processGenerateReceipt(BIZ_EVENT_MESSAGE_SAME_CF, documentdb, requeueMessage, context))
-        );
-
-        verify(documentdb).setValue(receiptCaptor.capture());
-        Receipt capturedCosmos = receiptCaptor.getValue();
-
-        verify(requeueMessage).setValue(messageCaptor.capture());
-        String capturedMessage = messageCaptor.getValue();
-
-        assertEquals(BIZ_EVENT_MESSAGE_SAME_CF, capturedMessage);
-        assertEquals(ReceiptStatusType.RETRY, capturedCosmos.getStatus());
-        assertEquals(ReasonErrorCode.ERROR_PDF_ENGINE.getCustomCode(HttpStatus.SC_INTERNAL_SERVER_ERROR), capturedCosmos.getReasonErr().getCode());
-        assertEquals(PDF_ENGINE_ERROR_MESSAGE, capturedCosmos.getReasonErr().getMessage());
+        verify(receiptCosmosClientMock).getReceiptDocument(anyString());
+        verify(generateReceiptPdfServiceMock, never()).generateReceipts(any(), any());
+        verify(generateReceiptPdfServiceMock, never()).verifyAndUpdateReceipt(any(), any());
+        verify(documentReceiptsMock, never()).setValue(any());
+        verify(requeueMessageMock, never()).setValue(any());
     }
 
     @Test
-    void runKoBlobStorage() throws Exception {
-        ReceiptCosmosClientImpl cosmosClient = mock(ReceiptCosmosClientImpl.class);
-        receiptMock.setStatus(ReceiptStatusType.INSERTED);
-        EventData eventDataMock = mock(EventData.class);
-        when(eventDataMock.getDebtorFiscalCode()).thenReturn(VALID_DEBTOR_CF);
-        when(eventDataMock.getPayerFiscalCode()).thenReturn(VALID_PAYER_CF);
-        receiptMock.setEventData(eventDataMock);
-        when(cosmosClient.getReceiptDocument(any())).thenReturn(receiptMock);
+    @SneakyThrows
+    void generatePDFDiscardedReceiptWithIONotifierRetryStatus() {
+        Receipt receipt = buildReceiptWithStatus(ReceiptStatusType.IO_NOTIFIER_RETRY, 0);
 
-        GenerateReceiptPdfTest.setMock(ReceiptCosmosClientImpl.class, cosmosClient);
+        doReturn(receipt).when(receiptCosmosClientMock).getReceiptDocument(anyString());
 
-        PdfEngineClientImpl pdfEngineClient = mock(PdfEngineClientImpl.class);
-        when(pdfEngineResponse.getStatusCode()).thenReturn(HttpStatus.SC_OK);
-        when(pdfEngineResponse.getTempDirectoryPath()).thenReturn(tempDirectoryDebtor.getAbsolutePath());
-        when(pdfEngineResponse.getTempPdfPath()).thenReturn(outputPdfDebtor.getAbsolutePath());
+        sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, requeueMessageMock, executionContextMock);
 
-        when(pdfEngineClient.generatePDF(any())).thenReturn(pdfEngineResponse);
-
-        GenerateReceiptPdfTest.setMock(PdfEngineClientImpl.class, pdfEngineClient);
-
-        ReceiptBlobClientImpl blobClient = mock(ReceiptBlobClientImpl.class);
-        when(blobStorageResponse.getStatusCode()).thenReturn(com.microsoft.azure.functions.HttpStatus.FORBIDDEN.value());
-        when(blobClient.savePdfToBlobStorage(any(), anyString())).thenReturn(blobStorageResponse);
-
-        GenerateReceiptPdfTest.setMock(ReceiptBlobClientImpl.class, blobClient);
-
-        @SuppressWarnings("unchecked")
-        OutputBinding<Receipt> documentdb = (OutputBinding<Receipt>) spy(OutputBinding.class);
-
-        @SuppressWarnings("unchecked")
-        OutputBinding<String> requeueMessage = (OutputBinding<String>) spy(OutputBinding.class);
-
-        // test execution
-        withEnvironmentVariables().set("BRAND_LOGO_MAP", "{\"MASTER\":\"assets/mastercard.png\"}\n").set("PSP_INFO_MAP","{\"Nexi\":{\"logo\":\"assets/nexi_logo.png\"}}\n").execute(() ->
-                assertDoesNotThrow(() -> function.processGenerateReceipt(BIZ_EVENT_MESSAGE_DIFFERENT_CF, documentdb, requeueMessage, context))
-        );
-
-        verify(documentdb).setValue(receiptCaptor.capture());
-        Receipt capturedCosmos = receiptCaptor.getValue();
-
-        verify(requeueMessage).setValue(messageCaptor.capture());
-        String capturedMessage = messageCaptor.getValue();
-
-        assertEquals(BIZ_EVENT_MESSAGE_DIFFERENT_CF, capturedMessage);
-        assertEquals(ReceiptStatusType.RETRY, capturedCosmos.getStatus());
-        assertEquals(ReasonErrorCode.ERROR_BLOB_STORAGE.getCode(), capturedCosmos.getReasonErr().getCode());
+        verify(receiptCosmosClientMock).getReceiptDocument(anyString());
+        verify(generateReceiptPdfServiceMock, never()).generateReceipts(any(), any());
+        verify(generateReceiptPdfServiceMock, never()).verifyAndUpdateReceipt(any(), any());
+        verify(documentReceiptsMock, never()).setValue(any());
+        verify(requeueMessageMock, never()).setValue(any());
     }
 
     @Test
-    void runKoBlobStorageThrowException() throws Exception {
-        ReceiptCosmosClientImpl cosmosClient = mock(ReceiptCosmosClientImpl.class);
-        receiptMock.setStatus(ReceiptStatusType.INSERTED);
-        EventData eventDataMock = mock(EventData.class);
-        when(eventDataMock.getDebtorFiscalCode()).thenReturn(VALID_DEBTOR_CF);
-        when(eventDataMock.getPayerFiscalCode()).thenReturn(VALID_PAYER_CF);
-        receiptMock.setEventData(eventDataMock);
-        when(cosmosClient.getReceiptDocument(any())).thenReturn(receiptMock);
+    @SneakyThrows
+    void generatePDFDiscardedReceiptWithUnableToSendStatus() {
+        Receipt receipt = buildReceiptWithStatus(ReceiptStatusType.UNABLE_TO_SEND, 0);
 
-        GenerateReceiptPdfTest.setMock(ReceiptCosmosClientImpl.class, cosmosClient);
+        doReturn(receipt).when(receiptCosmosClientMock).getReceiptDocument(anyString());
 
-        PdfEngineClientImpl pdfEngineClient = mock(PdfEngineClientImpl.class);
-        when(pdfEngineResponse.getStatusCode()).thenReturn(HttpStatus.SC_OK);
-        when(pdfEngineResponse.getTempDirectoryPath()).thenReturn(tempDirectoryDebtor.getAbsolutePath());
-        when(pdfEngineResponse.getTempPdfPath()).thenReturn(outputPdfDebtor.getAbsolutePath());
+        sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, requeueMessageMock, executionContextMock);
 
-        when(pdfEngineClient.generatePDF(any())).thenReturn(pdfEngineResponse);
-
-        GenerateReceiptPdfTest.setMock(PdfEngineClientImpl.class, pdfEngineClient);
-
-        ReceiptBlobClientImpl blobClient = mock(ReceiptBlobClientImpl.class);
-        when(blobStorageResponse.getStatusCode()).thenReturn(com.microsoft.azure.functions.HttpStatus.FORBIDDEN.value());
-        when(blobClient.savePdfToBlobStorage(any(), anyString())).thenReturn(blobStorageResponse);
-
-        GenerateReceiptPdfTest.setMock(ReceiptBlobClientImpl.class, blobClient);
-
-        @SuppressWarnings("unchecked")
-        OutputBinding<Receipt> documentdb = (OutputBinding<Receipt>) spy(OutputBinding.class);
-
-        @SuppressWarnings("unchecked")
-        OutputBinding<String> requeueMessage = (OutputBinding<String>) spy(OutputBinding.class);
-
-        // test execution
-        withEnvironmentVariables().set("BRAND_LOGO_MAP", "{\"MASTER\":\"assets/mastercard.png\"}\n").set("PSP_INFO_MAP","{\"Nexi\":{\"logo\":\"assets/nexi_logo.png\"}}\n").execute(() ->
-                assertDoesNotThrow(() ->
-                        function.processGenerateReceipt(BIZ_EVENT_MESSAGE_DIFFERENT_CF, documentdb, requeueMessage, context))
-        );
-
-        verify(documentdb).setValue(receiptCaptor.capture());
-        Receipt capturedCosmos = receiptCaptor.getValue();
-
-        verify(requeueMessage).setValue(messageCaptor.capture());
-        String capturedMessage = messageCaptor.getValue();
-
-        assertEquals(BIZ_EVENT_MESSAGE_DIFFERENT_CF, capturedMessage);
-        assertEquals(ReceiptStatusType.RETRY, capturedCosmos.getStatus());
-        assertEquals(ReasonErrorCode.ERROR_BLOB_STORAGE.getCode(), capturedCosmos.getReasonErr().getCode());
+        verify(receiptCosmosClientMock).getReceiptDocument(anyString());
+        verify(generateReceiptPdfServiceMock, never()).generateReceipts(any(), any());
+        verify(generateReceiptPdfServiceMock, never()).verifyAndUpdateReceipt(any(), any());
+        verify(documentReceiptsMock, never()).setValue(any());
+        verify(requeueMessageMock, never()).setValue(any());
     }
 
     @Test
-    void runKoTooManyRetry() throws Exception {
-        ReceiptCosmosClientImpl cosmosClient = mock(ReceiptCosmosClientImpl.class);
-        receiptMock.setStatus(ReceiptStatusType.RETRY);
-        EventData eventDataMock = mock(EventData.class);
-        when(eventDataMock.getDebtorFiscalCode()).thenReturn(VALID_DEBTOR_CF);
-        when(eventDataMock.getPayerFiscalCode()).thenReturn(VALID_DEBTOR_CF);
-        receiptMock.setEventData(eventDataMock);
-        receiptMock.setNumRetry(6);
-        when(cosmosClient.getReceiptDocument(any())).thenReturn(receiptMock);
+    @SneakyThrows
+    void generatePDFDiscardedReceiptWithNotToNotifyStatus() {
+        Receipt receipt = buildReceiptWithStatus(ReceiptStatusType.NOT_TO_NOTIFY, 0);
 
-        GenerateReceiptPdfTest.setMock(ReceiptCosmosClientImpl.class, cosmosClient);
+        doReturn(receipt).when(receiptCosmosClientMock).getReceiptDocument(anyString());
 
-        PdfEngineClientImpl pdfEngineClient = mock(PdfEngineClientImpl.class);
-        when(pdfEngineResponse.getStatusCode()).thenReturn(HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        when(pdfEngineClient.generatePDF(any())).thenReturn(pdfEngineResponse);
+        sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, requeueMessageMock, executionContextMock);
 
-        GenerateReceiptPdfTest.setMock(PdfEngineClientImpl.class, pdfEngineClient);
-
-        @SuppressWarnings("unchecked")
-        OutputBinding<Receipt> documentdb = (OutputBinding<Receipt>) spy(OutputBinding.class);
-
-        @SuppressWarnings("unchecked")
-        OutputBinding<String> requeueMessage = (OutputBinding<String>) spy(OutputBinding.class);
-
-        // test execution
-        withEnvironmentVariables().set("BRAND_LOGO_MAP", "{\"MASTER\":\"assets/mastercard.png\"}\n").set("PSP_INFO_MAP","{\"Nexi\":{\"logo\":\"assets/nexi_logo.png\"}}\n").execute(() ->
-                assertDoesNotThrow(() -> function.processGenerateReceipt(BIZ_EVENT_MESSAGE_SAME_CF, documentdb, requeueMessage, context))
-        );
-
-        verify(documentdb).setValue(receiptCaptor.capture());
-        Receipt capturedCosmos = receiptCaptor.getValue();
-
-        assertEquals(ReceiptStatusType.FAILED, capturedCosmos.getStatus());
+        verify(receiptCosmosClientMock).getReceiptDocument(anyString());
+        verify(generateReceiptPdfServiceMock, never()).generateReceipts(any(), any());
+        verify(generateReceiptPdfServiceMock, never()).verifyAndUpdateReceipt(any(), any());
+        verify(documentReceiptsMock, never()).setValue(any());
+        verify(requeueMessageMock, never()).setValue(any());
     }
 
-    private static <T> void setMock(Class<T> classToMock, T mock) {
-        try {
-            Field instance = classToMock.getDeclaredField("instance");
-            instance.setAccessible(true);
-            instance.set(instance, mock);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+    @Test
+    @SneakyThrows
+    void generatePDFFailDebtorFiscalCodeNull() {
+        int numRetry = 0;
+        Receipt receipt = Receipt.builder()
+                .eventData(EventData.builder().build())
+                .status(ReceiptStatusType.INSERTED)
+                .numRetry(numRetry)
+                .generated_at(ORIGINAL_GENERATED_AT)
+                .inserted_at(0L)
+                .notified_at(0L)
+                .build();
+
+        doReturn(receipt).when(receiptCosmosClientMock).getReceiptDocument(anyString());
+
+        sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, requeueMessageMock, executionContextMock);
+
+        assertEquals(ReceiptStatusType.FAILED, receipt.getStatus());
+        assertEquals(ORIGINAL_GENERATED_AT, receipt.getGenerated_at());
+        assertEquals(numRetry, receipt.getNumRetry());
+        assertNotNull(receipt.getReasonErr());
+        assertNotNull(receipt.getReasonErr().getMessage());
+        assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, receipt.getReasonErr().getCode());
+
+        verify(receiptCosmosClientMock).getReceiptDocument(anyString());
+        verify(generateReceiptPdfServiceMock, never()).generateReceipts(any(), any());
+        verify(generateReceiptPdfServiceMock, never()).verifyAndUpdateReceipt(any(), any());
+        verify(documentReceiptsMock).setValue(any());
+        verify(requeueMessageMock, never()).setValue(any());
+    }
+
+    @Test
+    @SneakyThrows
+    void generatePDFFailGoesToRetry() {
+        int numRetry = 0;
+        Receipt receipt = buildReceiptWithStatus(ReceiptStatusType.INSERTED, numRetry);
+
+        doReturn(receipt).when(receiptCosmosClientMock).getReceiptDocument(anyString());
+        doReturn(new PdfGeneration()).when(generateReceiptPdfServiceMock).generateReceipts(any(), any());
+        doReturn(false).when(generateReceiptPdfServiceMock).verifyAndUpdateReceipt(any(), any());
+
+        sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, requeueMessageMock, executionContextMock);
+
+        assertEquals(ReceiptStatusType.RETRY, receipt.getStatus());
+        assertEquals(ORIGINAL_GENERATED_AT, receipt.getGenerated_at());
+        assertEquals(numRetry + 1, receipt.getNumRetry());
+        assertNull(receipt.getReasonErr());
+
+        verify(receiptCosmosClientMock).getReceiptDocument(anyString());
+        verify(generateReceiptPdfServiceMock).generateReceipts(any(), any());
+        verify(generateReceiptPdfServiceMock).verifyAndUpdateReceipt(any(), any());
+        verify(documentReceiptsMock).setValue(any());
+        verify(requeueMessageMock).setValue(any());
+    }
+
+    @Test
+    @SneakyThrows
+    void generatePDFFailAndMaxNumRetryReached() {
+        int numRetry = 6;
+        Receipt receipt = buildReceiptWithStatus(ReceiptStatusType.RETRY, numRetry);
+
+        doReturn(receipt).when(receiptCosmosClientMock).getReceiptDocument(anyString());
+        doReturn(new PdfGeneration()).when(generateReceiptPdfServiceMock).generateReceipts(any(), any());
+        doReturn(false).when(generateReceiptPdfServiceMock).verifyAndUpdateReceipt(any(), any());
+
+        sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, requeueMessageMock, executionContextMock);
+
+        assertEquals(ReceiptStatusType.FAILED, receipt.getStatus());
+        assertEquals(ORIGINAL_GENERATED_AT, receipt.getGenerated_at());
+        assertEquals(numRetry, receipt.getNumRetry());
+        assertNull(receipt.getReasonErr());
+
+        verify(receiptCosmosClientMock).getReceiptDocument(anyString());
+        verify(generateReceiptPdfServiceMock).generateReceipts(any(), any());
+        verify(generateReceiptPdfServiceMock).verifyAndUpdateReceipt(any(), any());
+        verify(documentReceiptsMock).setValue(any());
+        verify(requeueMessageMock, never()).setValue(any());
+    }
+
+    private Receipt buildReceiptWithStatus(ReceiptStatusType receiptStatusType, int numRetry) {
+        return Receipt.builder()
+                .eventData(EventData.builder()
+                        .debtorFiscalCode("cd debtor")
+                        .payerFiscalCode("cf payer")
+                        .build())
+                .eventId("biz-event-id")
+                .status(receiptStatusType)
+                .numRetry(numRetry)
+                .generated_at(ORIGINAL_GENERATED_AT)
+                .inserted_at(0L)
+                .notified_at(0L)
+                .build();
     }
 }
