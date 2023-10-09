@@ -136,11 +136,6 @@ public class BizEventToPdfMapper {
         return event.getPayer() != null ? event.getPayer().getFullName() : null;
     }
 
-    public static boolean getExtraFee(BizEvent event){
-        //TODO Mapping ?
-        return false;
-    }
-
     public static String getUserMail(BizEvent event){
         //TODO Mapping ?
         return null;
