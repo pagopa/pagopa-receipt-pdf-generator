@@ -670,6 +670,7 @@ class GenerateReceiptPdfServiceImplTest {
                         .IUR("IUR")
                         .build())
                 .transactionDetails(TransactionDetails.builder()
+                        .wallet(WalletItem.builder().info(Info.builder().brand("MASTER").build()).build())
                         .transaction(Transaction.builder()
                                 .idTransaction(1L)
                                 .grandTotal(0L)
