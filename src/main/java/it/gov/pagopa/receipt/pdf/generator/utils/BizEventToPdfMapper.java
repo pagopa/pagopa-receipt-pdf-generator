@@ -4,6 +4,9 @@ import it.gov.pagopa.receipt.pdf.generator.entity.event.BizEvent;
 
 public class BizEventToPdfMapper {
 
+    private static final String REF_TYPE_NOTICE = "CODICE AVVISO";
+    private static final String REF_TYPE_IUV = "IUV";
+
     /**
      * Hide from public usage.
      */
@@ -136,11 +139,6 @@ public class BizEventToPdfMapper {
         return event.getPayer() != null ? event.getPayer().getFullName() : null;
     }
 
-    public static boolean getExtraFee(BizEvent event){
-        //TODO Mapping ?
-        return false;
-    }
-
     public static String getUserMail(BizEvent event){
         //TODO Mapping ?
         return null;
@@ -154,9 +152,16 @@ public class BizEventToPdfMapper {
         return event.getPayer() != null ? event.getPayer().getEntityUniqueIdentifierValue() : null;
     }
 
-    private static final String REF_NUMBER_TYPE = "CODICE AVVISO";
-    public static String getRefNumberType(){
-        return REF_NUMBER_TYPE;
+
+    public static String getRefNumberType(BizEvent event){
+        if(
+                event.getDebtorPosition() != null &&
+                event.getDebtorPosition().getModelType().equals("2")
+        ){
+            return REF_TYPE_IUV;
+        }
+
+        return REF_TYPE_NOTICE;
     }
 
     public static String getRefNumberValue(BizEvent event){

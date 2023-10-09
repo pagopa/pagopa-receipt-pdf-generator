@@ -14,6 +14,5 @@ public class PaymentMethod {
     private String name;
     private String logo;
     private String accountHolder;
-    private boolean extraFee;
 
 }

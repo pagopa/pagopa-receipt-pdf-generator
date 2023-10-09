@@ -234,7 +234,6 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
                                 .name(BizEventToPdfMapper.getPaymentMethodName(bizEvent))
                                 .logo(BizEventToPdfMapper.getPaymentMethodLogo(bizEvent))
                                 .accountHolder(BizEventToPdfMapper.getPaymentMethodAccountHolder(bizEvent))
-                                .extraFee(BizEventToPdfMapper.getExtraFee(bizEvent))
                                 .build())
                         .authCode(BizEventToPdfMapper.getAuthCode(bizEvent))
                         .requestedByDebtor(partialTemplate)
@@ -252,7 +251,7 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
                         .items(Collections.singletonList(
                                 Item.builder()
                                         .refNumber(RefNumber.builder()
-                                                .type(BizEventToPdfMapper.getRefNumberType())
+                                                .type(BizEventToPdfMapper.getRefNumberType(bizEvent))
                                                 .value(BizEventToPdfMapper.getRefNumberValue(bizEvent))
                                                 .build())
                                         .debtor(Debtor.builder()
