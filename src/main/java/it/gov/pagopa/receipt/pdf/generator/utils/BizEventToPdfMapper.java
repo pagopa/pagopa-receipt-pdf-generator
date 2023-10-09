@@ -2,6 +2,7 @@ package it.gov.pagopa.receipt.pdf.generator.utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import it.gov.pagopa.receipt.pdf.generator.entity.event.BizEvent;
+import it.gov.pagopa.receipt.pdf.generator.exception.PdfJsonMappingException;
 import it.gov.pagopa.receipt.pdf.generator.model.template.PSP;
 import it.gov.pagopa.receipt.pdf.generator.model.template.PSPFee;
 
@@ -21,15 +22,16 @@ public class BizEventToPdfMapper {
         try {
             brandLogoMap = ObjectMapperUtils.mapString(System.getenv().get("BRAND_LOGO_MAP"),Map.class);
         } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+            throw new PdfJsonMappingException(e);
         }
+
     }
 
     static {
         try {
             pspMap = ObjectMapperUtils.mapString(System.getenv().get("PSP_INFO_MAP"),Map.class);
         } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+            throw new PdfJsonMappingException(e);
         }
     }
 
