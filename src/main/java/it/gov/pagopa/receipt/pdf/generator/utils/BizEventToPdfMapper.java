@@ -235,7 +235,7 @@ public class BizEventToPdfMapper {
                         event.getTransactionDetails().getTransaction().getPsp().getBusinessName() != null
         ) {
             String name = event.getTransactionDetails().getTransaction().getPsp().getBusinessName();
-            LinkedHashMap<String,String> info = (LinkedHashMap<String, String>) pspMap.get(name);
+            LinkedHashMap<String,String> info = (LinkedHashMap<String, String>) pspMap.getOrDefault(name, new LinkedHashMap<>());
             return PSP.builder()
                     .name(name)
                     .fee(PSPFee.builder()
