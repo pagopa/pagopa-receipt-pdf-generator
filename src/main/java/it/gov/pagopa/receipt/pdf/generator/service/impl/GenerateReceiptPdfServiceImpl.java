@@ -32,6 +32,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
@@ -63,7 +64,7 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
      * {@inheritDoc}
      */
     @Override
-    public PdfGeneration generateReceipts(Receipt receipt, BizEvent bizEvent) {
+    public PdfGeneration generateReceipts(Receipt receipt, BizEvent bizEvent, Path workingDirPath) {
         PdfGeneration pdfGeneration = new PdfGeneration();
 
         String debtorCF = receipt.getEventData().getDebtorFiscalCode();
@@ -79,7 +80,7 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
                     return pdfGeneration;
                 }
                 ReceiptPDFTemplate completeTemplate = buildTemplate(bizEvent, false);
-                PdfMetadata generationResult = generateAndSavePDFReceipt(bizEvent, PAYER_TEMPLATE_SUFFIX, completeTemplate);
+                PdfMetadata generationResult = generateAndSavePDFReceipt(bizEvent, PAYER_TEMPLATE_SUFFIX, completeTemplate, workingDirPath);
                 pdfGeneration.setDebtorMetadata(generationResult);
                 return pdfGeneration;
             }
@@ -90,7 +91,7 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
             } else {
                 ReceiptPDFTemplate completeTemplate = buildTemplate(bizEvent, false);
 
-                PdfMetadata generationResult = generateAndSavePDFReceipt(bizEvent, PAYER_TEMPLATE_SUFFIX, completeTemplate);
+                PdfMetadata generationResult = generateAndSavePDFReceipt(bizEvent, PAYER_TEMPLATE_SUFFIX, completeTemplate, workingDirPath);
                 pdfGeneration.setPayerMetadata(generationResult);
             }
         } else {
@@ -103,7 +104,7 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
         } else {
             ReceiptPDFTemplate onlyDebtorTemplate = buildTemplate(bizEvent, true);
 
-            PdfMetadata generationResult = generateAndSavePDFReceipt(bizEvent, DEBTOR_TEMPLATE_SUFFIX, onlyDebtorTemplate);
+            PdfMetadata generationResult = generateAndSavePDFReceipt(bizEvent, DEBTOR_TEMPLATE_SUFFIX, onlyDebtorTemplate, workingDirPath);
             pdfGeneration.setDebtorMetadata(generationResult);
         }
 
@@ -158,11 +159,11 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
         return result;
     }
 
-    private PdfMetadata generateAndSavePDFReceipt(BizEvent bizEvent, String templateSuffix, ReceiptPDFTemplate completeTemplate) {
+    private PdfMetadata generateAndSavePDFReceipt(BizEvent bizEvent, String templateSuffix, ReceiptPDFTemplate completeTemplate, Path workingDirPath) {
         try {
             String dateFormatted = LocalDate.now().format(DateTimeFormatter.ofPattern("yyMMdd"));
             String blobName = String.format("%s-%s-%s-%s", TEMPLATE_PREFIX, dateFormatted, bizEvent.getId(), templateSuffix);
-            PdfEngineResponse pdfEngineResponse = generatePdf(completeTemplate);
+            PdfEngineResponse pdfEngineResponse = generatePDFReceipt(completeTemplate, workingDirPath);
             return saveToBlobStorage(pdfEngineResponse, blobName);
         } catch (PDFReceiptGenerationException e) {
             logger.error("An error occurred when generating or saving the PDF receipt for biz-event {}", bizEvent.getId(), e);
@@ -172,7 +173,6 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
 
     private PdfMetadata saveToBlobStorage(PdfEngineResponse pdfEngineResponse, String blobName) throws SavePDFToBlobException {
         String tempPdfPath = pdfEngineResponse.getTempPdfPath();
-        String tempDirectoryPath = pdfEngineResponse.getTempDirectoryPath();
 
         BlobStorageResponse blobStorageResponse;
         //Save to Blob Storage
@@ -180,8 +180,6 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
             blobStorageResponse = receiptBlobClient.savePdfToBlobStorage(pdfStream, blobName);
         } catch (Exception e) {
             throw new SavePDFToBlobException("Error saving pdf to blob storage", ReasonErrorCode.ERROR_BLOB_STORAGE.getCode(), e);
-        } finally {
-            deleteTempFolderAndFile(tempPdfPath, tempDirectoryPath);
         }
 
         if (blobStorageResponse.getStatusCode() != com.microsoft.azure.functions.HttpStatus.CREATED.value()) {
@@ -198,8 +196,7 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
                 .build();
     }
 
-    // TODO fix temp files create a temp dir and pass it to the client
-    private PdfEngineResponse generatePdf(ReceiptPDFTemplate template) throws PDFReceiptGenerationException {
+    private PdfEngineResponse generatePDFReceipt(ReceiptPDFTemplate template, Path workingDirPath) throws PDFReceiptGenerationException {
         PdfEngineRequest request = new PdfEngineRequest();
 
         URL templateStream = GenerateReceiptPdfServiceImpl.class.getClassLoader().getResource("template.zip");
@@ -208,7 +205,7 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
         request.setData(parseTemplateDataToString(template));
         request.setApplySignature(false);
 
-        PdfEngineResponse pdfEngineResponse = pdfEngineClient.generatePDF(request);
+        PdfEngineResponse pdfEngineResponse = pdfEngineClient.generatePDF(request, workingDirPath);
 
         if (pdfEngineResponse.getStatusCode() != HttpStatus.SC_OK) {
             throw new GeneratePDFException(pdfEngineResponse.getErrorMessage(), pdfEngineResponse.getStatusCode());
@@ -270,26 +267,6 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
                         .amountPartial(BizEventToPdfMapper.getItemAmount(bizEvent)) //Cart items total amount w/o fee
                         .build())
                 .build();
-    }
-
-    private void deleteTempFolderAndFile(String tempPdfPath, String tempDirectoryPath) {
-        File tempFile = new File(tempPdfPath);
-        if (tempFile.exists()) {
-            try {
-                Files.delete(tempFile.toPath());
-            } catch (IOException e) {
-                logger.warn("Error deleting temporary pdf file from file system", e);
-            }
-        }
-
-        File tempDirectory = new File(tempDirectoryPath);
-        if (tempDirectory.exists()) {
-            try {
-                Files.delete(tempDirectory.toPath());
-            } catch (IOException e) {
-                logger.warn("Error deleting temporary pdf directory from file system", e);
-            }
-        }
     }
 
     private String parseTemplateDataToString(ReceiptPDFTemplate template) throws GeneratePDFException {
