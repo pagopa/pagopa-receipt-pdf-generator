@@ -1,12 +1,40 @@
 package it.gov.pagopa.receipt.pdf.generator.utils;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import it.gov.pagopa.receipt.pdf.generator.entity.event.BizEvent;
+import it.gov.pagopa.receipt.pdf.generator.exception.PdfJsonMappingException;
+import it.gov.pagopa.receipt.pdf.generator.model.template.PSP;
+import it.gov.pagopa.receipt.pdf.generator.model.template.PSPFee;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class BizEventToPdfMapper {
 
     /**
      * Hide from public usage.
      */
+
+    private static final Map<String, String> brandLogoMap;
+    private static final Map<String, Object> pspMap;
+
+    static {
+        try {
+            brandLogoMap = ObjectMapperUtils.mapString(System.getenv().get("BRAND_LOGO_MAP"),Map.class);
+        } catch (JsonProcessingException e) {
+            throw new PdfJsonMappingException(e);
+        }
+
+    }
+
+    static {
+        try {
+            pspMap = ObjectMapperUtils.mapString(System.getenv().get("PSP_INFO_MAP"),Map.class);
+        } catch (JsonProcessingException e) {
+            throw new PdfJsonMappingException(e);
+        }
+    }
+
     private BizEventToPdfMapper() {
     }
 
@@ -49,19 +77,6 @@ public class BizEventToPdfMapper {
         }
 
         return event.getPaymentInfo() != null ? event.getPaymentInfo().getAmount() : null;
-    }
-
-    public static String getPspName(BizEvent event){
-        if(
-                event.getTransactionDetails() != null &&
-                        event.getTransactionDetails().getTransaction() != null &&
-                        event.getTransactionDetails().getTransaction().getPsp() != null &&
-                        event.getTransactionDetails().getTransaction().getPsp().getBusinessName() != null
-        ){
-            return event.getTransactionDetails().getTransaction().getPsp().getBusinessName();
-        }
-
-        return event.getPsp() != null ? event.getPsp().getPsp() : null;
     }
 
     public static String getPspFee(BizEvent event){
@@ -119,6 +134,16 @@ public class BizEventToPdfMapper {
 
     public static String getPaymentMethodLogo(BizEvent event){
         //TODO analyse -> transactionDetails.wallet.info.brandLogo doesn't exist
+
+        if (event.getTransactionDetails() != null &&
+            event.getTransactionDetails().getWallet() != null &&
+            event.getTransactionDetails().getWallet().getInfo() != null
+        ) {
+            return brandLogoMap.getOrDefault(
+                    event.getTransactionDetails().getWallet()
+                            .getInfo().getBrand(),null
+            );
+        }
 
         return null;
     }
@@ -185,6 +210,35 @@ public class BizEventToPdfMapper {
 
     public static String getItemAmount(BizEvent event){
         return event.getPaymentInfo() != null ? event.getPaymentInfo().getAmount() : null;
+    }
+
+    public static PSP getPsp(BizEvent event) {
+
+        if(event.getTransactionDetails() != null &&
+                        event.getTransactionDetails().getTransaction() != null &&
+                        event.getTransactionDetails().getTransaction().getPsp() != null &&
+                        event.getTransactionDetails().getTransaction().getPsp().getBusinessName() != null
+        ) {
+            String name = event.getTransactionDetails().getTransaction().getPsp().getBusinessName();
+            LinkedHashMap<String,String> info = (LinkedHashMap<String, String>) pspMap.getOrDefault(name, new LinkedHashMap<>());
+            return PSP.builder()
+                    .name(name)
+                    .fee(PSPFee.builder()
+                            .amount(getPspFee(event))
+                            .build())
+                    .companyName(event.getTransactionDetails().getTransaction().getPsp().getServiceName())
+                    .address(info.get("address"))
+                    .city(info.get("city"))
+                    .province(info.get("province"))
+                    .buildingNumber(info.get("buildingNumber"))
+                    .postalCode(info.get("postalCode"))
+                    .logo(info.get("logo"))
+                    .build();
+
+        }
+
+        return null;
+
     }
 
 }
