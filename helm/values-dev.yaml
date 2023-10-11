@@ -101,12 +101,10 @@ microservice-chart:
     OTEL_TRACES_SAMPLER: "always_on"
     JAVA_TOOL_OPTIONS: "-javaagent:/home/site/wwwroot/jmx_prometheus_javaagent-0.19.0.jar=12345:/home/site/wwwroot/config.yaml -javaagent:/home/site/wwwroot/opentelemetry-javaagent.jar -Xmx1024m -XX:+UseG1GC"
     AZURE_FUNCTIONS_MESH_JAVA_OPTS: "-javaagent:/home/site/wwwroot/jmx_prometheus_javaagent-0.19.0.jar=12345:/home/site/wwwroot/config.yaml -javaagent:/home/site/wwwroot/opentelemetry-javaagent.jar -Xmx1024m -XX:+UseG1GC"
-
   envConfigMapExternals:
     template-maps:
       PSP_INFO_MAP: psp-info-map
       BRAND_LOGO_MAP: brand-logo-map
-
   envFieldRef:
     APP_NAME: "metadata.labels['app.kubernetes.io/instance']"
     APP_VERSION: "metadata.labels['app.kubernetes.io/version']"
@@ -131,7 +129,7 @@ microservice-chart:
                 values:
                   - user
   canaryDelivery:
-    create: false
+    create: true
     ingress:
       create: false
       canary:
@@ -145,7 +143,7 @@ microservice-chart:
       create: false
       image:
         repository: ghcr.io/pagopa/pagopa-receipt-pdf-generator
-        tag: "1.0.2"
+        tag: "1.3.0-2-GHA"
         pullPolicy: Always
       envConfig:
       envSecret:
