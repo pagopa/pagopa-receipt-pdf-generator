@@ -71,10 +71,8 @@ class PdfEngineClientImplTest {
         when(mockClient.execute(any())).thenReturn(mockResponse);
         when(mockBuilder.build()).thenReturn(mockClient);
 
-        environmentVariables.set("WORKING_DIRECTORY_PATH", "temp");
-
         PdfEngineClientImpl client = new PdfEngineClientImpl(mockBuilder);
-        PdfEngineResponse pdfEngineResponse = client.generatePDF(pdfEngineRequest);
+        PdfEngineResponse pdfEngineResponse = client.generatePDF(pdfEngineRequest, tempDirectory.toPath());
 
         File tempPdf = new File(pdfEngineResponse.getTempPdfPath());
         Assertions.assertTrue(tempPdf.delete());
@@ -119,7 +117,7 @@ class PdfEngineClientImplTest {
         when(mockBuilder.build()).thenReturn(mockClient);
 
         PdfEngineClientImpl client = new PdfEngineClientImpl(mockBuilder);
-        PdfEngineResponse pdfEngineResponse = client.generatePDF(pdfEngineRequest);
+        PdfEngineResponse pdfEngineResponse = client.generatePDF(pdfEngineRequest, tempDirectory.toPath());
 
         Assertions.assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, pdfEngineResponse.getStatusCode());
         Assertions.assertNotNull(pdfEngineResponse.getErrorMessage());
@@ -173,7 +171,7 @@ class PdfEngineClientImplTest {
         when(mockBuilder.build()).thenReturn(mockClient);
 
         PdfEngineClientImpl client = new PdfEngineClientImpl(mockBuilder);
-        PdfEngineResponse pdfEngineResponse = client.generatePDF(pdfEngineRequest);
+        PdfEngineResponse pdfEngineResponse = client.generatePDF(pdfEngineRequest, tempDirectory.toPath());
 
         Assertions.assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, pdfEngineResponse.getStatusCode());
         Assertions.assertEquals(ERROR_MESSAGE.replace("\"", ""), pdfEngineResponse.getErrorMessage());
