@@ -214,19 +214,20 @@ public class BizEventToPdfMapper {
 
     public static PSP getPsp(BizEvent event) {
 
-        if(event.getTransactionDetails() != null &&
-                        event.getTransactionDetails().getTransaction() != null &&
-                        event.getTransactionDetails().getTransaction().getPsp() != null &&
-                        event.getTransactionDetails().getTransaction().getPsp().getBusinessName() != null
+        if(event.getPsp() != null &&
+                        event.getPsp().getIdPsp() != null &&
+                event.getTransactionDetails() != null &&
+                event.getTransactionDetails().getTransaction() != null &&
+                event.getTransactionDetails().getTransaction().getPsp() != null
         ) {
             String name = event.getTransactionDetails().getTransaction().getPsp().getBusinessName();
-            LinkedHashMap<String,String> info = (LinkedHashMap<String, String>) pspMap.getOrDefault(name, new LinkedHashMap<>());
+            LinkedHashMap<String,String> info = (LinkedHashMap<String, String>) pspMap.getOrDefault(event.getPsp().getIdPsp(), new LinkedHashMap<>());
             return PSP.builder()
                     .name(name)
                     .fee(PSPFee.builder()
                             .amount(getPspFee(event))
                             .build())
-                    .companyName(event.getTransactionDetails().getTransaction().getPsp().getServiceName())
+                    .companyName(info.get("companyName"))
                     .address(info.get("address"))
                     .city(info.get("city"))
                     .province(info.get("province"))
