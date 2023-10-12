@@ -84,11 +84,11 @@ class GenerateReceiptPdfServiceImplTest {
         BizEvent bizEventOnly = getBizEventWithOnlyDebtor();
 
         doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdfDebtor.getPath(), tempDirectoryDebtor.getPath()))
-                .when(pdfEngineClientMock).generatePDF(any());
+                .when(pdfEngineClientMock).generatePDF(any(), any());
         doReturn(getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.CREATED.value()))
                 .when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
 
-        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly);
+        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly, Path.of("/tmp"));
 
         assertNotNull(pdfGeneration);
         assertTrue(pdfGeneration.isGenerateOnlyDebtor());
@@ -99,7 +99,7 @@ class GenerateReceiptPdfServiceImplTest {
         assertEquals(HttpStatus.SC_OK, pdfGeneration.getDebtorMetadata().getStatusCode());
         assertNull(pdfGeneration.getPayerMetadata());
 
-        verify(pdfEngineClientMock).generatePDF(any());
+        verify(pdfEngineClientMock).generatePDF(any(), any());
         verify(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
     }
 
@@ -109,11 +109,11 @@ class GenerateReceiptPdfServiceImplTest {
         BizEvent bizEventOnly = getBizEventWithDebtorPayer(VALID_CF_DEBTOR);
 
         doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdfDebtor.getPath(), tempDirectoryDebtor.getPath()))
-                .when(pdfEngineClientMock).generatePDF(any());
+                .when(pdfEngineClientMock).generatePDF(any(), any());
         doReturn(getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.CREATED.value()))
                 .when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
 
-        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly);
+        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly, Path.of("/tmp"));
 
         assertNotNull(pdfGeneration);
         assertTrue(pdfGeneration.isGenerateOnlyDebtor());
@@ -124,7 +124,7 @@ class GenerateReceiptPdfServiceImplTest {
         assertEquals(HttpStatus.SC_OK, pdfGeneration.getDebtorMetadata().getStatusCode());
         assertNull(pdfGeneration.getPayerMetadata());
 
-        verify(pdfEngineClientMock).generatePDF(any());
+        verify(pdfEngineClientMock).generatePDF(any(), any());
         verify(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
     }
 
@@ -135,12 +135,12 @@ class GenerateReceiptPdfServiceImplTest {
 
         doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdfDebtor.getPath(), tempDirectoryDebtor.getPath()),
                 getPdfEngineResponse(HttpStatus.SC_OK, outputPdfPayer.getPath(), tempDirectoryPayer.getPath()))
-                .when(pdfEngineClientMock).generatePDF(any());
+                .when(pdfEngineClientMock).generatePDF(any(), any());
         doReturn(getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.CREATED.value()),
                 getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.CREATED.value()))
                 .when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
 
-        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly);
+        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly, Path.of("/tmp"));
 
         assertNotNull(pdfGeneration);
         assertFalse(pdfGeneration.isGenerateOnlyDebtor());
@@ -155,7 +155,7 @@ class GenerateReceiptPdfServiceImplTest {
         assertNotNull(pdfGeneration.getPayerMetadata().getDocumentUrl());
         assertEquals(HttpStatus.SC_OK, pdfGeneration.getPayerMetadata().getStatusCode());
 
-        verify(pdfEngineClientMock, times(2)).generatePDF(any());
+        verify(pdfEngineClientMock, times(2)).generatePDF(any(), any());
         verify(receiptBlobClientMock, times(2)).savePdfToBlobStorage(any(), anyString());
     }
 
@@ -164,7 +164,7 @@ class GenerateReceiptPdfServiceImplTest {
         Receipt receiptOnly = getReceiptWithOnlyDebtor(true);
         BizEvent bizEventOnly = getBizEventWithOnlyDebtor();
 
-        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly);
+        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly, Path.of("/tmp"));
 
         assertNotNull(pdfGeneration);
         assertTrue(pdfGeneration.isGenerateOnlyDebtor());
@@ -175,7 +175,7 @@ class GenerateReceiptPdfServiceImplTest {
         assertEquals(ALREADY_CREATED, pdfGeneration.getDebtorMetadata().getStatusCode());
         assertNull(pdfGeneration.getPayerMetadata());
 
-        verify(pdfEngineClientMock, never()).generatePDF(any());
+        verify(pdfEngineClientMock, never()).generatePDF(any(), any());
         verify(receiptBlobClientMock, never()).savePdfToBlobStorage(any(), anyString());
     }
 
@@ -184,7 +184,7 @@ class GenerateReceiptPdfServiceImplTest {
         Receipt receiptOnly = getReceiptWithDebtorPayer(VALID_CF_DEBTOR, true, false);
         BizEvent bizEventOnly = getBizEventWithDebtorPayer(VALID_CF_DEBTOR);
 
-        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly);
+        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly, Path.of("/tmp"));
 
         assertNotNull(pdfGeneration);
         assertTrue(pdfGeneration.isGenerateOnlyDebtor());
@@ -195,7 +195,7 @@ class GenerateReceiptPdfServiceImplTest {
         assertEquals(ALREADY_CREATED, pdfGeneration.getDebtorMetadata().getStatusCode());
         assertNull(pdfGeneration.getPayerMetadata());
 
-        verify(pdfEngineClientMock, never()).generatePDF(any());
+        verify(pdfEngineClientMock, never()).generatePDF(any(), any());
         verify(receiptBlobClientMock, never()).savePdfToBlobStorage(any(), anyString());
     }
 
@@ -205,11 +205,11 @@ class GenerateReceiptPdfServiceImplTest {
         BizEvent bizEventOnly = getBizEventWithDebtorPayer(VALID_CF_PAYER);
 
         doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdfDebtor.getPath(), tempDirectoryDebtor.getPath()))
-                .when(pdfEngineClientMock).generatePDF(any());
+                .when(pdfEngineClientMock).generatePDF(any(), any());
         doReturn(getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.CREATED.value()))
                 .when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
 
-        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly);
+        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly, Path.of("/tmp"));
 
         assertNotNull(pdfGeneration);
         assertFalse(pdfGeneration.isGenerateOnlyDebtor());
@@ -224,7 +224,7 @@ class GenerateReceiptPdfServiceImplTest {
         assertNull(pdfGeneration.getPayerMetadata().getDocumentUrl());
         assertEquals(ALREADY_CREATED, pdfGeneration.getPayerMetadata().getStatusCode());
 
-        verify(pdfEngineClientMock).generatePDF(any());
+        verify(pdfEngineClientMock).generatePDF(any(), any());
         verify(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
     }
 
@@ -234,9 +234,9 @@ class GenerateReceiptPdfServiceImplTest {
         BizEvent bizEventOnly = getBizEventWithOnlyDebtor();
 
         doReturn(getPdfEngineResponse(HttpStatus.SC_INTERNAL_SERVER_ERROR, "", ""))
-                .when(pdfEngineClientMock).generatePDF(any());
+                .when(pdfEngineClientMock).generatePDF(any(), any());
 
-        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly);
+        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly, Path.of("/tmp"));
 
         assertNotNull(pdfGeneration);
         assertTrue(pdfGeneration.isGenerateOnlyDebtor());
@@ -247,7 +247,7 @@ class GenerateReceiptPdfServiceImplTest {
         assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, pdfGeneration.getDebtorMetadata().getStatusCode());
         assertNull(pdfGeneration.getPayerMetadata());
 
-        verify(pdfEngineClientMock).generatePDF(any());
+        verify(pdfEngineClientMock).generatePDF(any(), any());
         verify(receiptBlobClientMock, never()).savePdfToBlobStorage(any(), anyString());
     }
 
@@ -257,10 +257,10 @@ class GenerateReceiptPdfServiceImplTest {
         BizEvent bizEventOnly = getBizEventWithOnlyDebtor();
 
         doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdfDebtor.getPath(), tempDirectoryDebtor.getPath()))
-                .when(pdfEngineClientMock).generatePDF(any());
+                .when(pdfEngineClientMock).generatePDF(any(), any());
         doThrow(RuntimeException.class).when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
 
-        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly);
+        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly, Path.of("/tmp"));
 
         assertNotNull(pdfGeneration);
         assertTrue(pdfGeneration.isGenerateOnlyDebtor());
@@ -271,7 +271,7 @@ class GenerateReceiptPdfServiceImplTest {
         assertEquals(ReasonErrorCode.ERROR_BLOB_STORAGE.getCode(), pdfGeneration.getDebtorMetadata().getStatusCode());
         assertNull(pdfGeneration.getPayerMetadata());
 
-        verify(pdfEngineClientMock).generatePDF(any());
+        verify(pdfEngineClientMock).generatePDF(any(), any());
         verify(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
     }
 
@@ -281,11 +281,11 @@ class GenerateReceiptPdfServiceImplTest {
         BizEvent bizEventOnly = getBizEventWithOnlyDebtor();
 
         doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdfDebtor.getPath(), tempDirectoryDebtor.getPath()))
-                .when(pdfEngineClientMock).generatePDF(any());
+                .when(pdfEngineClientMock).generatePDF(any(), any());
         doReturn(getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.INTERNAL_SERVER_ERROR.value()))
                 .when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
 
-        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly);
+        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly, Path.of("/tmp"));
 
         assertNotNull(pdfGeneration);
         assertTrue(pdfGeneration.isGenerateOnlyDebtor());
@@ -296,7 +296,7 @@ class GenerateReceiptPdfServiceImplTest {
         assertEquals(ReasonErrorCode.ERROR_BLOB_STORAGE.getCode(), pdfGeneration.getDebtorMetadata().getStatusCode());
         assertNull(pdfGeneration.getPayerMetadata());
 
-        verify(pdfEngineClientMock).generatePDF(any());
+        verify(pdfEngineClientMock).generatePDF(any(), any());
         verify(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
     }
 
@@ -599,7 +599,6 @@ class GenerateReceiptPdfServiceImplTest {
     private PdfEngineResponse getPdfEngineResponse(int status, String pdfPath, String dirPath) {
         PdfEngineResponse pdfEngineResponse = new PdfEngineResponse();
         pdfEngineResponse.setTempPdfPath(pdfPath);
-        pdfEngineResponse.setTempDirectoryPath(dirPath);
         if (status != HttpStatus.SC_OK) {
             pdfEngineResponse.setErrorMessage("error");
         }
