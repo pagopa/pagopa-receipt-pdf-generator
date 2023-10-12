@@ -121,7 +121,7 @@ class GenerateReceiptPdfServiceImplTest {
                 .when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
 
         AtomicReference<PdfGeneration> pdfGeneration = new AtomicReference<>();
-        withEnvironmentVariables().set("BRAND_LOGO_MAP", "{\"MASTER\":\"assets/mastercard.png\"}\n").set("PSP_INFO_MAP","{\"Nexi\":{\"logo\":\"assets/nexi_logo.png\"}}\n").execute(() ->
+        withEnvironmentVariables().set("BRAND_LOGO_MAP", "{\"MASTER\":\"assets/mastercard.png\"}\n").set("PSP_INFO_MAP","{\"60000000001\":{\"logo\":\"assets/nexi_logo.png\"}}\n").execute(() ->
                 pdfGeneration.set(sut.generateReceipts(receiptOnly, bizEventOnly))
         );
 
@@ -656,6 +656,7 @@ class GenerateReceiptPdfServiceImplTest {
                         .officeName("office PA")
                         .build())
                 .psp(Psp.builder()
+                        .idPsp("60000000001")
                         .psp("PSP Paolo")
                         .build())
                 .debtor(Debtor.builder()
