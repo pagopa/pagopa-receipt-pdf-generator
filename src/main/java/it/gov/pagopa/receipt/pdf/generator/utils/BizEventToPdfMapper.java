@@ -2,6 +2,10 @@ package it.gov.pagopa.receipt.pdf.generator.utils;
 
 import it.gov.pagopa.receipt.pdf.generator.entity.event.BizEvent;
 
+import java.math.BigDecimal;
+import java.text.NumberFormat;
+import java.util.Locale;
+
 public class BizEventToPdfMapper {
 
     private static final String REF_TYPE_NOTICE = "CODICE AVVISO";
@@ -48,10 +52,10 @@ public class BizEventToPdfMapper {
                         event.getTransactionDetails().getTransaction() != null &&
                         event.getTransactionDetails().getTransaction().getAmount() != 0L
         ){
-            return String.valueOf(event.getTransactionDetails().getTransaction().getAmount());
+            return valueFormat(String.valueOf(event.getTransactionDetails().getTransaction().getAmount()));
         }
 
-        return event.getPaymentInfo() != null ? event.getPaymentInfo().getAmount() : null;
+        return event.getPaymentInfo() != null ? valueFormat(event.getPaymentInfo().getAmount()) : null;
     }
 
     public static String getPspName(BizEvent event){
@@ -73,10 +77,10 @@ public class BizEventToPdfMapper {
                         event.getTransactionDetails().getTransaction() != null &&
                         event.getTransactionDetails().getTransaction().getFee() != 0L
         ){
-            return String.valueOf(event.getTransactionDetails().getTransaction().getFee());
+            return valueFormat(String.valueOf(event.getTransactionDetails().getTransaction().getFee()));
         }
 
-        return event.getPaymentInfo() != null ? event.getPaymentInfo().getFee() : null;
+        return event.getPaymentInfo() != null ? valueFormat(event.getPaymentInfo().getFee()) : null;
     }
 
     public static String getRnn(BizEvent event){
@@ -189,7 +193,14 @@ public class BizEventToPdfMapper {
     }
 
     public static String getItemAmount(BizEvent event){
-        return event.getPaymentInfo() != null ? event.getPaymentInfo().getAmount() : null;
+        return event.getPaymentInfo() != null ? valueFormat(event.getPaymentInfo().getAmount()) : null;
+    }
+
+    private static String valueFormat(String value){
+        BigDecimal valueToFormat = new BigDecimal(value);
+        NumberFormat numberFormat = NumberFormat.getInstance(Locale.ITALY);
+
+        return numberFormat.format(valueToFormat);
     }
 
 }
