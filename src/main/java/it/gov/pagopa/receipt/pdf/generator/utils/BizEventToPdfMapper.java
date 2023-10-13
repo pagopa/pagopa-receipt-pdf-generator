@@ -2,7 +2,14 @@ package it.gov.pagopa.receipt.pdf.generator.utils;
 
 import it.gov.pagopa.receipt.pdf.generator.entity.event.BizEvent;
 
+import java.math.BigDecimal;
+import java.text.NumberFormat;
+import java.util.Locale;
+
 public class BizEventToPdfMapper {
+
+    private static final String REF_TYPE_NOTICE = "CODICE AVVISO";
+    private static final String REF_TYPE_IUV = "IUV";
 
     /**
      * Hide from public usage.
@@ -45,10 +52,11 @@ public class BizEventToPdfMapper {
                         event.getTransactionDetails().getTransaction() != null &&
                         event.getTransactionDetails().getTransaction().getAmount() != 0L
         ){
-            return String.valueOf(event.getTransactionDetails().getTransaction().getAmount());
+            //Amount in transactionDetails is defined in cents (es. 25500 not 255.00)
+            return valueFormat(String.valueOf(event.getTransactionDetails().getTransaction().getAmount() / 100.00));
         }
 
-        return event.getPaymentInfo() != null ? event.getPaymentInfo().getAmount() : null;
+        return event.getPaymentInfo() != null ? valueFormat(event.getPaymentInfo().getAmount()) : null;
     }
 
     public static String getPspName(BizEvent event){
@@ -70,10 +78,11 @@ public class BizEventToPdfMapper {
                         event.getTransactionDetails().getTransaction() != null &&
                         event.getTransactionDetails().getTransaction().getFee() != 0L
         ){
-            return String.valueOf(event.getTransactionDetails().getTransaction().getFee());
+            //Fee in transactionDetails is defined in cents (es. 25500 not 255.00)
+            return valueFormat(String.valueOf(event.getTransactionDetails().getTransaction().getFee() / 100.00));
         }
 
-        return event.getPaymentInfo() != null ? event.getPaymentInfo().getFee() : null;
+        return event.getPaymentInfo() != null ? valueFormat(event.getPaymentInfo().getFee()) : null;
     }
 
     public static String getRnn(BizEvent event){
@@ -136,13 +145,7 @@ public class BizEventToPdfMapper {
         return event.getPayer() != null ? event.getPayer().getFullName() : null;
     }
 
-    public static boolean getExtraFee(BizEvent event){
-        //TODO Mapping ?
-        return false;
-    }
-
-    public static String getUserMail(BizEvent event){
-        //TODO Mapping ?
+    public static String getUserMail(){
         return null;
     }
 
@@ -154,9 +157,16 @@ public class BizEventToPdfMapper {
         return event.getPayer() != null ? event.getPayer().getEntityUniqueIdentifierValue() : null;
     }
 
-    private static final String REF_NUMBER_TYPE = "CODICE AVVISO";
-    public static String getRefNumberType(){
-        return REF_NUMBER_TYPE;
+
+    public static String getRefNumberType(BizEvent event){
+        if(
+                event.getDebtorPosition() != null &&
+                event.getDebtorPosition().getModelType().equals("2")
+        ){
+            return REF_TYPE_IUV;
+        }
+
+        return REF_TYPE_NOTICE;
     }
 
     public static String getRefNumberValue(BizEvent event){
@@ -184,7 +194,14 @@ public class BizEventToPdfMapper {
     }
 
     public static String getItemAmount(BizEvent event){
-        return event.getPaymentInfo() != null ? event.getPaymentInfo().getAmount() : null;
+        return event.getPaymentInfo() != null ? valueFormat(event.getPaymentInfo().getAmount()) : null;
+    }
+
+    private static String valueFormat(String value){
+        BigDecimal valueToFormat = new BigDecimal(value);
+        NumberFormat numberFormat = NumberFormat.getInstance(Locale.ITALY);
+
+        return numberFormat.format(valueToFormat);
     }
 
 }

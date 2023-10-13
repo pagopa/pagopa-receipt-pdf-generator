@@ -234,7 +234,6 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
                                 .name(BizEventToPdfMapper.getPaymentMethodName(bizEvent))
                                 .logo(BizEventToPdfMapper.getPaymentMethodLogo(bizEvent))
                                 .accountHolder(BizEventToPdfMapper.getPaymentMethodAccountHolder(bizEvent))
-                                .extraFee(BizEventToPdfMapper.getExtraFee(bizEvent))
                                 .build())
                         .authCode(BizEventToPdfMapper.getAuthCode(bizEvent))
                         .requestedByDebtor(partialTemplate)
@@ -246,13 +245,13 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
                                         .fullName(BizEventToPdfMapper.getUserFullName(bizEvent))
                                         .taxCode(BizEventToPdfMapper.getUserTaxCode(bizEvent))
                                         .build())
-                                .email(BizEventToPdfMapper.getUserMail(bizEvent))
+                                .email(BizEventToPdfMapper.getUserMail())
                                 .build())
                 .cart(Cart.builder()
                         .items(Collections.singletonList(
                                 Item.builder()
                                         .refNumber(RefNumber.builder()
-                                                .type(BizEventToPdfMapper.getRefNumberType())
+                                                .type(BizEventToPdfMapper.getRefNumberType(bizEvent))
                                                 .value(BizEventToPdfMapper.getRefNumberValue(bizEvent))
                                                 .build())
                                         .debtor(Debtor.builder()
@@ -267,7 +266,8 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
                                         .amount(BizEventToPdfMapper.getItemAmount(bizEvent))
                                         .build()
                         ))
-                        .amountPartial(BizEventToPdfMapper.getItemAmount(bizEvent)) //Cart items total amount w/o fee
+                        //Cart items total amount w/o fee, TODO change it with multiple cart items implementation
+                        .amountPartial(BizEventToPdfMapper.getItemAmount(bizEvent))
                         .build())
                 .build();
     }
