@@ -6,12 +6,12 @@ import it.gov.pagopa.receipt.pdf.generator.exception.PdfJsonMappingException;
 import it.gov.pagopa.receipt.pdf.generator.model.template.PSP;
 import it.gov.pagopa.receipt.pdf.generator.model.template.PSPFee;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.util.Locale;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 public class BizEventToPdfMapper {
 
@@ -86,7 +86,6 @@ public class BizEventToPdfMapper {
 
         return event.getPaymentInfo() != null ? valueFormat(event.getPaymentInfo().getAmount()) : null;
     }
-
     public static String getPspFee(BizEvent event){
         if(
                 event.getTransactionDetails() != null &&
