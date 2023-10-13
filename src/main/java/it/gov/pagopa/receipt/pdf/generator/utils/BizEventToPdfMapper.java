@@ -186,6 +186,7 @@ public class BizEventToPdfMapper {
     public static String getRefNumberType(BizEvent event){
         if(
                 event.getDebtorPosition() != null &&
+                event.getDebtorPosition().getModelType() != null &&
                 event.getDebtorPosition().getModelType().equals("2")
         ){
             return REF_TYPE_IUV;
