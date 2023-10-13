@@ -52,7 +52,8 @@ public class BizEventToPdfMapper {
                         event.getTransactionDetails().getTransaction() != null &&
                         event.getTransactionDetails().getTransaction().getAmount() != 0L
         ){
-            return valueFormat(String.valueOf(event.getTransactionDetails().getTransaction().getAmount()));
+            //Amount in transactionDetails is defined in cents (es. 25500 not 255.00)
+            return valueFormat(String.valueOf(event.getTransactionDetails().getTransaction().getAmount() / 100.00));
         }
 
         return event.getPaymentInfo() != null ? valueFormat(event.getPaymentInfo().getAmount()) : null;
@@ -77,7 +78,8 @@ public class BizEventToPdfMapper {
                         event.getTransactionDetails().getTransaction() != null &&
                         event.getTransactionDetails().getTransaction().getFee() != 0L
         ){
-            return valueFormat(String.valueOf(event.getTransactionDetails().getTransaction().getFee()));
+            //Fee in transactionDetails is defined in cents (es. 25500 not 255.00)
+            return valueFormat(String.valueOf(event.getTransactionDetails().getTransaction().getFee() / 100.00));
         }
 
         return event.getPaymentInfo() != null ? valueFormat(event.getPaymentInfo().getFee()) : null;
@@ -143,8 +145,7 @@ public class BizEventToPdfMapper {
         return event.getPayer() != null ? event.getPayer().getFullName() : null;
     }
 
-    public static String getUserMail(BizEvent event){
-        //TODO Mapping ?
+    public static String getUserMail(){
         return null;
     }
 
