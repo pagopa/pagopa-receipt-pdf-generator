@@ -92,7 +92,7 @@ jobs:
           skip_ci: ${{ inputs.beta }}
 
   image:
-    # needs: [ setup, release ]
+    needs: [ setup, release ]
     name: Build and Push Docker Image
     runs-on: ubuntu-latest
     if: ${{ inputs.semver != 'skip' }}
