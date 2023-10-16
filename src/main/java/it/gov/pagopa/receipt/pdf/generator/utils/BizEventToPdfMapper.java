@@ -10,8 +10,10 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
+import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Locale;
-
 
 public class BizEventToPdfMapper {
 
@@ -27,7 +29,7 @@ public class BizEventToPdfMapper {
 
     static {
         try {
-            brandLogoMap = ObjectMapperUtils.mapString(System.getenv().get("BRAND_LOGO_MAP"),Map.class);
+            brandLogoMap = ObjectMapperUtils.mapString(System.getenv().get("BRAND_LOGO_MAP"), Map.class);
         } catch (JsonProcessingException e) {
             throw new PdfJsonMappingException(e);
         }
@@ -36,7 +38,7 @@ public class BizEventToPdfMapper {
 
     static {
         try {
-            pspMap = ObjectMapperUtils.mapString(System.getenv().get("PSP_INFO_MAP"),Map.class);
+            pspMap = ObjectMapperUtils.mapString(System.getenv().get("PSP_INFO_MAP"), Map.class);
         } catch (JsonProcessingException e) {
             throw new PdfJsonMappingException(e);
         }
@@ -46,183 +48,162 @@ public class BizEventToPdfMapper {
     }
 
     public static String getId(BizEvent event) {
-        if (
-                event.getTransactionDetails() != null &&
-                        event.getTransactionDetails().getTransaction() != null &&
-                        event.getTransactionDetails().getTransaction().getIdTransaction() != 0L
-        ) {
+        if (event.getTransactionDetails() != null &&
+                event.getTransactionDetails().getTransaction() != null &&
+                event.getTransactionDetails().getTransaction().getIdTransaction() != 0L) {
             return String.valueOf(event.getTransactionDetails().getTransaction().getIdTransaction());
         }
-        if (
-                event.getPaymentInfo() != null
-        ) {
-            return event.getPaymentInfo().getPaymentToken() != null ? event.getPaymentInfo().getPaymentToken() : event.getPaymentInfo().getIUR();
+        if (event.getPaymentInfo() != null) {
+            return event.getPaymentInfo().getPaymentToken() != null ? event.getPaymentInfo().getPaymentToken()
+                    : event.getPaymentInfo().getIUR();
         }
 
         return null;
     }
 
     public static String getTimestamp(BizEvent event) {
-        if(
-                event.getTransactionDetails() != null &&
-                        event.getTransactionDetails().getTransaction() != null &&
-                        event.getTransactionDetails().getTransaction().getCreationDate() != null
-        ){
-            return event.getTransactionDetails().getTransaction().getCreationDate();
+        if (event.getTransactionDetails() != null &&
+                event.getTransactionDetails().getTransaction() != null &&
+                event.getTransactionDetails().getTransaction().getCreationDate() != null) {
+            return dateFormat(event.getTransactionDetails().getTransaction().getCreationDate(), true);
         }
 
-        return event.getPaymentInfo() != null ? event.getPaymentInfo().getPaymentDateTime() : null;
+        return event.getPaymentInfo() != null ? dateFormat(event.getPaymentInfo().getPaymentDateTime(), false) : null;
     }
 
-    public static String getAmount(BizEvent event){
-        if(
-                event.getTransactionDetails() != null &&
-                        event.getTransactionDetails().getTransaction() != null &&
-                        event.getTransactionDetails().getTransaction().getAmount() != 0L
-        ){
-            //Amount in transactionDetails is defined in cents (es. 25500 not 255.00)
-            return valueFormat(String.valueOf(event.getTransactionDetails().getTransaction().getAmount() / 100.00));
+    public static String getAmount(BizEvent event) {
+        if (event.getTransactionDetails() != null &&
+                event.getTransactionDetails().getTransaction() != null &&
+                event.getTransactionDetails().getTransaction().getAmount() != 0L) {
+            // Amount in transactionDetails is defined in cents (es. 25500 not 255.00)
+            return currencyFormat(String.valueOf(event.getTransactionDetails().getTransaction().getAmount() / 100.00));
         }
 
-        return event.getPaymentInfo() != null ? valueFormat(event.getPaymentInfo().getAmount()) : null;
+        return event.getPaymentInfo() != null ? currencyFormat(event.getPaymentInfo().getAmount()) : null;
     }
-    public static String getPspFee(BizEvent event){
-        if(
-                event.getTransactionDetails() != null &&
-                        event.getTransactionDetails().getTransaction() != null &&
-                        event.getTransactionDetails().getTransaction().getFee() != 0L
-        ){
-            //Fee in transactionDetails is defined in cents (es. 25500 not 255.00)
-            return valueFormat(String.valueOf(event.getTransactionDetails().getTransaction().getFee() / 100.00));
+
+    public static String getPspFee(BizEvent event) {
+        if (event.getTransactionDetails() != null &&
+                event.getTransactionDetails().getTransaction() != null &&
+                event.getTransactionDetails().getTransaction().getFee() != 0L) {
+            // Fee in transactionDetails is defined in cents (es. 25500 not 255.00)
+            return currencyFormat(String.valueOf(event.getTransactionDetails().getTransaction().getFee() / 100.00));
         }
 
-        return event.getPaymentInfo() != null ? valueFormat(event.getPaymentInfo().getFee()) : null;
+        return event.getPaymentInfo() != null ? currencyFormat(event.getPaymentInfo().getFee()) : null;
     }
 
-    public static String getRnn(BizEvent event){
-        if(
-                event.getTransactionDetails() != null &&
-                        event.getTransactionDetails().getTransaction() != null &&
-                        event.getTransactionDetails().getTransaction().getRrn() != null
-        ){
+    public static String getRnn(BizEvent event) {
+        if (event.getTransactionDetails() != null &&
+                event.getTransactionDetails().getTransaction() != null &&
+                event.getTransactionDetails().getTransaction().getRrn() != null) {
             return event.getTransactionDetails().getTransaction().getRrn();
         }
 
-        if (
-                event.getPaymentInfo() != null
-        ) {
-            return event.getPaymentInfo().getPaymentToken() != null ? event.getPaymentInfo().getPaymentToken() : event.getPaymentInfo().getIUR();
+        if (event.getPaymentInfo() != null) {
+            return event.getPaymentInfo().getPaymentToken() != null ? event.getPaymentInfo().getPaymentToken()
+                    : event.getPaymentInfo().getIUR();
         }
 
         return null;
     }
 
-    public static String getAuthCode(BizEvent event){
-        if(
-                event.getTransactionDetails() != null &&
-                        event.getTransactionDetails().getTransaction() != null
-        ){
+    public static String getAuthCode(BizEvent event) {
+        if (event.getTransactionDetails() != null &&
+                event.getTransactionDetails().getTransaction() != null) {
             return event.getTransactionDetails().getTransaction().getAuthorizationCode();
         }
 
         return null;
     }
 
-    public static String getPaymentMethodName(BizEvent event){
-        if(
-                event.getTransactionDetails() != null &&
-                        event.getTransactionDetails().getWallet() != null &&
-                        event.getTransactionDetails().getWallet().getInfo() != null
-        ){
+    public static String getPaymentMethodName(BizEvent event) {
+        if (event.getTransactionDetails() != null &&
+                event.getTransactionDetails().getWallet() != null &&
+                event.getTransactionDetails().getWallet().getInfo() != null) {
             return event.getTransactionDetails().getWallet().getInfo().getBrand();
         }
 
         return null;
     }
 
-    public static String getPaymentMethodLogo(BizEvent event){
-        //TODO analyse -> transactionDetails.wallet.info.brandLogo doesn't exist
+    public static String getPaymentMethodLogo(BizEvent event) {
+        // TODO analyse -> transactionDetails.wallet.info.brandLogo doesn't exist
 
         if (event.getTransactionDetails() != null &&
-            event.getTransactionDetails().getWallet() != null &&
-            event.getTransactionDetails().getWallet().getInfo() != null
-        ) {
+                event.getTransactionDetails().getWallet() != null &&
+                event.getTransactionDetails().getWallet().getInfo() != null) {
             return brandLogoMap.getOrDefault(
                     event.getTransactionDetails().getWallet()
-                            .getInfo().getBrand(),null
-            );
+                            .getInfo().getBrand(),
+                    null);
         }
 
         return null;
     }
 
-    public static String getPaymentMethodAccountHolder(BizEvent event){
-        if(
-                event.getTransactionDetails() != null &&
-                        event.getTransactionDetails().getWallet() != null &&
-                        event.getTransactionDetails().getWallet().getInfo() != null &&
-                        event.getTransactionDetails().getWallet().getInfo().getHolder() != null
-        ){
+    public static String getPaymentMethodAccountHolder(BizEvent event) {
+        if (event.getTransactionDetails() != null &&
+                event.getTransactionDetails().getWallet() != null &&
+                event.getTransactionDetails().getWallet().getInfo() != null &&
+                event.getTransactionDetails().getWallet().getInfo().getHolder() != null) {
             return event.getTransactionDetails().getWallet().getInfo().getHolder();
         }
 
         return event.getPayer() != null ? event.getPayer().getFullName() : null;
     }
 
-    public static String getUserMail(){
+    public static String getUserMail() {
         return null;
     }
 
-    public static String getUserFullName(BizEvent event){
+    public static String getUserFullName(BizEvent event) {
         return event.getPayer() != null ? event.getPayer().getFullName() : null;
     }
 
-    public static String getUserTaxCode(BizEvent event){
+    public static String getUserTaxCode(BizEvent event) {
         return event.getPayer() != null ? event.getPayer().getEntityUniqueIdentifierValue() : null;
     }
 
-
-    public static String getRefNumberType(BizEvent event){
-        if(
-                event.getDebtorPosition() != null &&
+    public static String getRefNumberType(BizEvent event) {
+        if (event.getDebtorPosition() != null &&
                 event.getDebtorPosition().getModelType() != null &&
-                event.getDebtorPosition().getModelType().equals("2")
-        ){
+                event.getDebtorPosition().getModelType().equals("2")) {
             return REF_TYPE_IUV;
         }
 
         return REF_TYPE_NOTICE;
     }
 
-    public static String getRefNumberValue(BizEvent event){
+    public static String getRefNumberValue(BizEvent event) {
         return event.getDebtorPosition() != null ? event.getDebtorPosition().getIuv() : null;
     }
 
-    public static String getDebtorFullName(BizEvent event){
+    public static String getDebtorFullName(BizEvent event) {
         return event.getDebtor() != null ? event.getDebtor().getFullName() : null;
     }
 
-    public static String getDebtorTaxCode(BizEvent event){
+    public static String getDebtorTaxCode(BizEvent event) {
         return event.getDebtor() != null ? event.getDebtor().getEntityUniqueIdentifierValue() : null;
     }
 
-    public static String getPayeeName(BizEvent event){
+    public static String getPayeeName(BizEvent event) {
         return event.getCreditor() != null ? event.getCreditor().getOfficeName() : null;
     }
 
-    public static String getPayeeTaxCode(BizEvent event){
+    public static String getPayeeTaxCode(BizEvent event) {
         return event.getCreditor() != null ? event.getCreditor().getCompanyName() : null;
     }
 
-    public static String getItemSubject(BizEvent event){
+    public static String getItemSubject(BizEvent event) {
         return event.getPaymentInfo() != null ? event.getPaymentInfo().getRemittanceInformation() : null;
     }
 
-    public static String getItemAmount(BizEvent event){
-        return event.getPaymentInfo() != null ? valueFormat(event.getPaymentInfo().getAmount()) : null;
+    public static String getItemAmount(BizEvent event) {
+        return event.getPaymentInfo() != null ? currencyFormat(event.getPaymentInfo().getAmount()) : null;
     }
 
-    private static String valueFormat(String value){
+    private static String currencyFormat(String value) {
         BigDecimal valueToFormat = new BigDecimal(value);
         NumberFormat numberFormat = NumberFormat.getInstance(Locale.ITALY);
 
@@ -231,14 +212,14 @@ public class BizEventToPdfMapper {
 
     public static PSP getPsp(BizEvent event) {
 
-        if(event.getPsp() != null &&
-                        event.getPsp().getIdPsp() != null &&
+        if (event.getPsp() != null &&
+                event.getPsp().getIdPsp() != null &&
                 event.getTransactionDetails() != null &&
                 event.getTransactionDetails().getTransaction() != null &&
-                event.getTransactionDetails().getTransaction().getPsp() != null
-        ) {
+                event.getTransactionDetails().getTransaction().getPsp() != null) {
             String name = event.getTransactionDetails().getTransaction().getPsp().getBusinessName();
-            LinkedHashMap<String,String> info = (LinkedHashMap<String, String>) pspMap.getOrDefault(event.getPsp().getIdPsp(), new LinkedHashMap<>());
+            LinkedHashMap<String, String> info = (LinkedHashMap<String, String>) pspMap
+                    .getOrDefault(event.getPsp().getIdPsp(), new LinkedHashMap<>());
             return PSP.builder()
                     .name(name)
                     .fee(PSPFee.builder()
@@ -256,7 +237,16 @@ public class BizEventToPdfMapper {
         }
 
         return null;
+    }
 
+    private static String dateFormat(String date, boolean withTimeZone) {
+        DateTimeFormatter simpleDateFormat = DateTimeFormatter.ofPattern("dd MMMM yyyy, HH:mm:ss");
+
+        if (withTimeZone) {
+            return ZonedDateTime.parse(date).format(simpleDateFormat);
+        }
+
+        return LocalDateTime.parse(date).format(simpleDateFormat);
     }
 
 }

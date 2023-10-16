@@ -4,6 +4,8 @@ import it.gov.pagopa.receipt.pdf.generator.entity.event.BizEvent;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.generator.model.PdfGeneration;
 
+import java.nio.file.Path;
+
 public interface GenerateReceiptPdfService {
 
     /**
@@ -13,7 +15,7 @@ public interface GenerateReceiptPdfService {
      * @param bizEvent Biz-event from queue message
      * @return {@link PdfGeneration} object with the result of the PDF generation and store or the relatives error messages
      */
-    PdfGeneration generateReceipts(Receipt receipt, BizEvent bizEvent);
+    PdfGeneration generateReceipts(Receipt receipt, BizEvent bizEvent, Path workingDirPath);
 
     /**
      * Verifies if the PDF generation process succeeded or not, and update the receipt with the result
