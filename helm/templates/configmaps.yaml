@@ -5,6 +5,6 @@ metadata:
   namespace: receipts
 data:
   brand-logo-map: |
-    {"MASTERCARD":"assets/mastercard.png","VISA":"assets/visa.png","AMEX":"assets/amex.png","MAESTRO":"assets/maestro.png","JCB":"assets/jcb.png","OTHER":"","DINERS":"assets/diners.png","DISCOVER":"assets/discover.png","UNIONPAY":"assets/unionpay.png"}
+    {"MASTERCARD":"assets/mastercard.png","VISA":"assets/visa.png","AMEX":"https://assets.cdn.platform.pagopa.it/payment-methods/amex.png","MAESTRO":"assets/maestro.png","JCB":"assets/jcb.png","OTHER":"","DINERS":"assets/diners.png","DISCOVER":"assets/discover.png","UNIONPAY":"assets/unionpay.png"}
   psp-info-map: |
-    {"CIPBITMM":{"logo":"assets/nexi-logo.png","name":"Nexi","companyName":"Nexi Payments S.p.A.","address":"Corso Sempione","buildingNumber":"55","postalCode":"20149","city":"Milano","province":"MI","fee":{"amount":"2,00"}}}
+    {"CIPBITMM":{"logo":"https://assets.cdn.io.italia.it/logos/abi/32875.png","name":"Nexi","companyName":"Nexi Payments S.p.A.","address":"Corso Sempione","buildingNumber":"55","postalCode":"20149","city":"Milano","province":"MI","fee":{"amount":"2,00"}}}
