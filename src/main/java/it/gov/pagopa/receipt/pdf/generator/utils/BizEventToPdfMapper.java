@@ -4,6 +4,9 @@ import it.gov.pagopa.receipt.pdf.generator.entity.event.BizEvent;
 
 import java.math.BigDecimal;
 import java.text.NumberFormat;
+import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
 public class BizEventToPdfMapper {
@@ -40,10 +43,10 @@ public class BizEventToPdfMapper {
                         event.getTransactionDetails().getTransaction() != null &&
                         event.getTransactionDetails().getTransaction().getCreationDate() != null
         ){
-            return event.getTransactionDetails().getTransaction().getCreationDate();
+            return dateFormat(event.getTransactionDetails().getTransaction().getCreationDate(), true);
         }
 
-        return event.getPaymentInfo() != null ? event.getPaymentInfo().getPaymentDateTime() : null;
+        return event.getPaymentInfo() != null ? dateFormat(event.getPaymentInfo().getPaymentDateTime(), false) : null;
     }
 
     public static String getAmount(BizEvent event){
@@ -53,10 +56,10 @@ public class BizEventToPdfMapper {
                         event.getTransactionDetails().getTransaction().getAmount() != 0L
         ){
             //Amount in transactionDetails is defined in cents (es. 25500 not 255.00)
-            return valueFormat(String.valueOf(event.getTransactionDetails().getTransaction().getAmount() / 100.00));
+            return currencyFormat(String.valueOf(event.getTransactionDetails().getTransaction().getAmount() / 100.00));
         }
 
-        return event.getPaymentInfo() != null ? valueFormat(event.getPaymentInfo().getAmount()) : null;
+        return event.getPaymentInfo() != null ? currencyFormat(event.getPaymentInfo().getAmount()) : null;
     }
 
     public static String getPspName(BizEvent event){
@@ -79,10 +82,10 @@ public class BizEventToPdfMapper {
                         event.getTransactionDetails().getTransaction().getFee() != 0L
         ){
             //Fee in transactionDetails is defined in cents (es. 25500 not 255.00)
-            return valueFormat(String.valueOf(event.getTransactionDetails().getTransaction().getFee() / 100.00));
+            return currencyFormat(String.valueOf(event.getTransactionDetails().getTransaction().getFee() / 100.00));
         }
 
-        return event.getPaymentInfo() != null ? valueFormat(event.getPaymentInfo().getFee()) : null;
+        return event.getPaymentInfo() != null ? currencyFormat(event.getPaymentInfo().getFee()) : null;
     }
 
     public static String getRnn(BizEvent event){
@@ -194,14 +197,24 @@ public class BizEventToPdfMapper {
     }
 
     public static String getItemAmount(BizEvent event){
-        return event.getPaymentInfo() != null ? valueFormat(event.getPaymentInfo().getAmount()) : null;
+        return event.getPaymentInfo() != null ? currencyFormat(event.getPaymentInfo().getAmount()) : null;
     }
 
-    private static String valueFormat(String value){
+    private static String currencyFormat(String value){
         BigDecimal valueToFormat = new BigDecimal(value);
         NumberFormat numberFormat = NumberFormat.getInstance(Locale.ITALY);
 
         return numberFormat.format(valueToFormat);
+    }
+
+    private static String dateFormat(String date, boolean withTimeZone){
+        DateTimeFormatter simpleDateFormat = DateTimeFormatter.ofPattern("dd MMMM yyyy, HH:mm:ss");
+
+        if(withTimeZone){
+            return ZonedDateTime.parse(date).format(simpleDateFormat);
+        }
+
+        return LocalDateTime.parse(date).format(simpleDateFormat);
     }
 
 }
