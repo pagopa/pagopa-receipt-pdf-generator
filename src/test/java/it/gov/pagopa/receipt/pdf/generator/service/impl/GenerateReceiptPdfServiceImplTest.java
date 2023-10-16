@@ -83,7 +83,7 @@ class GenerateReceiptPdfServiceImplTest {
         Receipt receiptOnly = getReceiptWithOnlyDebtor(false);
         BizEvent bizEventOnly = getBizEventWithOnlyDebtor();
 
-        doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdfDebtor.getPath(), tempDirectoryDebtor.getPath()))
+        doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdfDebtor.getPath()))
                 .when(pdfEngineClientMock).generatePDF(any(), any());
         doReturn(getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.CREATED.value()))
                 .when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
@@ -108,7 +108,7 @@ class GenerateReceiptPdfServiceImplTest {
         Receipt receiptOnly = getReceiptWithDebtorPayer(VALID_CF_DEBTOR, false, false);
         BizEvent bizEventOnly = getBizEventWithDebtorPayer(VALID_CF_DEBTOR);
 
-        doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdfDebtor.getPath(), tempDirectoryDebtor.getPath()))
+        doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdfDebtor.getPath()))
                 .when(pdfEngineClientMock).generatePDF(any(), any());
         doReturn(getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.CREATED.value()))
                 .when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
@@ -133,8 +133,8 @@ class GenerateReceiptPdfServiceImplTest {
         Receipt receiptOnly = getReceiptWithDebtorPayer(VALID_CF_PAYER, false, false);
         BizEvent bizEventOnly = getBizEventWithDebtorPayer(VALID_CF_PAYER);
 
-        doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdfDebtor.getPath(), tempDirectoryDebtor.getPath()),
-                getPdfEngineResponse(HttpStatus.SC_OK, outputPdfPayer.getPath(), tempDirectoryPayer.getPath()))
+        doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdfDebtor.getPath()),
+                getPdfEngineResponse(HttpStatus.SC_OK, outputPdfPayer.getPath()))
                 .when(pdfEngineClientMock).generatePDF(any(), any());
         doReturn(getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.CREATED.value()),
                 getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.CREATED.value()))
@@ -204,7 +204,7 @@ class GenerateReceiptPdfServiceImplTest {
         Receipt receiptOnly = getReceiptWithDebtorPayer(VALID_CF_PAYER, false, true);
         BizEvent bizEventOnly = getBizEventWithDebtorPayer(VALID_CF_PAYER);
 
-        doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdfDebtor.getPath(), tempDirectoryDebtor.getPath()))
+        doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdfDebtor.getPath()))
                 .when(pdfEngineClientMock).generatePDF(any(), any());
         doReturn(getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.CREATED.value()))
                 .when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
@@ -233,7 +233,7 @@ class GenerateReceiptPdfServiceImplTest {
         Receipt receiptOnly = getReceiptWithOnlyDebtor(false);
         BizEvent bizEventOnly = getBizEventWithOnlyDebtor();
 
-        doReturn(getPdfEngineResponse(HttpStatus.SC_INTERNAL_SERVER_ERROR, "", ""))
+        doReturn(getPdfEngineResponse(HttpStatus.SC_INTERNAL_SERVER_ERROR, ""))
                 .when(pdfEngineClientMock).generatePDF(any(), any());
 
         PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly, Path.of("/tmp"));
@@ -256,7 +256,7 @@ class GenerateReceiptPdfServiceImplTest {
         Receipt receiptOnly = getReceiptWithOnlyDebtor(false);
         BizEvent bizEventOnly = getBizEventWithOnlyDebtor();
 
-        doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdfDebtor.getPath(), tempDirectoryDebtor.getPath()))
+        doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdfDebtor.getPath()))
                 .when(pdfEngineClientMock).generatePDF(any(), any());
         doThrow(RuntimeException.class).when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
 
@@ -280,7 +280,7 @@ class GenerateReceiptPdfServiceImplTest {
         Receipt receiptOnly = getReceiptWithOnlyDebtor(false);
         BizEvent bizEventOnly = getBizEventWithOnlyDebtor();
 
-        doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdfDebtor.getPath(), tempDirectoryDebtor.getPath()))
+        doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdfDebtor.getPath()))
                 .when(pdfEngineClientMock).generatePDF(any(), any());
         doReturn(getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.INTERNAL_SERVER_ERROR.value()))
                 .when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
@@ -596,7 +596,7 @@ class GenerateReceiptPdfServiceImplTest {
         return blobStorageResponse;
     }
 
-    private PdfEngineResponse getPdfEngineResponse(int status, String pdfPath, String dirPath) {
+    private PdfEngineResponse getPdfEngineResponse(int status, String pdfPath) {
         PdfEngineResponse pdfEngineResponse = new PdfEngineResponse();
         pdfEngineResponse.setTempPdfPath(pdfPath);
         if (status != HttpStatus.SC_OK) {
@@ -622,6 +622,7 @@ class GenerateReceiptPdfServiceImplTest {
                 .id(BIZ_EVENT_ID)
                 .debtorPosition(DebtorPosition.builder()
                         .iuv("02119891614290410")
+                        .modelType("2")
                         .build())
                 .creditor(Creditor.builder()
                         .companyName("PA paolo")
