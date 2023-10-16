@@ -4,7 +4,7 @@ microservice-chart:
   fullnameOverride: ""
   image:
     repository: ghcr.io/pagopa/pagopa-receipt-pdf-generator
-    tag: "1.3.2"
+    tag: "1.3.8-PRDP-145-feat-add-logo-management"
     pullPolicy: Always
   # https://github.com/Azure/azure-functions-host/blob/dev/src/WebJobs.Script.WebHost/Controllers/HostController.cs
   livenessProbe:
@@ -54,8 +54,8 @@ microservice-chart:
     allowPrivilegeEscalation: false
   resources:
     requests:
-      memory: "1512Mi"
-      cpu: "0.75"
+      memory: "1024Mi"
+      cpu: "0.40"
     limits:
       memory: "1512Mi"
       cpu: "0.75"
@@ -81,15 +81,15 @@ microservice-chart:
     ENV: "uat"
     WEBSITE_SITE_NAME: "pagopareceiptpdfgenerator" # required to show cloud role name in application insights
     FUNCTIONS_WORKER_RUNTIME: "java"
-    RECEIPT_QUEUE_TOPIC: 'pagopa-u-weu-receipts-queue-receipt-waiting-4-gen'
+    RECEIPT_QUEUE_TOPIC: "pagopa-u-weu-receipts-queue-receipt-waiting-4-gen"
     RECEIPT_QUEUE_TOPIC_POISON: "pagopa-u-weu-receipts-queue-receipt-waiting-4-gen-poison"
-    COSMOS_RECEIPT_QUEUE_MAX_RETRY: '5'
-    PDF_ENGINE_ENDPOINT: 'https://api.uat.platform.pagopa.it/shared/pdf-engine/v1/generate-pdf'
-    COSMOS_RECEIPT_SERVICE_ENDPOINT: 'https://pagopa-u-weu-receipts-ds-cosmos-account.documents.azure.com:443/'
-    COSMOS_RECEIPT_DB_NAME: 'db'
-    COSMOS_RECEIPT_CONTAINER_NAME: 'receipts'
-    BLOB_STORAGE_ACCOUNT_ENDPOINT: 'https://pagopauweureceiptsfnsa.blob.core.windows.net'
-    BLOB_STORAGE_CONTAINER_NAME: 'pagopa-u-weu-receipts-azure-blob-receipt-st-attach'
+    COSMOS_RECEIPT_QUEUE_MAX_RETRY: "5"
+    PDF_ENGINE_ENDPOINT: "https://api.uat.platform.pagopa.it/shared/pdf-engine/v1/generate-pdf"
+    COSMOS_RECEIPT_SERVICE_ENDPOINT: "https://pagopa-u-weu-receipts-ds-cosmos-account.documents.azure.com:443/"
+    COSMOS_RECEIPT_DB_NAME: "db"
+    COSMOS_RECEIPT_CONTAINER_NAME: "receipts"
+    BLOB_STORAGE_ACCOUNT_ENDPOINT: "https://pagopauweureceiptsfnsa.blob.core.windows.net"
+    BLOB_STORAGE_CONTAINER_NAME: "pagopa-u-weu-receipts-azure-blob-receipt-st-attach"
     WORKING_DIRECTORY_PATH: "/temp"
     ENABLE_ECS_CONSOLE: "true"
     CONSOLE_LOG_THRESHOLD: "DEBUG"
@@ -100,16 +100,20 @@ microservice-chart:
     OTEL_LOGS_EXPORTER: "none"
     OTEL_TRACES_SAMPLER: "always_on"
     AZURE_FUNCTIONS_MESH_JAVA_OPTS: "-javaagent:/home/site/wwwroot/jmx_prometheus_javaagent-0.19.0.jar=12345:/home/site/wwwroot/config.yaml -javaagent:/home/site/wwwroot/opentelemetry-javaagent.jar -Xmx1024m -XX:+UseG1GC"
+  envConfigMapExternals:
+    template-maps:
+      PSP_INFO_MAP: psp-info-map
+      BRAND_LOGO_MAP: brand-logo-map
   envFieldRef:
     APP_NAME: "metadata.labels['app.kubernetes.io/instance']"
     APP_VERSION: "metadata.labels['app.kubernetes.io/version']"
   envSecret:
-    APPLICATIONINSIGHTS_CONNECTION_STRING: 'ai-u-connection-string'
+    APPLICATIONINSIGHTS_CONNECTION_STRING: "ai-u-connection-string"
     RECEIPTS_STORAGE_CONN_STRING: "receipts-storage-account-connection-string"
     COSMOS_RECEIPTS_CONN_STRING: "cosmos-receipt-connection-string"
-    OCP_APIM_SUBSCRIPTION_KEY: 'shared-apim-u-subscription-key'
+    OCP_APIM_SUBSCRIPTION_KEY: "shared-apim-u-subscription-key"
     COSMOS_RECEIPT_KEY: "cosmos-receipt-pkey"
-    OTEL_EXPORTER_OTLP_HEADERS: 'elastic-otl-secret-token'
+    OTEL_EXPORTER_OTLP_HEADERS: "elastic-otl-secret-token"
   keyvault:
     name: "pagopa-u-receipts-kv"
     tenantId: "7788edaf-0346-4068-9d79-c868aed15b3d"
