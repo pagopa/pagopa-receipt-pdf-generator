@@ -4,6 +4,7 @@ import it.gov.pagopa.receipt.pdf.generator.entity.event.BizEvent;
 
 import java.math.BigDecimal;
 import java.text.NumberFormat;
+import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
@@ -209,7 +210,11 @@ public class BizEventToPdfMapper {
     private static String dateFormat(String date){
         DateTimeFormatter simpleDateFormat = DateTimeFormatter.ofPattern("dd MMMM yyyy, HH:mm:ss");
 
-        return ZonedDateTime.parse(date).format(simpleDateFormat);
+        if(date.endsWith("Z")){
+            return ZonedDateTime.parse(date).format(simpleDateFormat);
+        }
+
+        return LocalDateTime.parse(date).format(simpleDateFormat);
     }
 
 }
