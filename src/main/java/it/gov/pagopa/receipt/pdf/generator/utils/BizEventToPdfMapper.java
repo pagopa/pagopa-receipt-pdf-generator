@@ -11,7 +11,7 @@ import java.util.Locale;
 
 public class BizEventToPdfMapper {
 
-    private static final String REF_TYPE_NOTICE = "CODICE AVVISO";
+    private static final String REF_TYPE_NOTICE = "codiceAvviso";
     private static final String REF_TYPE_IUV = "IUV";
 
     /**
@@ -208,7 +208,7 @@ public class BizEventToPdfMapper {
     }
 
     private static String dateFormat(String date, boolean withTimeZone){
-        DateTimeFormatter simpleDateFormat = DateTimeFormatter.ofPattern("dd MMMM yyyy, HH:mm:ss");
+        DateTimeFormatter simpleDateFormat = DateTimeFormatter.ofPattern("dd MMMM yyyy, HH:mm:ss").withLocale(Locale.ITALY);
 
         if(withTimeZone){
             return ZonedDateTime.parse(date).format(simpleDateFormat);
