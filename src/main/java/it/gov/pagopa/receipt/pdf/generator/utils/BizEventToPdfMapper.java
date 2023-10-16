@@ -43,10 +43,10 @@ public class BizEventToPdfMapper {
                         event.getTransactionDetails().getTransaction() != null &&
                         event.getTransactionDetails().getTransaction().getCreationDate() != null
         ){
-            return event.getTransactionDetails().getTransaction().getCreationDate();
+            return dateFormat(event.getTransactionDetails().getTransaction().getCreationDate(), true);
         }
 
-        return event.getPaymentInfo() != null ? dateFormat(event.getPaymentInfo().getPaymentDateTime()) : null;
+        return event.getPaymentInfo() != null ? dateFormat(event.getPaymentInfo().getPaymentDateTime(), false) : null;
     }
 
     public static String getAmount(BizEvent event){
@@ -207,10 +207,10 @@ public class BizEventToPdfMapper {
         return numberFormat.format(valueToFormat);
     }
 
-    private static String dateFormat(String date){
+    private static String dateFormat(String date, boolean withTimeZone){
         DateTimeFormatter simpleDateFormat = DateTimeFormatter.ofPattern("dd MMMM yyyy, HH:mm:ss");
 
-        if(date.endsWith("Z")){
+        if(withTimeZone){
             return ZonedDateTime.parse(date).format(simpleDateFormat);
         }
 
