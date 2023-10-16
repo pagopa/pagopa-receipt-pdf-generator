@@ -208,7 +208,7 @@ public class BizEventToPdfMapper {
     }
 
     private static String dateFormat(String date, boolean withTimeZone){
-        DateTimeFormatter simpleDateFormat = DateTimeFormatter.ofPattern("dd MMMM yyyy, HH:mm:ss");
+        DateTimeFormatter simpleDateFormat = DateTimeFormatter.ofPattern("dd MMMM yyyy, HH:mm:ss").withLocale(Locale.ITALY);
 
         if(withTimeZone){
             return ZonedDateTime.parse(date).format(simpleDateFormat);
