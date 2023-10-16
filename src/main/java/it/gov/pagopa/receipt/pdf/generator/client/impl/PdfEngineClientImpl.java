@@ -22,7 +22,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
+import java.nio.file.Path;
 
 /**
  * Client for the PDF Engine
@@ -33,7 +33,6 @@ public class PdfEngineClientImpl implements PdfEngineClient {
 
     private final String pdfEngineEndpoint = System.getenv().getOrDefault("PDF_ENGINE_ENDPOINT", "");
     private final String ocpAimSubKey = System.getenv().getOrDefault("OCP_APIM_SUBSCRIPTION_KEY", "");
-    private final String workingDirectoryPath = System.getenv().getOrDefault("WORKING_DIRECTORY_PATH", "");
 
     private static final String HEADER_AUTH_KEY = "Ocp-Apim-Subscription-Key";
     private static final String ZIP_FILE_NAME = "template.zip";
@@ -64,7 +63,8 @@ public class PdfEngineClientImpl implements PdfEngineClient {
      * @param pdfEngineRequest Request to the client
      * @return response with the PDF or error message and the status
      */
-    public PdfEngineResponse generatePDF(PdfEngineRequest pdfEngineRequest) {
+    @Override
+    public PdfEngineResponse generatePDF(PdfEngineRequest pdfEngineRequest, Path workingDirPath) {
 
         PdfEngineResponse pdfEngineResponse = new PdfEngineResponse();
 
@@ -86,7 +86,7 @@ public class PdfEngineClientImpl implements PdfEngineClient {
             request.setHeader(HEADER_AUTH_KEY, ocpAimSubKey);
             request.setEntity(entity);
 
-            pdfEngineResponse = handlePdfEngineResponse(client, request);
+            pdfEngineResponse = handlePdfEngineResponse(client, request, workingDirPath);
         } catch (IOException e) {
             handleExceptionErrorMessage(pdfEngineResponse, e);
         }
@@ -101,7 +101,7 @@ public class PdfEngineClientImpl implements PdfEngineClient {
      * @param request The request to the PDF engine
      * @return pdf engine response
      */
-    private PdfEngineResponse handlePdfEngineResponse(CloseableHttpClient client, HttpPost request) {
+    private PdfEngineResponse handlePdfEngineResponse(CloseableHttpClient client, HttpPost request, Path workingDirPath) {
         PdfEngineResponse pdfEngineResponse = new PdfEngineResponse();
         //Execute call
         try (CloseableHttpResponse response = client.execute(request)) {
@@ -113,7 +113,7 @@ public class PdfEngineClientImpl implements PdfEngineClient {
                 try (InputStream inputStream = entityResponse.getContent()) {
                     pdfEngineResponse.setStatusCode(HttpStatus.SC_OK);
 
-                    saveTempPdf(pdfEngineResponse, inputStream);
+                    saveTempPdf(pdfEngineResponse, inputStream, workingDirPath);
                 }
             } else {
                 pdfEngineResponse.setStatusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR);
@@ -134,18 +134,12 @@ public class PdfEngineClientImpl implements PdfEngineClient {
      * @param inputStream       InputStream pdf
      * @throws IOException In case of error to save
      */
-    private void saveTempPdf(PdfEngineResponse pdfEngineResponse, InputStream inputStream) throws IOException {
-        File tempDirectory = new File(workingDirectoryPath);
-        if (!tempDirectory.exists()) {
-            Files.createDirectory(tempDirectory.toPath());
-        }
-
-        File targetFile = File.createTempFile("tempFile", ".pdf", tempDirectory);
+    private void saveTempPdf(PdfEngineResponse pdfEngineResponse, InputStream inputStream, Path workingDirPath) throws IOException {
+        File targetFile = File.createTempFile("tempFile", ".pdf", workingDirPath.toFile());
 
         FileUtils.copyInputStreamToFile(inputStream, targetFile);
 
         pdfEngineResponse.setTempPdfPath(targetFile.getAbsolutePath());
-        pdfEngineResponse.setTempDirectoryPath(tempDirectory.getAbsolutePath());
     }
 
     /**
