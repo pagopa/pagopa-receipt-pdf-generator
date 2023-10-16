@@ -11,7 +11,7 @@ import java.util.Locale;
 
 public class BizEventToPdfMapper {
 
-    private static final String REF_TYPE_NOTICE = "CODICE AVVISO";
+    private static final String REF_TYPE_NOTICE = "codiceAvviso";
     private static final String REF_TYPE_IUV = "IUV";
 
     /**
