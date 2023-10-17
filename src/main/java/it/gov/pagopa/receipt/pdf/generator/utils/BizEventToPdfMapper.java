@@ -208,13 +208,6 @@ public class BizEventToPdfMapper {
         return event.getPaymentInfo() != null ? currencyFormat(event.getPaymentInfo().getAmount()) : null;
     }
 
-    private static String currencyFormat(String value) {
-        BigDecimal valueToFormat = new BigDecimal(value);
-        NumberFormat numberFormat = NumberFormat.getInstance(Locale.ITALY);
-
-        return numberFormat.format(valueToFormat);
-    }
-
     public static PSP getPsp(BizEvent event) {
 
         if (event.getPsp() != null &&
@@ -242,6 +235,15 @@ public class BizEventToPdfMapper {
         }
 
         return null;
+    }
+
+    private static String currencyFormat(String value) {
+        BigDecimal valueToFormat = new BigDecimal(value);
+        NumberFormat numberFormat = NumberFormat.getInstance(Locale.ITALY);
+        numberFormat.setMaximumFractionDigits(2);
+        numberFormat.setMinimumFractionDigits(2);
+
+        return numberFormat.format(valueToFormat);
     }
 
     private static String dateFormat(String date, boolean withTimeZone){
