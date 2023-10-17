@@ -39,7 +39,7 @@ public class BizEventToPdfMapper {
     }
 
     static {
-        try (InputStream data = BizEventToPdfMapper.class.getResourceAsStream("psp_info.json")) {
+        try (InputStream data = BizEventToPdfMapper.class.getClassLoader().getResourceAsStream("psp_info.json")) {
             pspMap = ObjectMapperUtils.mapString(new String(data.readAllBytes()), Map.class);
         } catch (IOException e) {
             throw new PdfJsonMappingException(e);
