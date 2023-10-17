@@ -102,7 +102,7 @@ public class BizEventToPdfMapper {
         throw new TemplateDataMappingException(formatErrorMessage("transaction.amount"), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
     }
 
-    public static String getPspFee(BizEvent event) throws TemplateDataMappingException {
+    public static String getPspFee(BizEvent event) {
         if (
                 event.getTransactionDetails() != null &&
                         event.getTransactionDetails().getTransaction() != null &&
@@ -111,11 +111,7 @@ public class BizEventToPdfMapper {
             // Fee in transactionDetails is defined in cents (es. 25500 not 255.00)
             return currencyFormat(String.valueOf(event.getTransactionDetails().getTransaction().getFee() / 100.00));
         }
-        if (event.getPaymentInfo() != null &&
-                event.getPaymentInfo().getFee() != null) {
-            return currencyFormat(event.getPaymentInfo().getFee());
-        }
-        throw new TemplateDataMappingException(formatErrorMessage("transaction.psp.fee"), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
+        return null;
     }
 
     public static String getRnn(BizEvent event) throws TemplateDataMappingException {
@@ -134,7 +130,6 @@ public class BizEventToPdfMapper {
                 return event.getPaymentInfo().getIUR();
             }
         }
-
         throw new TemplateDataMappingException(formatErrorMessage("transaction.rrn"), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
     }
 
@@ -142,11 +137,10 @@ public class BizEventToPdfMapper {
         if (event.getTransactionDetails() != null && event.getTransactionDetails().getTransaction() != null) {
             return event.getTransactionDetails().getTransaction().getAuthorizationCode();
         }
-
         return null;
     }
 
-    public static String getPaymentMethodName(BizEvent event) throws TemplateDataMappingException {
+    public static String getPaymentMethodName(BizEvent event) {
         if (
                 event.getTransactionDetails() != null &&
                         event.getTransactionDetails().getWallet() != null &&
@@ -155,11 +149,10 @@ public class BizEventToPdfMapper {
         ) {
             return event.getTransactionDetails().getWallet().getInfo().getBrand();
         }
-
-        throw new TemplateDataMappingException(formatErrorMessage("transaction.paymentMethod.name"), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
+        return null;
     }
 
-    public static String getPaymentMethodLogo(BizEvent event) throws TemplateDataMappingException {
+    public static String getPaymentMethodLogo(BizEvent event) {
         return brandLogoMap.getOrDefault(getPaymentMethodName(event), null);
     }
 
@@ -248,6 +241,9 @@ public class BizEventToPdfMapper {
         if (event.getTransactionDetails().getTransaction().getPsp().getBusinessName() != null) {
             return event.getTransactionDetails().getTransaction().getPsp().getBusinessName();
         }
+        if(event.getPsp().getPsp() != null){
+            return event.getPsp().getPsp();
+        }
         throw new TemplateDataMappingException(formatErrorMessage("transaction.psp.name"), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
     }
 
@@ -261,10 +257,11 @@ public class BizEventToPdfMapper {
         ) {
             LinkedHashMap<String, String> info = (LinkedHashMap<String, String>) pspMap
                     .getOrDefault(event.getPsp().getIdPsp(), new LinkedHashMap<>());
+            String pspFee = getPspFee(event);
             return PSP.builder()
                     .name(getPspName(event))
                     .fee(PSPFee.builder()
-                            .amount(getPspFee(event))
+                            .amount(pspFee)
                             .build())
                     .companyName(getOrThrow(info, "companyName"))
                     .address(getOrThrow(info, "address"))
@@ -272,7 +269,7 @@ public class BizEventToPdfMapper {
                     .province(getOrThrow(info, "province"))
                     .buildingNumber(getOrThrow(info, "buildingNumber"))
                     .postalCode(getOrThrow(info, "postalCode"))
-                    .logo(getOrThrow(info, "logo"))
+                    .logo(pspFee != null ? getOrThrow(info, "logo") : info.get("logo"))
                     .build();
         }
         throw new TemplateDataMappingException(formatErrorMessage("transaction.psp"), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
