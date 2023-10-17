@@ -76,7 +76,7 @@ public class BizEventToPdfMapper {
                 event.getTransactionDetails().getTransaction() != null &&
                 event.getTransactionDetails().getTransaction().getAmount() != 0L) {
             // Amount in transactionDetails is defined in cents (es. 25500 not 255.00)
-            return currencyFormat(String.valueOf(event.getTransactionDetails().getTransaction().getAmount() / 100.00));
+            return currencyFormat(String.valueOf(event.getTransactionDetails().getTransaction().getGrandTotal() / 100.00));
         }
 
         return event.getPaymentInfo() != null ? currencyFormat(event.getPaymentInfo().getAmount()) : null;
