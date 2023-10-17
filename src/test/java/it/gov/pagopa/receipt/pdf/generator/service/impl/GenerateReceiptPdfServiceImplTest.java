@@ -93,7 +93,7 @@ class GenerateReceiptPdfServiceImplTest {
                 .when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
 
         AtomicReference<PdfGeneration> pdfGeneration = new AtomicReference<>();
-        withEnvironmentVariables().set("BRAND_LOGO_MAP", "{\"MASTER\":\"assets/mastercard.png\"}\n").set("PSP_INFO_MAP","{\"60000000001\":{\"logo\":\"assets/nexi_logo.png\"}}\n").execute(() ->
+        withEnvironmentVariables().set("BRAND_LOGO_MAP", "{\"MASTER\":\"assets/mastercard.png\"}\n").execute(() ->
                 pdfGeneration.set(sut.generateReceipts(receiptOnly, bizEventOnly,Path.of("/tmp") ))
         );
 
@@ -121,7 +121,7 @@ class GenerateReceiptPdfServiceImplTest {
                 .when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
 
         AtomicReference<PdfGeneration> pdfGeneration = new AtomicReference<>();
-        withEnvironmentVariables().set("BRAND_LOGO_MAP", "{\"MASTER\":\"assets/mastercard.png\"}\n").set("PSP_INFO_MAP","{\"60000000001\":{\"logo\":\"assets/nexi_logo.png\"}}\n").execute(() ->
+        withEnvironmentVariables().set("BRAND_LOGO_MAP", "{\"MASTER\":\"assets/mastercard.png\"}\n").execute(() ->
                 pdfGeneration.set(sut.generateReceipts(receiptOnly, bizEventOnly,Path.of("/tmp")))
         );
 
@@ -151,7 +151,7 @@ class GenerateReceiptPdfServiceImplTest {
                 .when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
 
         AtomicReference<PdfGeneration> pdfGeneration = new AtomicReference<>();
-        withEnvironmentVariables().set("BRAND_LOGO_MAP", "{\"MASTER\":\"assets/mastercard.png\"}\n").set("PSP_INFO_MAP","{\"60000000001\":{\"logo\":\"assets/nexi_logo.png\"}}\n").execute(() ->
+        withEnvironmentVariables().set("BRAND_LOGO_MAP", "{\"MASTER\":\"assets/mastercard.png\"}\n").execute(() ->
                 pdfGeneration.set(sut.generateReceipts(receiptOnly, bizEventOnly,Path.of("/tmp")))
         );
 
@@ -223,7 +223,7 @@ class GenerateReceiptPdfServiceImplTest {
                 .when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
 
         AtomicReference<PdfGeneration> pdfGeneration = new AtomicReference<>();
-        withEnvironmentVariables().set("BRAND_LOGO_MAP", "{\"MASTER\":\"assets/mastercard.png\"}\n").set("PSP_INFO_MAP","{\"60000000001\":{\"logo\":\"assets/nexi_logo.png\"}}\n").execute(() ->
+        withEnvironmentVariables().set("BRAND_LOGO_MAP", "{\"MASTER\":\"assets/mastercard.png\"}\n").execute(() ->
                 pdfGeneration.set(sut.generateReceipts(receiptOnly, bizEventOnly,Path.of("/tmp")))
         );
 
@@ -253,7 +253,7 @@ class GenerateReceiptPdfServiceImplTest {
                 .when(pdfEngineClientMock).generatePDF(any(), any());
 
         AtomicReference<PdfGeneration> pdfGeneration = new AtomicReference<>();
-        withEnvironmentVariables().set("BRAND_LOGO_MAP", "{\"MASTER\":\"assets/mastercard.png\"}\n").set("PSP_INFO_MAP","{\"60000000001\":{\"logo\":\"assets/nexi_logo.png\"}}\n").execute(() ->
+        withEnvironmentVariables().set("BRAND_LOGO_MAP", "{\"MASTER\":\"assets/mastercard.png\"}\n").execute(() ->
                 pdfGeneration.set(sut.generateReceipts(receiptOnly, bizEventOnly,Path.of("/tmp")))
         );
 
@@ -281,7 +281,7 @@ class GenerateReceiptPdfServiceImplTest {
 
 
         AtomicReference<PdfGeneration> pdfGeneration = new AtomicReference<>();
-        withEnvironmentVariables().set("BRAND_LOGO_MAP", "{\"MASTER\":\"assets/mastercard.png\"}\n").set("PSP_INFO_MAP","{\"60000000001\":{\"logo\":\"assets/nexi_logo.png\"}}\n").execute(() ->
+        withEnvironmentVariables().set("BRAND_LOGO_MAP", "{\"MASTER\":\"assets/mastercard.png\"}\n").execute(() ->
                 pdfGeneration.set(sut.generateReceipts(receiptOnly, bizEventOnly,Path.of("/tmp")))
         );
 
@@ -309,7 +309,7 @@ class GenerateReceiptPdfServiceImplTest {
                 .when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
 
         AtomicReference<PdfGeneration> pdfGeneration = new AtomicReference<>();
-        withEnvironmentVariables().set("BRAND_LOGO_MAP", "{\"MASTER\":\"assets/mastercard.png\"}\n").set("PSP_INFO_MAP","{\"60000000001\":{\"logo\":\"assets/nexi_logo.png\"}}\n").execute(() ->
+        withEnvironmentVariables().set("BRAND_LOGO_MAP", "{\"MASTER\":\"assets/mastercard.png\"}\n").execute(() ->
                 pdfGeneration.set(sut.generateReceipts(receiptOnly, bizEventOnly,Path.of("/tmp")))
         );
 
