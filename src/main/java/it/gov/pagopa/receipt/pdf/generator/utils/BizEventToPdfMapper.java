@@ -6,6 +6,7 @@ import it.gov.pagopa.receipt.pdf.generator.exception.PdfJsonMappingException;
 import it.gov.pagopa.receipt.pdf.generator.model.template.PSP;
 import it.gov.pagopa.receipt.pdf.generator.model.template.PSPFee;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -39,8 +40,11 @@ public class BizEventToPdfMapper {
 
     static {
         try (InputStream data = BizEventToPdfMapper.class.getResourceAsStream("psp_config_file.json")) {
+            if (data == null) {
+                throw new IOException("PSP config file not found");
+            }
             pspMap = ObjectMapperUtils.mapString(new String(data.readAllBytes()), Map.class);
-        } catch (Exception e) {
+        } catch (IOException e) {
             throw new PdfJsonMappingException(e);
         }
     }
