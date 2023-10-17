@@ -19,23 +19,19 @@ import it.gov.pagopa.receipt.pdf.generator.model.request.PdfEngineRequest;
 import it.gov.pagopa.receipt.pdf.generator.model.response.BlobStorageResponse;
 import it.gov.pagopa.receipt.pdf.generator.model.response.PdfEngineResponse;
 import it.gov.pagopa.receipt.pdf.generator.model.template.*;
+import it.gov.pagopa.receipt.pdf.generator.service.BuildTemplateService;
 import it.gov.pagopa.receipt.pdf.generator.service.GenerateReceiptPdfService;
-import it.gov.pagopa.receipt.pdf.generator.utils.BizEventToPdfMapper;
 import it.gov.pagopa.receipt.pdf.generator.utils.ObjectMapperUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedInputStream;
-import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.net.URL;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.Collections;
 
 public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService {
 
@@ -49,15 +45,18 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
 
     private final PdfEngineClient pdfEngineClient;
     private final ReceiptBlobClient receiptBlobClient;
+    private final BuildTemplateService buildTemplateService;
 
     public GenerateReceiptPdfServiceImpl() {
         this.pdfEngineClient = PdfEngineClientImpl.getInstance();
         this.receiptBlobClient = ReceiptBlobClientImpl.getInstance();
+        this.buildTemplateService = new BuildTemplateServiceImpl();
     }
 
-    public GenerateReceiptPdfServiceImpl(PdfEngineClient pdfEngineClient, ReceiptBlobClient receiptBlobClient) {
+    GenerateReceiptPdfServiceImpl(PdfEngineClient pdfEngineClient, ReceiptBlobClient receiptBlobClient, BuildTemplateService buildTemplateService) {
         this.pdfEngineClient = pdfEngineClient;
         this.receiptBlobClient = receiptBlobClient;
+        this.buildTemplateService = buildTemplateService;
     }
 
     /**
@@ -79,8 +78,7 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
                     pdfGeneration.setDebtorMetadata(PdfMetadata.builder().statusCode(ALREADY_CREATED).build());
                     return pdfGeneration;
                 }
-                ReceiptPDFTemplate completeTemplate = buildTemplate(bizEvent, false);
-                PdfMetadata generationResult = generateAndSavePDFReceipt(bizEvent, PAYER_TEMPLATE_SUFFIX, completeTemplate, workingDirPath);
+                PdfMetadata generationResult = generateAndSavePDFReceipt(bizEvent, PAYER_TEMPLATE_SUFFIX, false, workingDirPath);
                 pdfGeneration.setDebtorMetadata(generationResult);
                 return pdfGeneration;
             }
@@ -89,9 +87,8 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
             if (receiptAlreadyCreated(receipt.getMdAttachPayer())) {
                 pdfGeneration.setPayerMetadata(PdfMetadata.builder().statusCode(ALREADY_CREATED).build());
             } else {
-                ReceiptPDFTemplate completeTemplate = buildTemplate(bizEvent, false);
 
-                PdfMetadata generationResult = generateAndSavePDFReceipt(bizEvent, PAYER_TEMPLATE_SUFFIX, completeTemplate, workingDirPath);
+                PdfMetadata generationResult = generateAndSavePDFReceipt(bizEvent, PAYER_TEMPLATE_SUFFIX, false, workingDirPath);
                 pdfGeneration.setPayerMetadata(generationResult);
             }
         } else {
@@ -102,9 +99,7 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
         if (receiptAlreadyCreated(receipt.getMdAttach())) {
             pdfGeneration.setDebtorMetadata(PdfMetadata.builder().statusCode(ALREADY_CREATED).build());
         } else {
-            ReceiptPDFTemplate onlyDebtorTemplate = buildTemplate(bizEvent, true);
-
-            PdfMetadata generationResult = generateAndSavePDFReceipt(bizEvent, DEBTOR_TEMPLATE_SUFFIX, onlyDebtorTemplate, workingDirPath);
+            PdfMetadata generationResult = generateAndSavePDFReceipt(bizEvent, DEBTOR_TEMPLATE_SUFFIX, true, workingDirPath);
             pdfGeneration.setDebtorMetadata(generationResult);
         }
 
@@ -159,11 +154,12 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
         return result;
     }
 
-    private PdfMetadata generateAndSavePDFReceipt(BizEvent bizEvent, String templateSuffix, ReceiptPDFTemplate completeTemplate, Path workingDirPath) {
+    private PdfMetadata generateAndSavePDFReceipt(BizEvent bizEvent, String templateSuffix, boolean partialTemplate, Path workingDirPath) {
         try {
+            ReceiptPDFTemplate template = buildTemplateService.buildTemplate(bizEvent, partialTemplate);
             String dateFormatted = LocalDate.now().format(DateTimeFormatter.ofPattern("yyMMdd"));
             String blobName = String.format("%s-%s-%s-%s", TEMPLATE_PREFIX, dateFormatted, bizEvent.getId(), templateSuffix);
-            PdfEngineResponse pdfEngineResponse = generatePDFReceipt(completeTemplate, workingDirPath);
+            PdfEngineResponse pdfEngineResponse = generatePDFReceipt(template, workingDirPath);
             return saveToBlobStorage(pdfEngineResponse, blobName);
         } catch (PDFReceiptGenerationException e) {
             logger.error("An error occurred when generating or saving the PDF receipt for biz-event {}", bizEvent.getId(), e);
@@ -212,56 +208,6 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
         }
 
         return pdfEngineResponse;
-    }
-
-    private ReceiptPDFTemplate buildTemplate(BizEvent bizEvent, boolean partialTemplate) {
-        return ReceiptPDFTemplate.builder()
-                .transaction(Transaction.builder()
-                        .id(BizEventToPdfMapper.getId(bizEvent))
-                        .timestamp(BizEventToPdfMapper.getTimestamp(bizEvent))
-                        .amount(BizEventToPdfMapper.getAmount(bizEvent))
-                        .psp(BizEventToPdfMapper.getPsp(bizEvent))
-                        .rrn(BizEventToPdfMapper.getRnn(bizEvent))
-                        .paymentMethod(PaymentMethod.builder()
-                                .name(BizEventToPdfMapper.getPaymentMethodName(bizEvent))
-                                .logo(BizEventToPdfMapper.getPaymentMethodLogo(bizEvent))
-                                .accountHolder(BizEventToPdfMapper.getPaymentMethodAccountHolder(bizEvent))
-                                .build())
-                        .authCode(BizEventToPdfMapper.getAuthCode(bizEvent))
-                        .requestedByDebtor(partialTemplate)
-                        .build())
-                .user(partialTemplate ?
-                        null :
-                        User.builder()
-                                .data(UserData.builder()
-                                        .fullName(BizEventToPdfMapper.getUserFullName(bizEvent))
-                                        .taxCode(BizEventToPdfMapper.getUserTaxCode(bizEvent))
-                                        .build())
-                                .email(BizEventToPdfMapper.getUserMail())
-                                .build())
-                .cart(Cart.builder()
-                        .items(Collections.singletonList(
-                                Item.builder()
-                                        .refNumber(RefNumber.builder()
-                                                .type(BizEventToPdfMapper.getRefNumberType(bizEvent))
-                                                .value(BizEventToPdfMapper.getRefNumberValue(bizEvent))
-                                                .build())
-                                        .debtor(Debtor.builder()
-                                                .fullName(BizEventToPdfMapper.getDebtorFullName(bizEvent))
-                                                .taxCode(BizEventToPdfMapper.getDebtorTaxCode(bizEvent))
-                                                .build())
-                                        .payee(Payee.builder()
-                                                .name(BizEventToPdfMapper.getPayeeName(bizEvent))
-                                                .taxCode(BizEventToPdfMapper.getPayeeTaxCode(bizEvent))
-                                                .build())
-                                        .subject(BizEventToPdfMapper.getItemSubject(bizEvent))
-                                        .amount(BizEventToPdfMapper.getItemAmount(bizEvent))
-                                        .build()
-                        ))
-                        //Cart items total amount w/o fee, TODO change it with multiple cart items implementation
-                        .amountPartial(BizEventToPdfMapper.getItemAmount(bizEvent))
-                        .build())
-                .build();
     }
 
     private String parseTemplateDataToString(ReceiptPDFTemplate template) throws GeneratePDFException {
