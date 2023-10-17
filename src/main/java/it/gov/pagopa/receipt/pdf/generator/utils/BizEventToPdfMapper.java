@@ -39,7 +39,7 @@ public class BizEventToPdfMapper {
     }
 
     static {
-        try (InputStream data = BizEventToPdfMapper.class.getResourceAsStream("psp_config_file.json")) {
+        try (InputStream data = BizEventToPdfMapper.class.getClassLoader().getResourceAsStream("psp_config_file.json")) {
             if (data == null) {
                 throw new IOException("PSP config file not found");
             }
