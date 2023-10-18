@@ -1,0 +1,382 @@
+package it.gov.pagopa.receipt.pdf.generator.service.impl;
+
+import it.gov.pagopa.receipt.pdf.generator.entity.event.*;
+import it.gov.pagopa.receipt.pdf.generator.entity.event.enumeration.BizEventStatusType;
+import it.gov.pagopa.receipt.pdf.generator.model.template.ReceiptPDFTemplate;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import java.util.concurrent.atomic.AtomicReference;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static uk.org.webcompere.systemstubs.SystemStubs.withEnvironmentVariables;
+
+class BuildTemplateServiceImplTest {
+
+    public static final String PSP_KEY_CITY = "city";
+    public static final String COMPANY_NAME = "PA paolo";
+    public static final String OFFICE_NAME = "office PA";
+    public static final String ID_PSP = "ID_PSP";
+    public static final String PSP_NAME = "PSP Paolo";
+    public static final String DEBTOR_FULL_NAME = "John Doe";
+    public static final String DEBTOR_VALID_CF = "CF_DEBTOR";
+    public static final String PAYER_FULL_NAME = "John Doe PAYER";
+    public static final String PAYER_VALID_CF = "CF_PAYER";
+    public static final String HOLDER_FULL_NAME = "John Doe HOLDER";
+    public static final String PAYMENT_TOKEN = "9a9bad2caf604b86a339476373c659b0";
+    public static final String AMOUNT_WITHOUT_CENTS = "7000";
+    public static final String FEE_WITH_SINGLE_DIGIT_CENTS = "77.7";
+    public static final long AMOUNT_LONG = 700000L;
+    public static final long FEE_LONG = 7770L;
+    public static final long GRAND_TOTAL_LONG = 707770L;
+    public static final String FORMATTED_AMOUNT = "7.000,00";
+    public static final String FORMATTED_FEE = "77,70";
+    public static final String FORMATTED_GRAND_TOTAL = "7.077,70";
+    public static final String REMITTANCE_INFORMATION = "TARI 2021";
+    public static final String IUR = "IUR";
+    public static final String BRAND = "MASTER";
+    public static final long ID_TRANSACTION = 1L;
+    public static final String RRN = "rrn";
+    public static final String AUTH_CODE = "authCode";
+    public static final String DATE_TIME_TIMESTAMP_MILLISECONDS = "2023-04-12T16:32:27.022486";
+    public static final String DATE_TIME_TIMESTAMP_ZONED = "2023-04-12T16:32:27Z";
+    public static final String BUSINESS_NAME = "Nexi";
+    public static final boolean PARTIAL_TEMPLATE = true;
+    public static final boolean COMPLETE_TEMPLATE = false;
+    public static final String PSP_LOGO = "logo";
+    public static final String PSP_COMPANY = "companyName";
+    public static final String PSP_POSTAL_CODE = "postalCode";
+    public static final String PSP_ADDRESS = "address";
+    public static final String PSP_BUILDING_NUMBER = "buildingNumber";
+    public static final String PSP_PROVINCE = "province";
+    public static final String BRAND_ASSET_URL = "/asset";
+    private static final String IUV = "02119891614290410";
+    private static final String BIZ_EVENT_ID = "biz-event-id";
+    private static final String MODEL_TYPE_NOTICE_CODE = "1";
+    private static final String MODEL_TYPE_IUV_CODE = "2";
+    private static final String MODEL_TYPE_NOTICE_TEXT = "codiceAvviso";
+    private static final String MODEL_TYPE_IUV_TEXT = "IUV";
+    private static final String DATE_TIME_TIMESTAMP_FORMATTED = "12 aprile 2023, 16:32:27";
+    private BuildTemplateServiceImpl buildTemplateService;
+
+    @BeforeEach
+    void setUp() throws Exception {
+        AtomicReference<BuildTemplateServiceImpl> atomicBuildTemplateService = new AtomicReference<>();
+        withEnvironmentVariables().set("BRAND_LOGO_MAP", String.format("{\"%s\":\"%s\"}\n", BRAND, BRAND_ASSET_URL)).execute(() ->
+                atomicBuildTemplateService.set(new BuildTemplateServiceImpl())
+        );
+        buildTemplateService = atomicBuildTemplateService.get();
+    }
+
+    @Test
+    void mapTemplateAllFieldsSuccessCompleteTemplate() throws Exception {
+        BizEvent event = BizEvent.builder()
+                .id(BIZ_EVENT_ID)
+                .debtorPosition(DebtorPosition.builder()
+                        .iuv(IUV)
+                        .modelType(MODEL_TYPE_IUV_CODE)
+                        .build())
+                .creditor(Creditor.builder()
+                        .companyName(COMPANY_NAME)
+                        .officeName(OFFICE_NAME)
+                        .build())
+                .psp(Psp.builder()
+                        .idPsp(ID_PSP)
+                        .psp(PSP_NAME)
+                        .build())
+                .debtor(Debtor.builder()
+                        .fullName(DEBTOR_FULL_NAME)
+                        .entityUniqueIdentifierValue(DEBTOR_VALID_CF)
+                        .build())
+                .payer(Payer.builder().fullName(PAYER_FULL_NAME).entityUniqueIdentifierValue(PAYER_VALID_CF).build())
+                .paymentInfo(PaymentInfo.builder()
+                        .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS)
+                        .paymentToken(PAYMENT_TOKEN)
+                        .amount(AMOUNT_WITHOUT_CENTS)
+                        .fee(FEE_WITH_SINGLE_DIGIT_CENTS)
+                        .remittanceInformation(REMITTANCE_INFORMATION)
+                        .IUR(IUR)
+                        .build())
+                .transactionDetails(TransactionDetails.builder()
+                        .wallet(WalletItem.builder().info(Info.builder().brand(BRAND).holder(HOLDER_FULL_NAME).build()).build())
+                        .transaction(Transaction.builder()
+                                .idTransaction(ID_TRANSACTION)
+                                .grandTotal(GRAND_TOTAL_LONG)
+                                .amount(AMOUNT_LONG)
+                                .fee(FEE_LONG)
+                                .rrn(RRN)
+                                .authorizationCode(AUTH_CODE)
+                                .creationDate(DATE_TIME_TIMESTAMP_ZONED)
+                                .psp(TransactionPsp.builder()
+                                        .businessName(BUSINESS_NAME)
+                                        .build())
+                                .build())
+                        .build())
+                .eventStatus(BizEventStatusType.DONE)
+                .build();
+        ReceiptPDFTemplate receiptPdfTemplate = buildTemplateService.buildTemplate(event, COMPLETE_TEMPLATE);
+
+        assertNotNull(receiptPdfTemplate);
+
+        it.gov.pagopa.receipt.pdf.generator.model.template.Transaction transaction = receiptPdfTemplate.getTransaction();
+        assertEquals(String.valueOf(ID_TRANSACTION), transaction.getId());
+        assertEquals(DATE_TIME_TIMESTAMP_FORMATTED, transaction.getTimestamp());
+        assertEquals(FORMATTED_GRAND_TOTAL, transaction.getAmount());
+        assertEquals(PSP_LOGO, transaction.getPsp().getLogo());
+        assertEquals(FORMATTED_FEE, transaction.getPsp().getFee().getAmount());
+        assertEquals(BUSINESS_NAME, transaction.getPsp().getName());
+        assertEquals(PSP_KEY_CITY, transaction.getPsp().getCity());
+        assertEquals(PSP_COMPANY, transaction.getPsp().getCompanyName());
+        assertEquals(PSP_POSTAL_CODE, transaction.getPsp().getPostalCode());
+        assertEquals(PSP_ADDRESS, transaction.getPsp().getAddress());
+        assertEquals(PSP_BUILDING_NUMBER, transaction.getPsp().getBuildingNumber());
+        assertEquals(PSP_PROVINCE, transaction.getPsp().getProvince());
+        assertEquals(RRN, transaction.getRrn());
+        assertEquals(BRAND, transaction.getPaymentMethod().getName());
+        assertEquals(BRAND_ASSET_URL, transaction.getPaymentMethod().getLogo());
+        assertEquals(HOLDER_FULL_NAME, transaction.getPaymentMethod().getAccountHolder());
+        assertEquals(AUTH_CODE, transaction.getAuthCode());
+        assertEquals(COMPLETE_TEMPLATE, transaction.isRequestedByDebtor());
+
+        it.gov.pagopa.receipt.pdf.generator.model.template.UserData userData = receiptPdfTemplate.getUser().getData();
+        assertEquals(PAYER_VALID_CF, userData.getTaxCode());
+        assertEquals(PAYER_FULL_NAME, userData.getFullName());
+
+        it.gov.pagopa.receipt.pdf.generator.model.template.Cart cart = receiptPdfTemplate.getCart();
+        assertEquals(FORMATTED_AMOUNT, cart.getAmountPartial());
+        assertEquals(FORMATTED_AMOUNT, cart.getItems().get(0).getAmount());
+        assertEquals(DEBTOR_FULL_NAME, cart.getItems().get(0).getDebtor().getFullName());
+        assertEquals(DEBTOR_VALID_CF, cart.getItems().get(0).getDebtor().getTaxCode());
+        assertEquals(REMITTANCE_INFORMATION, cart.getItems().get(0).getSubject());
+        assertEquals(OFFICE_NAME, cart.getItems().get(0).getPayee().getName());
+        assertEquals(COMPANY_NAME, cart.getItems().get(0).getPayee().getTaxCode());
+        assertEquals(MODEL_TYPE_IUV_TEXT, cart.getItems().get(0).getRefNumber().getType());
+        assertEquals(IUV, cart.getItems().get(0).getRefNumber().getValue());
+    }
+
+    @Test
+    void mapTemplateAllFieldsSuccessPartialTemplate() throws Exception {
+        BizEvent event = BizEvent.builder()
+                .id(BIZ_EVENT_ID)
+                .debtorPosition(DebtorPosition.builder()
+                        .iuv(IUV)
+                        .modelType(MODEL_TYPE_NOTICE_CODE)
+                        .build())
+                .creditor(Creditor.builder()
+                        .companyName(COMPANY_NAME)
+                        .officeName(OFFICE_NAME)
+                        .build())
+                .psp(Psp.builder()
+                        .idPsp(ID_PSP)
+                        .psp(PSP_NAME)
+                        .build())
+                .debtor(Debtor.builder()
+                        .fullName(DEBTOR_FULL_NAME)
+                        .entityUniqueIdentifierValue(DEBTOR_VALID_CF)
+                        .build())
+                .payer(Payer.builder().fullName(PAYER_FULL_NAME).entityUniqueIdentifierValue(PAYER_VALID_CF).build())
+                .paymentInfo(PaymentInfo.builder()
+                        .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS)
+                        .paymentToken(PAYMENT_TOKEN)
+                        .amount(AMOUNT_WITHOUT_CENTS)
+                        .fee(FEE_WITH_SINGLE_DIGIT_CENTS)
+                        .remittanceInformation(REMITTANCE_INFORMATION)
+                        .IUR(IUR)
+                        .build())
+                .transactionDetails(TransactionDetails.builder()
+                        .wallet(WalletItem.builder().info(Info.builder().brand(BRAND).holder(HOLDER_FULL_NAME).build()).build())
+                        .transaction(Transaction.builder()
+                                .idTransaction(ID_TRANSACTION)
+                                .grandTotal(GRAND_TOTAL_LONG)
+                                .amount(AMOUNT_LONG)
+                                .fee(FEE_LONG)
+                                .rrn(RRN)
+                                .authorizationCode(AUTH_CODE)
+                                .creationDate(DATE_TIME_TIMESTAMP_ZONED)
+                                .psp(TransactionPsp.builder()
+                                        .businessName(BUSINESS_NAME)
+                                        .build())
+                                .build())
+                        .build())
+                .eventStatus(BizEventStatusType.DONE)
+                .build();
+        ReceiptPDFTemplate receiptPdfTemplate = buildTemplateService.buildTemplate(event, PARTIAL_TEMPLATE);
+
+        assertNotNull(receiptPdfTemplate);
+
+        it.gov.pagopa.receipt.pdf.generator.model.template.Transaction transaction = receiptPdfTemplate.getTransaction();
+        assertEquals(String.valueOf(ID_TRANSACTION), transaction.getId());
+        assertEquals(DATE_TIME_TIMESTAMP_FORMATTED, transaction.getTimestamp());
+        assertEquals(FORMATTED_GRAND_TOTAL, transaction.getAmount());
+        assertEquals(PSP_LOGO, transaction.getPsp().getLogo());
+        assertEquals(FORMATTED_FEE, transaction.getPsp().getFee().getAmount());
+        assertEquals(BUSINESS_NAME, transaction.getPsp().getName());
+        assertEquals(PSP_KEY_CITY, transaction.getPsp().getCity());
+        assertEquals(PSP_COMPANY, transaction.getPsp().getCompanyName());
+        assertEquals(PSP_POSTAL_CODE, transaction.getPsp().getPostalCode());
+        assertEquals(PSP_ADDRESS, transaction.getPsp().getAddress());
+        assertEquals(PSP_BUILDING_NUMBER, transaction.getPsp().getBuildingNumber());
+        assertEquals(PSP_PROVINCE, transaction.getPsp().getProvince());
+        assertEquals(RRN, transaction.getRrn());
+        assertEquals(BRAND, transaction.getPaymentMethod().getName());
+        assertEquals(BRAND_ASSET_URL, transaction.getPaymentMethod().getLogo());
+        assertEquals(HOLDER_FULL_NAME, transaction.getPaymentMethod().getAccountHolder());
+        assertEquals(AUTH_CODE, transaction.getAuthCode());
+        assertEquals(PARTIAL_TEMPLATE, transaction.isRequestedByDebtor());
+
+        it.gov.pagopa.receipt.pdf.generator.model.template.User user = receiptPdfTemplate.getUser();
+        assertNull(user);
+
+        it.gov.pagopa.receipt.pdf.generator.model.template.Cart cart = receiptPdfTemplate.getCart();
+        assertEquals(FORMATTED_AMOUNT, cart.getAmountPartial());
+        assertEquals(FORMATTED_AMOUNT, cart.getItems().get(0).getAmount());
+        assertEquals(DEBTOR_FULL_NAME, cart.getItems().get(0).getDebtor().getFullName());
+        assertEquals(DEBTOR_VALID_CF, cart.getItems().get(0).getDebtor().getTaxCode());
+        assertEquals(REMITTANCE_INFORMATION, cart.getItems().get(0).getSubject());
+        assertEquals(OFFICE_NAME, cart.getItems().get(0).getPayee().getName());
+        assertEquals(COMPANY_NAME, cart.getItems().get(0).getPayee().getTaxCode());
+        assertEquals(MODEL_TYPE_NOTICE_TEXT, cart.getItems().get(0).getRefNumber().getType());
+        assertEquals(IUV, cart.getItems().get(0).getRefNumber().getValue());
+    }
+
+    @Test
+    void mapTemplateWithoutTransactionDetailsSuccess() throws Exception {
+        BizEvent event = BizEvent.builder()
+                .id(BIZ_EVENT_ID)
+                .debtorPosition(DebtorPosition.builder()
+                        .iuv(IUV)
+                        .modelType(MODEL_TYPE_IUV_CODE)
+                        .build())
+                .creditor(Creditor.builder()
+                        .companyName(COMPANY_NAME)
+                        .officeName(OFFICE_NAME)
+                        .build())
+                .psp(Psp.builder()
+                        .idPsp(ID_PSP)
+                        .psp(PSP_NAME)
+                        .build())
+                .debtor(Debtor.builder()
+                        .fullName(DEBTOR_FULL_NAME)
+                        .entityUniqueIdentifierValue(DEBTOR_VALID_CF)
+                        .build())
+                .payer(Payer.builder().fullName(PAYER_FULL_NAME).entityUniqueIdentifierValue(PAYER_VALID_CF).build())
+                .paymentInfo(PaymentInfo.builder()
+                        .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS)
+                        .paymentToken(PAYMENT_TOKEN)
+                        .amount(AMOUNT_WITHOUT_CENTS)
+                        .fee(FEE_WITH_SINGLE_DIGIT_CENTS)
+                        .remittanceInformation(REMITTANCE_INFORMATION)
+                        .IUR(IUR)
+                        .build())
+                .eventStatus(BizEventStatusType.DONE)
+                .build();
+        ReceiptPDFTemplate receiptPdfTemplate = buildTemplateService.buildTemplate(event, COMPLETE_TEMPLATE);
+
+        assertNotNull(receiptPdfTemplate);
+
+        it.gov.pagopa.receipt.pdf.generator.model.template.Transaction transaction = receiptPdfTemplate.getTransaction();
+        assertEquals(PAYMENT_TOKEN, transaction.getId());
+        assertEquals(DATE_TIME_TIMESTAMP_FORMATTED, transaction.getTimestamp());
+        assertEquals(FORMATTED_AMOUNT, transaction.getAmount());
+        assertEquals(PSP_LOGO, transaction.getPsp().getLogo());
+        assertNull(transaction.getPsp().getFee().getAmount());
+        assertEquals(PSP_NAME, transaction.getPsp().getName());
+        assertEquals(PSP_KEY_CITY, transaction.getPsp().getCity());
+        assertEquals(PSP_COMPANY, transaction.getPsp().getCompanyName());
+        assertEquals(PSP_POSTAL_CODE, transaction.getPsp().getPostalCode());
+        assertEquals(PSP_ADDRESS, transaction.getPsp().getAddress());
+        assertEquals(PSP_BUILDING_NUMBER, transaction.getPsp().getBuildingNumber());
+        assertEquals(PSP_PROVINCE, transaction.getPsp().getProvince());
+        assertEquals(PAYMENT_TOKEN, transaction.getRrn());
+        assertNull(transaction.getPaymentMethod().getName());
+        assertNull(transaction.getPaymentMethod().getLogo());
+        assertEquals(PAYER_FULL_NAME, transaction.getPaymentMethod().getAccountHolder());
+        assertNull(transaction.getAuthCode());
+        assertEquals(COMPLETE_TEMPLATE, transaction.isRequestedByDebtor());
+
+        it.gov.pagopa.receipt.pdf.generator.model.template.UserData userData = receiptPdfTemplate.getUser().getData();
+        assertEquals(PAYER_VALID_CF, userData.getTaxCode());
+        assertEquals(PAYER_FULL_NAME, userData.getFullName());
+
+        it.gov.pagopa.receipt.pdf.generator.model.template.Cart cart = receiptPdfTemplate.getCart();
+        assertEquals(FORMATTED_AMOUNT, cart.getAmountPartial());
+        assertEquals(FORMATTED_AMOUNT, cart.getItems().get(0).getAmount());
+        assertEquals(DEBTOR_FULL_NAME, cart.getItems().get(0).getDebtor().getFullName());
+        assertEquals(DEBTOR_VALID_CF, cart.getItems().get(0).getDebtor().getTaxCode());
+        assertEquals(REMITTANCE_INFORMATION, cart.getItems().get(0).getSubject());
+        assertEquals(OFFICE_NAME, cart.getItems().get(0).getPayee().getName());
+        assertEquals(COMPANY_NAME, cart.getItems().get(0).getPayee().getTaxCode());
+        assertEquals(MODEL_TYPE_IUV_TEXT, cart.getItems().get(0).getRefNumber().getType());
+        assertEquals(IUV, cart.getItems().get(0).getRefNumber().getValue());
+    }
+
+    @Test
+    void mapTemplateWithoutTransactionDetailsAndPaymentTokenSuccess() throws Exception {
+        BizEvent event = BizEvent.builder()
+                .id(BIZ_EVENT_ID)
+                .debtorPosition(DebtorPosition.builder()
+                        .iuv(IUV)
+                        .modelType(MODEL_TYPE_IUV_CODE)
+                        .build())
+                .creditor(Creditor.builder()
+                        .companyName(COMPANY_NAME)
+                        .officeName(OFFICE_NAME)
+                        .build())
+                .psp(Psp.builder()
+                        .idPsp(ID_PSP)
+                        .psp(PSP_NAME)
+                        .build())
+                .debtor(Debtor.builder()
+                        .fullName(DEBTOR_FULL_NAME)
+                        .entityUniqueIdentifierValue(DEBTOR_VALID_CF)
+                        .build())
+                .payer(Payer.builder().fullName(PAYER_FULL_NAME).entityUniqueIdentifierValue(PAYER_VALID_CF).build())
+                .paymentInfo(PaymentInfo.builder()
+                        .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS)
+                        .amount(AMOUNT_WITHOUT_CENTS)
+                        .fee(FEE_WITH_SINGLE_DIGIT_CENTS)
+                        .remittanceInformation(REMITTANCE_INFORMATION)
+                        .IUR(IUR)
+                        .build())
+                .eventStatus(BizEventStatusType.DONE)
+                .build();
+        ReceiptPDFTemplate receiptPdfTemplate = buildTemplateService.buildTemplate(event, COMPLETE_TEMPLATE);
+
+        assertNotNull(receiptPdfTemplate);
+
+        it.gov.pagopa.receipt.pdf.generator.model.template.Transaction transaction = receiptPdfTemplate.getTransaction();
+        assertEquals(IUR, transaction.getId());
+        assertEquals(DATE_TIME_TIMESTAMP_FORMATTED, transaction.getTimestamp());
+        assertEquals(FORMATTED_AMOUNT, transaction.getAmount());
+        assertEquals(PSP_LOGO, transaction.getPsp().getLogo());
+        assertNull(transaction.getPsp().getFee().getAmount());
+        assertEquals(PSP_NAME, transaction.getPsp().getName());
+        assertEquals(PSP_KEY_CITY, transaction.getPsp().getCity());
+        assertEquals(PSP_COMPANY, transaction.getPsp().getCompanyName());
+        assertEquals(PSP_POSTAL_CODE, transaction.getPsp().getPostalCode());
+        assertEquals(PSP_ADDRESS, transaction.getPsp().getAddress());
+        assertEquals(PSP_BUILDING_NUMBER, transaction.getPsp().getBuildingNumber());
+        assertEquals(PSP_PROVINCE, transaction.getPsp().getProvince());
+        assertEquals(IUR, transaction.getRrn());
+        assertNull(transaction.getPaymentMethod().getName());
+        assertNull(transaction.getPaymentMethod().getLogo());
+        assertEquals(PAYER_FULL_NAME, transaction.getPaymentMethod().getAccountHolder());
+        assertNull(transaction.getAuthCode());
+        assertEquals(COMPLETE_TEMPLATE, transaction.isRequestedByDebtor());
+
+        it.gov.pagopa.receipt.pdf.generator.model.template.UserData userData = receiptPdfTemplate.getUser().getData();
+        assertEquals(PAYER_VALID_CF, userData.getTaxCode());
+        assertEquals(PAYER_FULL_NAME, userData.getFullName());
+
+        it.gov.pagopa.receipt.pdf.generator.model.template.Cart cart = receiptPdfTemplate.getCart();
+        assertEquals(FORMATTED_AMOUNT, cart.getAmountPartial());
+        assertEquals(FORMATTED_AMOUNT, cart.getItems().get(0).getAmount());
+        assertEquals(DEBTOR_FULL_NAME, cart.getItems().get(0).getDebtor().getFullName());
+        assertEquals(DEBTOR_VALID_CF, cart.getItems().get(0).getDebtor().getTaxCode());
+        assertEquals(REMITTANCE_INFORMATION, cart.getItems().get(0).getSubject());
+        assertEquals(OFFICE_NAME, cart.getItems().get(0).getPayee().getName());
+        assertEquals(COMPANY_NAME, cart.getItems().get(0).getPayee().getTaxCode());
+        assertEquals(MODEL_TYPE_IUV_TEXT, cart.getItems().get(0).getRefNumber().getType());
+        assertEquals(IUV, cart.getItems().get(0).getRefNumber().getValue());
+    }
+}
