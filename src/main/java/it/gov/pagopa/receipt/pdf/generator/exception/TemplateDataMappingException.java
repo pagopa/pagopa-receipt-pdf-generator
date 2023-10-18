@@ -1,6 +1,6 @@
 package it.gov.pagopa.receipt.pdf.generator.exception;
 
-/** Thrown in case an error occurred when saving a PDF Receipt to the Blob storage */
+/** Thrown in case an error occurred when mapping the bizEvent to the template */
 public class TemplateDataMappingException extends PDFReceiptGenerationException {
 
     /**
