@@ -18,7 +18,6 @@ import it.gov.pagopa.receipt.pdf.generator.model.PdfMetadata;
 import it.gov.pagopa.receipt.pdf.generator.model.request.PdfEngineRequest;
 import it.gov.pagopa.receipt.pdf.generator.model.response.BlobStorageResponse;
 import it.gov.pagopa.receipt.pdf.generator.model.response.PdfEngineResponse;
-import it.gov.pagopa.receipt.pdf.generator.model.template.*;
 import it.gov.pagopa.receipt.pdf.generator.service.BuildTemplateService;
 import it.gov.pagopa.receipt.pdf.generator.service.GenerateReceiptPdfService;
 import it.gov.pagopa.receipt.pdf.generator.utils.ObjectMapperUtils;
@@ -147,8 +146,8 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
 
             receipt.setMdAttachPayer(receiptMetadata);
         } else if (payerMetadata.getStatusCode() != ALREADY_CREATED) {
-            ReasonError reasonError = new ReasonError(payerMetadata.getStatusCode(), payerMetadata.getErrorMessage());
-            receipt.setReasonErr(reasonError);
+            ReasonError reasonErrorPayer = new ReasonError(payerMetadata.getStatusCode(), payerMetadata.getErrorMessage());
+            receipt.setReasonErrPayer(reasonErrorPayer);
             result = false;
         }
         return result;
