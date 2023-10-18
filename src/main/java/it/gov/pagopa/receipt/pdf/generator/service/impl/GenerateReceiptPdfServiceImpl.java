@@ -18,7 +18,16 @@ import it.gov.pagopa.receipt.pdf.generator.model.PdfMetadata;
 import it.gov.pagopa.receipt.pdf.generator.model.request.PdfEngineRequest;
 import it.gov.pagopa.receipt.pdf.generator.model.response.BlobStorageResponse;
 import it.gov.pagopa.receipt.pdf.generator.model.response.PdfEngineResponse;
-import it.gov.pagopa.receipt.pdf.generator.model.template.*;
+import it.gov.pagopa.receipt.pdf.generator.model.template.Cart;
+import it.gov.pagopa.receipt.pdf.generator.model.template.Debtor;
+import it.gov.pagopa.receipt.pdf.generator.model.template.Item;
+import it.gov.pagopa.receipt.pdf.generator.model.template.Payee;
+import it.gov.pagopa.receipt.pdf.generator.model.template.PaymentMethod;
+import it.gov.pagopa.receipt.pdf.generator.model.template.ReceiptPDFTemplate;
+import it.gov.pagopa.receipt.pdf.generator.model.template.RefNumber;
+import it.gov.pagopa.receipt.pdf.generator.model.template.Transaction;
+import it.gov.pagopa.receipt.pdf.generator.model.template.User;
+import it.gov.pagopa.receipt.pdf.generator.model.template.UserData;
 import it.gov.pagopa.receipt.pdf.generator.service.GenerateReceiptPdfService;
 import it.gov.pagopa.receipt.pdf.generator.utils.BizEventToPdfMapper;
 import it.gov.pagopa.receipt.pdf.generator.utils.ObjectMapperUtils;
@@ -27,11 +36,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedInputStream;
-import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.net.URL;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -152,8 +158,8 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
 
             receipt.setMdAttachPayer(receiptMetadata);
         } else if (payerMetadata.getStatusCode() != ALREADY_CREATED) {
-            ReasonError reasonError = new ReasonError(payerMetadata.getStatusCode(), payerMetadata.getErrorMessage());
-            receipt.setReasonErr(reasonError);
+            ReasonError reasonErrorPayer = new ReasonError(payerMetadata.getStatusCode(), payerMetadata.getErrorMessage());
+            receipt.setReasonErrPayer(reasonErrorPayer);
             result = false;
         }
         return result;
