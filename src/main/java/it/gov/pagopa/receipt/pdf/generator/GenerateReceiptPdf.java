@@ -229,7 +229,9 @@ public class GenerateReceiptPdf {
         if (!workingDirectory.exists()) {
             try {
                 Files.createDirectory(workingDirectory.toPath());
-            } catch (FileAlreadyExistsException ignored) {}
+            } catch (FileAlreadyExistsException ignored) {
+                // The working directory already exist we don't need to create it
+            }
         }
         return Files.createTempDirectory(workingDirectory.toPath(),
                 DateTimeFormatter.ofPattern(PATTERN_FORMAT)
