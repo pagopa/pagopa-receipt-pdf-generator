@@ -2,7 +2,10 @@ package it.gov.pagopa.receipt.pdf.generator.service.impl;
 
 import it.gov.pagopa.receipt.pdf.generator.entity.event.*;
 import it.gov.pagopa.receipt.pdf.generator.entity.event.enumeration.BizEventStatusType;
+import it.gov.pagopa.receipt.pdf.generator.entity.receipt.enumeration.ReasonErrorCode;
+import it.gov.pagopa.receipt.pdf.generator.exception.TemplateDataMappingException;
 import it.gov.pagopa.receipt.pdf.generator.model.template.ReceiptPDFTemplate;
+import it.gov.pagopa.receipt.pdf.generator.utils.TemplateDataField;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -378,5 +381,487 @@ class BuildTemplateServiceImplTest {
         assertEquals(COMPANY_NAME, cart.getItems().get(0).getPayee().getTaxCode());
         assertEquals(MODEL_TYPE_IUV_TEXT, cart.getItems().get(0).getRefNumber().getType());
         assertEquals(IUV, cart.getItems().get(0).getRefNumber().getValue());
+    }
+
+    @Test
+    void mapTemplateLeastAmountOfInfoSuccess() {
+        BizEvent event = BizEvent.builder()
+                .paymentInfo(PaymentInfo.builder()
+                        .IUR(IUR)
+                        .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS)
+                        .remittanceInformation(REMITTANCE_INFORMATION)
+                        .amount(AMOUNT_WITHOUT_CENTS)
+                        .build())
+                .psp(Psp.builder()
+                        .idPsp(ID_PSP)
+                        .psp(PSP_NAME)
+                        .build())
+                .payer(Payer.builder()
+                        .fullName(PAYER_FULL_NAME)
+                        .entityUniqueIdentifierValue(PAYER_VALID_CF)
+                        .build())
+                .debtorPosition(DebtorPosition.builder()
+                        .modelType(MODEL_TYPE_IUV_CODE)
+                        .iuv(IUV)
+                        .build())
+                .debtor(Debtor.builder()
+                        .entityUniqueIdentifierValue(DEBTOR_VALID_CF)
+                        .build())
+                .creditor(Creditor.builder()
+                        .companyName(COMPANY_NAME)
+                        .build())
+                .transactionDetails(TransactionDetails.builder()
+                        .transaction(Transaction.builder()
+                                .grandTotal(GRAND_TOTAL_LONG).build()
+                        )
+                        .build()
+                )
+                .build();
+        assertDoesNotThrow(() -> buildTemplateService.buildTemplate(event, COMPLETE_TEMPLATE));
+    }
+
+    @Test
+    void mapTemplateNoTransactionIdError() {
+        BizEvent event = new BizEvent();
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(event, COMPLETE_TEMPLATE));
+
+        assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_ID), e.getMessage());
+    }
+
+    @Test
+    void mapTemplateNoTransactionTimestampError() {
+        BizEvent event = BizEvent.builder().paymentInfo(PaymentInfo.builder().IUR(IUR).build()).build();
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(event, COMPLETE_TEMPLATE));
+
+        assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_TIMESTAMP), e.getMessage());
+    }
+
+    @Test
+    void mapTemplateNoTransactionAmountError() {
+        BizEvent event = BizEvent.builder()
+                .paymentInfo(PaymentInfo.builder()
+                        .IUR(IUR)
+                        .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS)
+                        .build())
+                .build();
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(event, COMPLETE_TEMPLATE));
+
+        assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_AMOUNT), e.getMessage());
+    }
+
+    @Test
+    void mapTemplateNoPspError() {
+        BizEvent event = BizEvent.builder()
+                .paymentInfo(PaymentInfo.builder()
+                        .IUR(IUR)
+                        .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS)
+                        .amount(AMOUNT_WITHOUT_CENTS)
+                        .build())
+                .build();
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(event, COMPLETE_TEMPLATE));
+
+        assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_PSP), e.getMessage());
+    }
+
+    @Test
+    void mapTemplateNoPspNameError() {
+        BizEvent event = BizEvent.builder()
+                .paymentInfo(PaymentInfo.builder()
+                        .IUR(IUR)
+                        .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS)
+                        .amount(AMOUNT_WITHOUT_CENTS)
+                        .build())
+                .psp(Psp.builder()
+                        .idPsp(ID_PSP)
+                        .build())
+                .build();
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(event, COMPLETE_TEMPLATE));
+
+        assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_PSP_NAME), e.getMessage());
+    }
+
+    @Test
+    void mapTemplateNoPspCompanyNameError() {
+        BizEvent event = BizEvent.builder()
+                .paymentInfo(PaymentInfo.builder()
+                        .IUR(IUR)
+                        .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS)
+                        .amount(AMOUNT_WITHOUT_CENTS)
+                        .build())
+                .psp(Psp.builder()
+                        .idPsp("noCompanyName")
+                        .psp(PSP_NAME)
+                        .build())
+                .build();
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(event, COMPLETE_TEMPLATE));
+
+        assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_PSP_COMPANY_NAME), e.getMessage());
+    }
+
+    @Test
+    void mapTemplateNoPspAddressError() {
+        BizEvent event = BizEvent.builder()
+                .paymentInfo(PaymentInfo.builder()
+                        .IUR(IUR)
+                        .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS)
+                        .amount(AMOUNT_WITHOUT_CENTS)
+                        .build())
+                .psp(Psp.builder()
+                        .idPsp("noAddress")
+                        .psp(PSP_NAME)
+                        .build())
+                .build();
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(event, COMPLETE_TEMPLATE));
+
+        assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_PSP_ADDRESS), e.getMessage());
+    }
+
+    @Test
+    void mapTemplateNoPspCityError() {
+        BizEvent event = BizEvent.builder()
+                .paymentInfo(PaymentInfo.builder()
+                        .IUR(IUR)
+                        .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS)
+                        .amount(AMOUNT_WITHOUT_CENTS)
+                        .build())
+                .psp(Psp.builder()
+                        .idPsp("noCity")
+                        .psp(PSP_NAME)
+                        .build())
+                .build();
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(event, COMPLETE_TEMPLATE));
+
+        assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_PSP_CITY), e.getMessage());
+    }
+
+    @Test
+    void mapTemplateNoPspProvinceError() {
+        BizEvent event = BizEvent.builder()
+                .paymentInfo(PaymentInfo.builder()
+                        .IUR(IUR)
+                        .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS)
+                        .amount(AMOUNT_WITHOUT_CENTS)
+                        .build())
+                .psp(Psp.builder()
+                        .idPsp("noProvince")
+                        .psp(PSP_NAME)
+                        .build())
+                .build();
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(event, COMPLETE_TEMPLATE));
+
+        assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_PSP_PROVINCE), e.getMessage());
+    }
+
+    @Test
+    void mapTemplateNoPspBuildingNumberError() {
+        BizEvent event = BizEvent.builder()
+                .paymentInfo(PaymentInfo.builder()
+                        .IUR(IUR)
+                        .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS)
+                        .amount(AMOUNT_WITHOUT_CENTS)
+                        .build())
+                .psp(Psp.builder()
+                        .idPsp("noBuildingNumber")
+                        .psp(PSP_NAME)
+                        .build())
+                .build();
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(event, COMPLETE_TEMPLATE));
+
+        assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_PSP_BUILDING_NUMBER), e.getMessage());
+    }
+
+    @Test
+    void mapTemplateNoPspPostalCodeError() {
+        BizEvent event = BizEvent.builder()
+                .paymentInfo(PaymentInfo.builder()
+                        .IUR(IUR)
+                        .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS)
+                        .amount(AMOUNT_WITHOUT_CENTS)
+                        .build())
+                .psp(Psp.builder()
+                        .idPsp("noPostalCode")
+                        .psp(PSP_NAME)
+                        .build())
+                .build();
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(event, COMPLETE_TEMPLATE));
+
+        assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_PSP_POSTAL_CODE), e.getMessage());
+    }
+
+    @Test
+    void mapTemplateNoPspLogoError() {
+        BizEvent event = BizEvent.builder()
+                .paymentInfo(PaymentInfo.builder()
+                        .IUR(IUR)
+                        .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS)
+                        .amount(AMOUNT_WITHOUT_CENTS)
+                        .build())
+                .psp(Psp.builder()
+                        .idPsp("noLogo")
+                        .psp(PSP_NAME)
+                        .build())
+                .transactionDetails(TransactionDetails.builder()
+                        .transaction(Transaction.builder()
+                                .fee(FEE_LONG)
+                                .build())
+                        .build())
+                .build();
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(event, COMPLETE_TEMPLATE));
+
+        assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_PSP_LOGO), e.getMessage());
+    }
+
+    @Test
+    void mapTemplateNoRrnError() {
+        BizEvent event = BizEvent.builder()
+                .paymentInfo(PaymentInfo.builder()
+                        .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS)
+                        .amount(AMOUNT_WITHOUT_CENTS)
+                        .build())
+                .psp(Psp.builder()
+                        .idPsp(ID_PSP)
+                        .psp(PSP_NAME)
+                        .build())
+                .transactionDetails(TransactionDetails.builder()
+                        .transaction(Transaction.builder()
+                                .idTransaction(ID_TRANSACTION)
+                                .build())
+                        .build())
+                .build();
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(event, COMPLETE_TEMPLATE));
+
+        assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_RRN), e.getMessage());
+    }
+
+    @Test
+    void mapTemplateNoUserDataFullNameError() {
+        BizEvent event = BizEvent.builder()
+                .paymentInfo(PaymentInfo.builder()
+                        .IUR(IUR)
+                        .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS)
+                        .amount(AMOUNT_WITHOUT_CENTS)
+                        .build())
+                .psp(Psp.builder()
+                        .idPsp(ID_PSP)
+                        .psp(PSP_NAME)
+                        .build())
+                .build();
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(event, COMPLETE_TEMPLATE));
+
+        assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.USER_DATA_FULL_NAME), e.getMessage());
+    }
+
+    @Test
+    void mapTemplateNoUserDataTaxCodeError() {
+        BizEvent event = BizEvent.builder()
+                .paymentInfo(PaymentInfo.builder()
+                        .IUR(IUR)
+                        .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS)
+                        .amount(AMOUNT_WITHOUT_CENTS)
+                        .build())
+                .psp(Psp.builder()
+                        .idPsp(ID_PSP)
+                        .psp(PSP_NAME)
+                        .build())
+                .payer(Payer.builder()
+                        .fullName(PAYER_FULL_NAME)
+                        .build())
+                .build();
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(event, COMPLETE_TEMPLATE));
+
+        assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.USER_DATA_TAX_CODE), e.getMessage());
+    }
+
+    @Test
+    void mapTemplateNoCartItemRefNumberTypeError() {
+        BizEvent event = BizEvent.builder()
+                .paymentInfo(PaymentInfo.builder()
+                        .IUR(IUR)
+                        .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS)
+                        .amount(AMOUNT_WITHOUT_CENTS)
+                        .build())
+                .psp(Psp.builder()
+                        .idPsp(ID_PSP)
+                        .psp(PSP_NAME)
+                        .build())
+                .payer(Payer.builder()
+                        .fullName(PAYER_FULL_NAME)
+                        .entityUniqueIdentifierValue(PAYER_VALID_CF)
+                        .build())
+                .build();
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(event, COMPLETE_TEMPLATE));
+
+        assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.CART_ITEM_REF_NUMBER_TYPE), e.getMessage());
+    }
+
+    @Test
+    void mapTemplateNoCartItemRefNumberValueError() {
+        BizEvent event = BizEvent.builder()
+                .paymentInfo(PaymentInfo.builder()
+                        .IUR(IUR)
+                        .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS)
+                        .amount(AMOUNT_WITHOUT_CENTS)
+                        .build())
+                .psp(Psp.builder()
+                        .idPsp(ID_PSP)
+                        .psp(PSP_NAME)
+                        .build())
+                .payer(Payer.builder()
+                        .fullName(PAYER_FULL_NAME)
+                        .entityUniqueIdentifierValue(PAYER_VALID_CF)
+                        .build())
+                .debtorPosition(DebtorPosition.builder()
+                        .modelType(MODEL_TYPE_IUV_CODE)
+                        .build())
+                .build();
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(event, COMPLETE_TEMPLATE));
+
+        assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.CART_ITEM_REF_NUMBER_VALUE), e.getMessage());
+    }
+
+    @Test
+    void mapTemplateNoCartItemDebtorTaxCodeValueError() {
+        BizEvent event = BizEvent.builder()
+                .paymentInfo(PaymentInfo.builder()
+                        .IUR(IUR)
+                        .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS)
+                        .amount(AMOUNT_WITHOUT_CENTS)
+                        .build())
+                .psp(Psp.builder()
+                        .idPsp(ID_PSP)
+                        .psp(PSP_NAME)
+                        .build())
+                .payer(Payer.builder()
+                        .fullName(PAYER_FULL_NAME)
+                        .entityUniqueIdentifierValue(PAYER_VALID_CF)
+                        .build())
+                .debtorPosition(DebtorPosition.builder()
+                        .modelType(MODEL_TYPE_IUV_CODE)
+                        .iuv(IUV)
+                        .build())
+                .build();
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(event, COMPLETE_TEMPLATE));
+
+        assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.CART_ITEM_DEBTOR_TAX_CODE), e.getMessage());
+    }
+
+    @Test
+    void mapTemplateNoCartItemPayeeTaxCodeValueError() {
+        BizEvent event = BizEvent.builder()
+                .paymentInfo(PaymentInfo.builder()
+                        .IUR(IUR)
+                        .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS)
+                        .amount(AMOUNT_WITHOUT_CENTS)
+                        .build())
+                .psp(Psp.builder()
+                        .idPsp(ID_PSP)
+                        .psp(PSP_NAME)
+                        .build())
+                .payer(Payer.builder()
+                        .fullName(PAYER_FULL_NAME)
+                        .entityUniqueIdentifierValue(PAYER_VALID_CF)
+                        .build())
+                .debtorPosition(DebtorPosition.builder()
+                        .modelType(MODEL_TYPE_IUV_CODE)
+                        .iuv(IUV)
+                        .build())
+                .debtor(Debtor.builder()
+                        .entityUniqueIdentifierValue(DEBTOR_VALID_CF)
+                        .build())
+                .build();
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(event, COMPLETE_TEMPLATE));
+
+        assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.CART_ITEM_PAYEE_TAX_CODE), e.getMessage());
+    }
+
+    @Test
+    void mapTemplateNoCartItemSubjectValueError() {
+        BizEvent event = BizEvent.builder()
+                .paymentInfo(PaymentInfo.builder()
+                        .IUR(IUR)
+                        .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS)
+                        .amount(AMOUNT_WITHOUT_CENTS)
+                        .build())
+                .psp(Psp.builder()
+                        .idPsp(ID_PSP)
+                        .psp(PSP_NAME)
+                        .build())
+                .payer(Payer.builder()
+                        .fullName(PAYER_FULL_NAME)
+                        .entityUniqueIdentifierValue(PAYER_VALID_CF)
+                        .build())
+                .debtorPosition(DebtorPosition.builder()
+                        .modelType(MODEL_TYPE_IUV_CODE)
+                        .iuv(IUV)
+                        .build())
+                .debtor(Debtor.builder()
+                        .entityUniqueIdentifierValue(DEBTOR_VALID_CF)
+                        .build())
+                .creditor(Creditor.builder()
+                        .companyName(COMPANY_NAME)
+                        .build())
+                .build();
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(event, COMPLETE_TEMPLATE));
+
+        assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.CART_ITEM_SUBJECT), e.getMessage());
+    }
+
+    @Test
+    void mapTemplateNoCartItemAmountValueError() {
+        BizEvent event = BizEvent.builder()
+                .paymentInfo(PaymentInfo.builder()
+                        .IUR(IUR)
+                        .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS)
+                        .remittanceInformation(REMITTANCE_INFORMATION)
+                        .build())
+                .psp(Psp.builder()
+                        .idPsp(ID_PSP)
+                        .psp(PSP_NAME)
+                        .build())
+                .payer(Payer.builder()
+                        .fullName(PAYER_FULL_NAME)
+                        .entityUniqueIdentifierValue(PAYER_VALID_CF)
+                        .build())
+                .debtorPosition(DebtorPosition.builder()
+                        .modelType(MODEL_TYPE_IUV_CODE)
+                        .iuv(IUV)
+                        .build())
+                .debtor(Debtor.builder()
+                        .entityUniqueIdentifierValue(DEBTOR_VALID_CF)
+                        .build())
+                .creditor(Creditor.builder()
+                        .companyName(COMPANY_NAME)
+                        .build())
+                .transactionDetails(TransactionDetails.builder()
+                        .transaction(Transaction.builder()
+                                .grandTotal(GRAND_TOTAL_LONG).build()
+                        )
+                        .build()
+                )
+                .build();
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(event, COMPLETE_TEMPLATE));
+
+        assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.CART_ITEM_AMOUNT), e.getMessage());
     }
 }

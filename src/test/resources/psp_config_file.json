@@ -9,5 +9,75 @@
         "postalCode": "postalCode",
         "city": "city",
         "province": "province"
+    },
+    "noCompanyName": {
+        "logo": "logo",
+        "fiscalCode": "fiscalCode",
+        "name": "name",
+        "address": "address",
+        "buildingNumber": "buildingNumber",
+        "postalCode": "postalCode",
+        "city": "city",
+        "province": "province"
+    },
+    "noAddress": {
+        "logo": "logo",
+        "fiscalCode": "fiscalCode",
+        "name": "name",
+        "companyName": "companyName",
+        "buildingNumber": "buildingNumber",
+        "postalCode": "postalCode",
+        "city": "city",
+        "province": "province"
+    },
+    "noCity": {
+        "logo": "logo",
+        "fiscalCode": "fiscalCode",
+        "name": "name",
+        "companyName": "companyName",
+        "address": "address",
+        "buildingNumber": "buildingNumber",
+        "postalCode": "postalCode",
+        "province": "province"
+    },
+    "noProvince": {
+        "logo": "logo",
+        "fiscalCode": "fiscalCode",
+        "name": "name",
+        "companyName": "companyName",
+        "address": "address",
+        "buildingNumber": "buildingNumber",
+        "postalCode": "postalCode",
+        "city": "city"
+    },
+    "noBuildingNumber": {
+        "logo": "logo",
+        "fiscalCode": "fiscalCode",
+        "name": "name",
+        "companyName": "companyName",
+        "address": "address",
+        "postalCode": "postalCode",
+        "city": "city",
+        "province": "province"
+    },
+    "noPostalCode": {
+        "logo": "logo",
+        "fiscalCode": "fiscalCode",
+        "name": "name",
+        "companyName": "companyName",
+        "address": "address",
+        "buildingNumber": "buildingNumber",
+        "city": "city",
+        "province": "province"
+    },
+    "noLogo": {
+        "fiscalCode": "fiscalCode",
+        "name": "name",
+        "companyName": "companyName",
+        "address": "address",
+        "buildingNumber": "buildingNumber",
+        "postalCode": "postalCode",
+        "city": "city",
+        "province": "province"
     }
 }
