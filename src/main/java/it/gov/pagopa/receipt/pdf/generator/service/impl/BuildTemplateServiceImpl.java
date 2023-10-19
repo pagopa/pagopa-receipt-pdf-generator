@@ -210,7 +210,7 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
         ) {
             return event.getTransactionDetails().getWallet().getInfo().getHolder();
         }
-        return event.getPayer() != null ? event.getPayer().getFullName() : null;
+        return null;
     }
 
     private String getUserFullName(BizEvent event) throws TemplateDataMappingException {

@@ -293,7 +293,7 @@ class BuildTemplateServiceImplTest {
         assertEquals(PAYMENT_TOKEN, transaction.getRrn());
         assertNull(transaction.getPaymentMethod().getName());
         assertNull(transaction.getPaymentMethod().getLogo());
-        assertEquals(PAYER_FULL_NAME, transaction.getPaymentMethod().getAccountHolder());
+        assertNull(transaction.getPaymentMethod().getAccountHolder());
         assertNull(transaction.getAuthCode());
         assertEquals(COMPLETE_TEMPLATE, transaction.isRequestedByDebtor());
 
@@ -363,7 +363,7 @@ class BuildTemplateServiceImplTest {
         assertEquals(IUR, transaction.getRrn());
         assertNull(transaction.getPaymentMethod().getName());
         assertNull(transaction.getPaymentMethod().getLogo());
-        assertEquals(PAYER_FULL_NAME, transaction.getPaymentMethod().getAccountHolder());
+        assertNull(transaction.getPaymentMethod().getAccountHolder());
         assertNull(transaction.getAuthCode());
         assertEquals(COMPLETE_TEMPLATE, transaction.isRequestedByDebtor());
 
