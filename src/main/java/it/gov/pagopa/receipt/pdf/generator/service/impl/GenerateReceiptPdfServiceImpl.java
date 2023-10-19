@@ -18,6 +18,7 @@ import it.gov.pagopa.receipt.pdf.generator.model.PdfMetadata;
 import it.gov.pagopa.receipt.pdf.generator.model.request.PdfEngineRequest;
 import it.gov.pagopa.receipt.pdf.generator.model.response.BlobStorageResponse;
 import it.gov.pagopa.receipt.pdf.generator.model.response.PdfEngineResponse;
+import it.gov.pagopa.receipt.pdf.generator.model.template.ReceiptPDFTemplate;
 import it.gov.pagopa.receipt.pdf.generator.service.BuildTemplateService;
 import it.gov.pagopa.receipt.pdf.generator.service.GenerateReceiptPdfService;
 import it.gov.pagopa.receipt.pdf.generator.utils.ObjectMapperUtils;
