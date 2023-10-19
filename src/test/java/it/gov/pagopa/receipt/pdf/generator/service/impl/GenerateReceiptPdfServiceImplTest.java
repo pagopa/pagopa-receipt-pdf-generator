@@ -2,7 +2,18 @@ package it.gov.pagopa.receipt.pdf.generator.service.impl;
 
 import it.gov.pagopa.receipt.pdf.generator.client.PdfEngineClient;
 import it.gov.pagopa.receipt.pdf.generator.client.ReceiptBlobClient;
-import it.gov.pagopa.receipt.pdf.generator.entity.event.*;
+import it.gov.pagopa.receipt.pdf.generator.entity.event.BizEvent;
+import it.gov.pagopa.receipt.pdf.generator.entity.event.Creditor;
+import it.gov.pagopa.receipt.pdf.generator.entity.event.Debtor;
+import it.gov.pagopa.receipt.pdf.generator.entity.event.DebtorPosition;
+import it.gov.pagopa.receipt.pdf.generator.entity.event.Info;
+import it.gov.pagopa.receipt.pdf.generator.entity.event.Payer;
+import it.gov.pagopa.receipt.pdf.generator.entity.event.PaymentInfo;
+import it.gov.pagopa.receipt.pdf.generator.entity.event.Psp;
+import it.gov.pagopa.receipt.pdf.generator.entity.event.Transaction;
+import it.gov.pagopa.receipt.pdf.generator.entity.event.TransactionDetails;
+import it.gov.pagopa.receipt.pdf.generator.entity.event.TransactionPsp;
+import it.gov.pagopa.receipt.pdf.generator.entity.event.WalletItem;
 import it.gov.pagopa.receipt.pdf.generator.entity.event.enumeration.BizEventStatusType;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.EventData;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.Receipt;
@@ -27,12 +38,23 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static it.gov.pagopa.receipt.pdf.generator.service.impl.GenerateReceiptPdfServiceImpl.ALREADY_CREATED;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-import static uk.org.webcompere.systemstubs.SystemStubs.withEnvironmentVariables;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 class GenerateReceiptPdfServiceImplTest {
 
@@ -377,6 +399,7 @@ class GenerateReceiptPdfServiceImplTest {
         assertEquals(DEBTOR_DOCUMENT_URL, receipt.getMdAttach().getUrl());
         assertNull(receipt.getMdAttachPayer());
         assertNull(receipt.getReasonErr());
+        assertNull(receipt.getReasonErrPayer());
     }
 
     @Test
@@ -411,6 +434,7 @@ class GenerateReceiptPdfServiceImplTest {
         assertEquals(PAYER_DOCUMENT_NAME, receipt.getMdAttachPayer().getName());
         assertEquals(PAYER_DOCUMENT_URL, receipt.getMdAttachPayer().getUrl());
         assertNull(receipt.getReasonErr());
+        assertNull(receipt.getReasonErrPayer());
     }
 
     @Test
@@ -427,6 +451,7 @@ class GenerateReceiptPdfServiceImplTest {
         assertNull(receipt.getMdAttach());
         assertNull(receipt.getMdAttachPayer());
         assertNull(receipt.getReasonErr());
+        assertNull(receipt.getReasonErrPayer());
     }
 
     @Test
@@ -450,6 +475,7 @@ class GenerateReceiptPdfServiceImplTest {
         assertEquals(RECEIPT_METADATA_ORIGINAL_URL, receipt.getMdAttach().getUrl());
         assertNull(receipt.getMdAttachPayer());
         assertNull(receipt.getReasonErr());
+        assertNull(receipt.getReasonErrPayer());
     }
 
     @Test
@@ -473,6 +499,7 @@ class GenerateReceiptPdfServiceImplTest {
         assertNotNull(receipt.getReasonErr().getMessage());
         assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, receipt.getReasonErr().getCode());
         assertEquals(ERROR_MESSAGE, receipt.getReasonErr().getMessage());
+        assertNull(receipt.getReasonErrPayer());
     }
 
     @Test
@@ -505,6 +532,7 @@ class GenerateReceiptPdfServiceImplTest {
         assertEquals(PAYER_DOCUMENT_NAME, receipt.getMdAttachPayer().getName());
         assertEquals(PAYER_DOCUMENT_URL, receipt.getMdAttachPayer().getUrl());
         assertNull(receipt.getReasonErr());
+        assertNull(receipt.getReasonErrPayer());
     }
 
     @Test
@@ -537,6 +565,7 @@ class GenerateReceiptPdfServiceImplTest {
         assertEquals(RECEIPT_METADATA_ORIGINAL_NAME, receipt.getMdAttachPayer().getName());
         assertEquals(RECEIPT_METADATA_ORIGINAL_URL, receipt.getMdAttachPayer().getUrl());
         assertNull(receipt.getReasonErr());
+        assertNull(receipt.getReasonErrPayer());
     }
 
     @Test
@@ -569,6 +598,7 @@ class GenerateReceiptPdfServiceImplTest {
         assertNotNull(receipt.getMdAttachPayer().getName());
         assertEquals(PAYER_DOCUMENT_NAME, receipt.getMdAttachPayer().getName());
         assertEquals(PAYER_DOCUMENT_URL, receipt.getMdAttachPayer().getUrl());
+        assertNull(receipt.getReasonErrPayer());
     }
 
     @Test
@@ -597,10 +627,72 @@ class GenerateReceiptPdfServiceImplTest {
         assertEquals(DEBTOR_DOCUMENT_NAME, receipt.getMdAttach().getName());
         assertEquals(DEBTOR_DOCUMENT_URL, receipt.getMdAttach().getUrl());
         assertNull(receipt.getMdAttachPayer());
+        assertNull(receipt.getReasonErr());
+        assertNotNull(receipt.getReasonErrPayer());
+        assertNotNull(receipt.getReasonErrPayer().getMessage());
+        assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, receipt.getReasonErrPayer().getCode());
+        assertEquals(ERROR_MESSAGE, receipt.getReasonErrPayer().getMessage());
+    }
+
+    @Test
+    void verifyDifferentDebtorPayerFailGenerationInErrorForBoth() {
+        Receipt receipt = buildReceiptForVerify(false, false);
+
+        String errorMessagePayer = "error message payer";
+        PdfGeneration pdfGeneration = PdfGeneration.builder()
+                .debtorMetadata(PdfMetadata.builder()
+                        .statusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR)
+                        .errorMessage(ERROR_MESSAGE)
+                        .build())
+                .payerMetadata(PdfMetadata.builder()
+                        .statusCode(HttpStatus.SC_BAD_REQUEST)
+                        .errorMessage(errorMessagePayer)
+                        .build())
+                .generateOnlyDebtor(false)
+                .build();
+
+        boolean result = sut.verifyAndUpdateReceipt(receipt, pdfGeneration);
+
+        assertFalse(result);
+        assertNull(receipt.getMdAttach());
+        assertNull(receipt.getMdAttachPayer());
+        assertNull(receipt.getReasonErr());
+        assertNotNull(receipt.getReasonErrPayer());
+        assertNotNull(receipt.getReasonErrPayer().getMessage());
+        assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, receipt.getReasonErrPayer().getCode());
+        assertEquals(ERROR_MESSAGE, receipt.getReasonErrPayer().getMessage());
+    }
+
+    @Test
+    void verifyDifferentDebtorPayerFailGenerationInErrorForBoth() {
+        Receipt receipt = buildReceiptForVerify(false, false);
+
+        String errorMessagePayer = "error message payer";
+        PdfGeneration pdfGeneration = PdfGeneration.builder()
+                .debtorMetadata(PdfMetadata.builder()
+                        .statusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR)
+                        .errorMessage(ERROR_MESSAGE)
+                        .build())
+                .payerMetadata(PdfMetadata.builder()
+                        .statusCode(HttpStatus.SC_BAD_REQUEST)
+                        .errorMessage(errorMessagePayer)
+                        .build())
+                .generateOnlyDebtor(false)
+                .build();
+
+        boolean result = sut.verifyAndUpdateReceipt(receipt, pdfGeneration);
+
+        assertFalse(result);
+        assertNull(receipt.getMdAttach());
+        assertNull(receipt.getMdAttachPayer());
         assertNotNull(receipt.getReasonErr());
         assertNotNull(receipt.getReasonErr().getMessage());
         assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, receipt.getReasonErr().getCode());
         assertEquals(ERROR_MESSAGE, receipt.getReasonErr().getMessage());
+        assertNotNull(receipt.getReasonErrPayer());
+        assertNotNull(receipt.getReasonErrPayer().getMessage());
+        assertEquals(HttpStatus.SC_BAD_REQUEST, receipt.getReasonErrPayer().getCode());
+        assertEquals(errorMessagePayer, receipt.getReasonErrPayer().getMessage());
     }
 
     @Test
@@ -626,6 +718,7 @@ class GenerateReceiptPdfServiceImplTest {
         assertEquals(DEBTOR_DOCUMENT_URL, receipt.getMdAttach().getUrl());
         assertNull(receipt.getMdAttachPayer());
         assertNull(receipt.getReasonErr());
+        assertNull(receipt.getReasonErrPayer());
     }
 
     private Receipt buildReceiptForVerify(boolean debtorAlreadyCreated, boolean payerAlreadyCreated) {
@@ -700,7 +793,7 @@ class GenerateReceiptPdfServiceImplTest {
                         .IUR("IUR")
                         .build())
                 .transactionDetails(TransactionDetails.builder()
-                        .wallet(WalletItem.builder().info(Info.builder().brand("MASTER").build()).build())
+                        .wallet(WalletItem.builder().info(Info.builder().brand("MASTER").build()).pagoPa(false).favourite(false).build())
                         .transaction(Transaction.builder()
                                 .idTransaction(1L)
                                 .grandTotal(0L)
