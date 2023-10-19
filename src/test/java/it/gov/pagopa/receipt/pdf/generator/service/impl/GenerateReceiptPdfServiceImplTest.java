@@ -9,12 +9,13 @@ import it.gov.pagopa.receipt.pdf.generator.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.ReceiptMetadata;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.enumeration.ReasonErrorCode;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.enumeration.ReceiptStatusType;
-import it.gov.pagopa.receipt.pdf.generator.exception.BizEventNotValidException;
-import it.gov.pagopa.receipt.pdf.generator.exception.PdfJsonMappingException;
+import it.gov.pagopa.receipt.pdf.generator.exception.TemplateDataMappingException;
 import it.gov.pagopa.receipt.pdf.generator.model.PdfGeneration;
 import it.gov.pagopa.receipt.pdf.generator.model.PdfMetadata;
 import it.gov.pagopa.receipt.pdf.generator.model.response.BlobStorageResponse;
 import it.gov.pagopa.receipt.pdf.generator.model.response.PdfEngineResponse;
+import it.gov.pagopa.receipt.pdf.generator.model.template.ReceiptPDFTemplate;
+import it.gov.pagopa.receipt.pdf.generator.service.BuildTemplateService;
 import it.gov.pagopa.receipt.pdf.generator.service.GenerateReceiptPdfService;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
@@ -53,14 +54,16 @@ class GenerateReceiptPdfServiceImplTest {
 
     private PdfEngineClient pdfEngineClientMock;
     private ReceiptBlobClient receiptBlobClientMock;
+    private BuildTemplateService buildTemplateServiceMock;
     private GenerateReceiptPdfService sut;
 
     @BeforeEach
     void setUp() throws IOException {
         pdfEngineClientMock = mock(PdfEngineClient.class);
         receiptBlobClientMock= mock(ReceiptBlobClient.class);
+        buildTemplateServiceMock = mock(BuildTemplateService.class);
 
-        sut = spy(new GenerateReceiptPdfServiceImpl(pdfEngineClientMock, receiptBlobClientMock));
+        sut = spy(new GenerateReceiptPdfServiceImpl(pdfEngineClientMock, receiptBlobClientMock, buildTemplateServiceMock));
         Path basePath = Path.of("src/test/resources");
         tempDirectoryDebtor = Files.createTempDirectory(basePath, "tempDebtor").toFile();
         outputPdfDebtor = File.createTempFile("outputDebtor", ".tmp", tempDirectoryDebtor);
@@ -91,21 +94,21 @@ class GenerateReceiptPdfServiceImplTest {
                 .when(pdfEngineClientMock).generatePDF(any(), any());
         doReturn(getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.CREATED.value()))
                 .when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
+        doReturn(new ReceiptPDFTemplate())
+                .when(buildTemplateServiceMock).buildTemplate(any(), anyBoolean());
 
-        AtomicReference<PdfGeneration> pdfGeneration = new AtomicReference<>();
-        withEnvironmentVariables().set("BRAND_LOGO_MAP", "{\"MASTER\":\"assets/mastercard.png\"}\n").execute(() ->
-                pdfGeneration.set(sut.generateReceipts(receiptOnly, bizEventOnly,Path.of("/tmp") ))
-        );
+        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly,Path.of("/tmp"));
 
         assertNotNull(pdfGeneration);
-        assertTrue(pdfGeneration.get().isGenerateOnlyDebtor());
-        assertNotNull(pdfGeneration.get().getDebtorMetadata());
-        assertNull(pdfGeneration.get().getDebtorMetadata().getErrorMessage());
-        assertNotNull(pdfGeneration.get().getDebtorMetadata().getDocumentName());
-        assertNotNull(pdfGeneration.get().getDebtorMetadata().getDocumentUrl());
-        assertEquals(HttpStatus.SC_OK, pdfGeneration.get().getDebtorMetadata().getStatusCode());
-        assertNull(pdfGeneration.get().getPayerMetadata());
+        assertTrue(pdfGeneration.isGenerateOnlyDebtor());
+        assertNotNull(pdfGeneration.getDebtorMetadata());
+        assertNull(pdfGeneration.getDebtorMetadata().getErrorMessage());
+        assertNotNull(pdfGeneration.getDebtorMetadata().getDocumentName());
+        assertNotNull(pdfGeneration.getDebtorMetadata().getDocumentUrl());
+        assertEquals(HttpStatus.SC_OK, pdfGeneration.getDebtorMetadata().getStatusCode());
+        assertNull(pdfGeneration.getPayerMetadata());
 
+        verify(buildTemplateServiceMock).buildTemplate(any(), anyBoolean());
         verify(pdfEngineClientMock).generatePDF(any(), any());
         verify(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
     }
@@ -119,21 +122,21 @@ class GenerateReceiptPdfServiceImplTest {
                 .when(pdfEngineClientMock).generatePDF(any(), any());
         doReturn(getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.CREATED.value()))
                 .when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
+        doReturn(new ReceiptPDFTemplate())
+                .when(buildTemplateServiceMock).buildTemplate(any(), anyBoolean());
 
-        AtomicReference<PdfGeneration> pdfGeneration = new AtomicReference<>();
-        withEnvironmentVariables().set("BRAND_LOGO_MAP", "{\"MASTER\":\"assets/mastercard.png\"}\n").execute(() ->
-                pdfGeneration.set(sut.generateReceipts(receiptOnly, bizEventOnly,Path.of("/tmp")))
-        );
+        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly,Path.of("/tmp"));
 
         assertNotNull(pdfGeneration);
-        assertTrue(pdfGeneration.get().isGenerateOnlyDebtor());
-        assertNotNull(pdfGeneration.get().getDebtorMetadata());
-        assertNull(pdfGeneration.get().getDebtorMetadata().getErrorMessage());
-        assertNotNull(pdfGeneration.get().getDebtorMetadata().getDocumentName());
-        assertNotNull(pdfGeneration.get().getDebtorMetadata().getDocumentUrl());
-        assertEquals(HttpStatus.SC_OK, pdfGeneration.get().getDebtorMetadata().getStatusCode());
-        assertNull(pdfGeneration.get().getPayerMetadata());
+        assertTrue(pdfGeneration.isGenerateOnlyDebtor());
+        assertNotNull(pdfGeneration.getDebtorMetadata());
+        assertNull(pdfGeneration.getDebtorMetadata().getErrorMessage());
+        assertNotNull(pdfGeneration.getDebtorMetadata().getDocumentName());
+        assertNotNull(pdfGeneration.getDebtorMetadata().getDocumentUrl());
+        assertEquals(HttpStatus.SC_OK, pdfGeneration.getDebtorMetadata().getStatusCode());
+        assertNull(pdfGeneration.getPayerMetadata());
 
+        verify(buildTemplateServiceMock).buildTemplate(any(), anyBoolean());
         verify(pdfEngineClientMock).generatePDF(any(), any());
         verify(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
     }
@@ -149,31 +152,31 @@ class GenerateReceiptPdfServiceImplTest {
         doReturn(getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.CREATED.value()),
                 getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.CREATED.value()))
                 .when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
+        doReturn(new ReceiptPDFTemplate())
+                .when(buildTemplateServiceMock).buildTemplate(any(), anyBoolean());
 
-        AtomicReference<PdfGeneration> pdfGeneration = new AtomicReference<>();
-        withEnvironmentVariables().set("BRAND_LOGO_MAP", "{\"MASTER\":\"assets/mastercard.png\"}\n").execute(() ->
-                pdfGeneration.set(sut.generateReceipts(receiptOnly, bizEventOnly,Path.of("/tmp")))
-        );
+        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly,Path.of("/tmp"));
 
         assertNotNull(pdfGeneration);
-        assertFalse(pdfGeneration.get().isGenerateOnlyDebtor());
-        assertNotNull(pdfGeneration.get().getDebtorMetadata());
-        assertNull(pdfGeneration.get().getDebtorMetadata().getErrorMessage());
-        assertNotNull(pdfGeneration.get().getDebtorMetadata().getDocumentName());
-        assertNotNull(pdfGeneration.get().getDebtorMetadata().getDocumentUrl());
-        assertEquals(HttpStatus.SC_OK, pdfGeneration.get().getDebtorMetadata().getStatusCode());
-        assertNotNull(pdfGeneration.get().getPayerMetadata());
-        assertNull(pdfGeneration.get().getPayerMetadata().getErrorMessage());
-        assertNotNull(pdfGeneration.get().getPayerMetadata().getDocumentName());
-        assertNotNull(pdfGeneration.get().getPayerMetadata().getDocumentUrl());
-        assertEquals(HttpStatus.SC_OK, pdfGeneration.get().getPayerMetadata().getStatusCode());
+        assertFalse(pdfGeneration.isGenerateOnlyDebtor());
+        assertNotNull(pdfGeneration.getDebtorMetadata());
+        assertNull(pdfGeneration.getDebtorMetadata().getErrorMessage());
+        assertNotNull(pdfGeneration.getDebtorMetadata().getDocumentName());
+        assertNotNull(pdfGeneration.getDebtorMetadata().getDocumentUrl());
+        assertEquals(HttpStatus.SC_OK, pdfGeneration.getDebtorMetadata().getStatusCode());
+        assertNotNull(pdfGeneration.getPayerMetadata());
+        assertNull(pdfGeneration.getPayerMetadata().getErrorMessage());
+        assertNotNull(pdfGeneration.getPayerMetadata().getDocumentName());
+        assertNotNull(pdfGeneration.getPayerMetadata().getDocumentUrl());
+        assertEquals(HttpStatus.SC_OK, pdfGeneration.getPayerMetadata().getStatusCode());
 
+        verify(buildTemplateServiceMock, times(2)).buildTemplate(any(), anyBoolean());
         verify(pdfEngineClientMock, times(2)).generatePDF(any(), any());
         verify(receiptBlobClientMock, times(2)).savePdfToBlobStorage(any(), anyString());
     }
 
     @Test
-    void generateReceiptsPayerNullReceiptAlreadyCreatedWithSuccess() {
+    void generateReceiptsPayerNullReceiptAlreadyCreatedWithSuccess() throws TemplateDataMappingException {
         Receipt receiptOnly = getReceiptWithOnlyDebtor(true);
         BizEvent bizEventOnly = getBizEventWithOnlyDebtor();
 
@@ -188,12 +191,13 @@ class GenerateReceiptPdfServiceImplTest {
         assertEquals(ALREADY_CREATED, pdfGeneration.getDebtorMetadata().getStatusCode());
         assertNull(pdfGeneration.getPayerMetadata());
 
+        verify(buildTemplateServiceMock, never()).buildTemplate(any(), anyBoolean());
         verify(pdfEngineClientMock, never()).generatePDF(any(), any());
         verify(receiptBlobClientMock, never()).savePdfToBlobStorage(any(), anyString());
     }
 
     @Test
-    void generateReceiptsSameDebtorPayerAndDebtorReceiptAlreadyCreatedWithSuccess() {
+    void generateReceiptsSameDebtorPayerAndDebtorReceiptAlreadyCreatedWithSuccess() throws TemplateDataMappingException {
         Receipt receiptOnly = getReceiptWithDebtorPayer(VALID_CF_DEBTOR, true, false);
         BizEvent bizEventOnly = getBizEventWithDebtorPayer(VALID_CF_DEBTOR);
 
@@ -208,6 +212,7 @@ class GenerateReceiptPdfServiceImplTest {
         assertEquals(ALREADY_CREATED, pdfGeneration.getDebtorMetadata().getStatusCode());
         assertNull(pdfGeneration.getPayerMetadata());
 
+        verify(buildTemplateServiceMock, never()).buildTemplate(any(), anyBoolean());
         verify(pdfEngineClientMock, never()).generatePDF(any(), any());
         verify(receiptBlobClientMock, never()).savePdfToBlobStorage(any(), anyString());
     }
@@ -221,25 +226,25 @@ class GenerateReceiptPdfServiceImplTest {
                 .when(pdfEngineClientMock).generatePDF(any(), any());
         doReturn(getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.CREATED.value()))
                 .when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
+        doReturn(new ReceiptPDFTemplate())
+                .when(buildTemplateServiceMock).buildTemplate(any(), anyBoolean());
 
-        AtomicReference<PdfGeneration> pdfGeneration = new AtomicReference<>();
-        withEnvironmentVariables().set("BRAND_LOGO_MAP", "{\"MASTER\":\"assets/mastercard.png\"}\n").execute(() ->
-                pdfGeneration.set(sut.generateReceipts(receiptOnly, bizEventOnly,Path.of("/tmp")))
-        );
+        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly,Path.of("/tmp"));
 
         assertNotNull(pdfGeneration);
-        assertFalse(pdfGeneration.get().isGenerateOnlyDebtor());
-        assertNotNull(pdfGeneration.get().getDebtorMetadata());
-        assertNull(pdfGeneration.get().getDebtorMetadata().getErrorMessage());
-        assertNotNull(pdfGeneration.get().getDebtorMetadata().getDocumentName());
-        assertNotNull(pdfGeneration.get().getDebtorMetadata().getDocumentUrl());
-        assertEquals(HttpStatus.SC_OK, pdfGeneration.get().getDebtorMetadata().getStatusCode());
-        assertNotNull(pdfGeneration.get().getPayerMetadata());
-        assertNull(pdfGeneration.get().getPayerMetadata().getErrorMessage());
-        assertNull(pdfGeneration.get().getPayerMetadata().getDocumentName());
-        assertNull(pdfGeneration.get().getPayerMetadata().getDocumentUrl());
-        assertEquals(ALREADY_CREATED, pdfGeneration.get().getPayerMetadata().getStatusCode());
+        assertFalse(pdfGeneration.isGenerateOnlyDebtor());
+        assertNotNull(pdfGeneration.getDebtorMetadata());
+        assertNull(pdfGeneration.getDebtorMetadata().getErrorMessage());
+        assertNotNull(pdfGeneration.getDebtorMetadata().getDocumentName());
+        assertNotNull(pdfGeneration.getDebtorMetadata().getDocumentUrl());
+        assertEquals(HttpStatus.SC_OK, pdfGeneration.getDebtorMetadata().getStatusCode());
+        assertNotNull(pdfGeneration.getPayerMetadata());
+        assertNull(pdfGeneration.getPayerMetadata().getErrorMessage());
+        assertNull(pdfGeneration.getPayerMetadata().getDocumentName());
+        assertNull(pdfGeneration.getPayerMetadata().getDocumentUrl());
+        assertEquals(ALREADY_CREATED, pdfGeneration.getPayerMetadata().getStatusCode());
 
+        verify(buildTemplateServiceMock).buildTemplate(any(), anyBoolean());
         verify(pdfEngineClientMock).generatePDF(any(), any());
         verify(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
     }
@@ -251,22 +256,46 @@ class GenerateReceiptPdfServiceImplTest {
 
         doReturn(getPdfEngineResponse(HttpStatus.SC_INTERNAL_SERVER_ERROR, ""))
                 .when(pdfEngineClientMock).generatePDF(any(), any());
+        doReturn(new ReceiptPDFTemplate())
+                .when(buildTemplateServiceMock).buildTemplate(any(), anyBoolean());
 
-        AtomicReference<PdfGeneration> pdfGeneration = new AtomicReference<>();
-        withEnvironmentVariables().set("BRAND_LOGO_MAP", "{\"MASTER\":\"assets/mastercard.png\"}\n").execute(() ->
-                pdfGeneration.set(sut.generateReceipts(receiptOnly, bizEventOnly,Path.of("/tmp")))
-        );
+        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly,Path.of("/tmp"));
 
         assertNotNull(pdfGeneration);
-        assertTrue(pdfGeneration.get().isGenerateOnlyDebtor());
-        assertNotNull(pdfGeneration.get().getDebtorMetadata());
-        assertNotNull(pdfGeneration.get().getDebtorMetadata().getErrorMessage());
-        assertNull(pdfGeneration.get().getDebtorMetadata().getDocumentName());
-        assertNull(pdfGeneration.get().getDebtorMetadata().getDocumentUrl());
-        assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, pdfGeneration.get().getDebtorMetadata().getStatusCode());
-        assertNull(pdfGeneration.get().getPayerMetadata());
+        assertTrue(pdfGeneration.isGenerateOnlyDebtor());
+        assertNotNull(pdfGeneration.getDebtorMetadata());
+        assertNotNull(pdfGeneration.getDebtorMetadata().getErrorMessage());
+        assertNull(pdfGeneration.getDebtorMetadata().getDocumentName());
+        assertNull(pdfGeneration.getDebtorMetadata().getDocumentUrl());
+        assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, pdfGeneration.getDebtorMetadata().getStatusCode());
+        assertNull(pdfGeneration.getPayerMetadata());
 
+        verify(buildTemplateServiceMock).buildTemplate(any(), anyBoolean());
         verify(pdfEngineClientMock).generatePDF(any(), any());
+        verify(receiptBlobClientMock, never()).savePdfToBlobStorage(any(), anyString());
+    }
+
+    @Test
+    void generateReceiptsPayerNullFailBuildTemplateData() throws Exception {
+        Receipt receiptOnly = getReceiptWithOnlyDebtor(false);
+        BizEvent bizEventOnly = getBizEventWithOnlyDebtor();
+
+        doThrow(new TemplateDataMappingException("error message", ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode()))
+                .when(buildTemplateServiceMock).buildTemplate(any(), anyBoolean());
+
+        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly,Path.of("/tmp"));
+
+        assertNotNull(pdfGeneration);
+        assertTrue(pdfGeneration.isGenerateOnlyDebtor());
+        assertNotNull(pdfGeneration.getDebtorMetadata());
+        assertNotNull(pdfGeneration.getDebtorMetadata().getErrorMessage());
+        assertNull(pdfGeneration.getDebtorMetadata().getDocumentName());
+        assertNull(pdfGeneration.getDebtorMetadata().getDocumentUrl());
+        assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), pdfGeneration.getDebtorMetadata().getStatusCode());
+        assertNull(pdfGeneration.getPayerMetadata());
+
+        verify(buildTemplateServiceMock).buildTemplate(any(), anyBoolean());
+        verify(pdfEngineClientMock, never()).generatePDF(any(), any());
         verify(receiptBlobClientMock, never()).savePdfToBlobStorage(any(), anyString());
     }
 
@@ -278,22 +307,21 @@ class GenerateReceiptPdfServiceImplTest {
         doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdfDebtor.getPath()))
                 .when(pdfEngineClientMock).generatePDF(any(), any());
         doThrow(RuntimeException.class).when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
+        doReturn(new ReceiptPDFTemplate())
+                .when(buildTemplateServiceMock).buildTemplate(any(), anyBoolean());
 
-
-        AtomicReference<PdfGeneration> pdfGeneration = new AtomicReference<>();
-        withEnvironmentVariables().set("BRAND_LOGO_MAP", "{\"MASTER\":\"assets/mastercard.png\"}\n").execute(() ->
-                pdfGeneration.set(sut.generateReceipts(receiptOnly, bizEventOnly,Path.of("/tmp")))
-        );
+        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly,Path.of("/tmp"));
 
         assertNotNull(pdfGeneration);
-        assertTrue(pdfGeneration.get().isGenerateOnlyDebtor());
-        assertNotNull(pdfGeneration.get().getDebtorMetadata());
-        assertNotNull(pdfGeneration.get().getDebtorMetadata().getErrorMessage());
-        assertNull(pdfGeneration.get().getDebtorMetadata().getDocumentName());
-        assertNull(pdfGeneration.get().getDebtorMetadata().getDocumentUrl());
-        assertEquals(ReasonErrorCode.ERROR_BLOB_STORAGE.getCode(), pdfGeneration.get().getDebtorMetadata().getStatusCode());
-        assertNull(pdfGeneration.get().getPayerMetadata());
+        assertTrue(pdfGeneration.isGenerateOnlyDebtor());
+        assertNotNull(pdfGeneration.getDebtorMetadata());
+        assertNotNull(pdfGeneration.getDebtorMetadata().getErrorMessage());
+        assertNull(pdfGeneration.getDebtorMetadata().getDocumentName());
+        assertNull(pdfGeneration.getDebtorMetadata().getDocumentUrl());
+        assertEquals(ReasonErrorCode.ERROR_BLOB_STORAGE.getCode(), pdfGeneration.getDebtorMetadata().getStatusCode());
+        assertNull(pdfGeneration.getPayerMetadata());
 
+        verify(buildTemplateServiceMock).buildTemplate(any(), anyBoolean());
         verify(pdfEngineClientMock).generatePDF(any(), any());
         verify(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
     }
@@ -307,21 +335,21 @@ class GenerateReceiptPdfServiceImplTest {
                 .when(pdfEngineClientMock).generatePDF(any(), any());
         doReturn(getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.INTERNAL_SERVER_ERROR.value()))
                 .when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
+        doReturn(new ReceiptPDFTemplate())
+                .when(buildTemplateServiceMock).buildTemplate(any(), anyBoolean());
 
-        AtomicReference<PdfGeneration> pdfGeneration = new AtomicReference<>();
-        withEnvironmentVariables().set("BRAND_LOGO_MAP", "{\"MASTER\":\"assets/mastercard.png\"}\n").execute(() ->
-                pdfGeneration.set(sut.generateReceipts(receiptOnly, bizEventOnly,Path.of("/tmp")))
-        );
+        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly,Path.of("/tmp"));
 
         assertNotNull(pdfGeneration);
-        assertTrue(pdfGeneration.get().isGenerateOnlyDebtor());
-        assertNotNull((pdfGeneration.get().getDebtorMetadata()));
-        assertNotNull((pdfGeneration.get().getDebtorMetadata().getErrorMessage()));
-        assertNull((pdfGeneration.get().getDebtorMetadata().getDocumentName()));
-        assertNull((pdfGeneration.get().getDebtorMetadata().getDocumentUrl()));
-        assertEquals(ReasonErrorCode.ERROR_BLOB_STORAGE.getCode(), (pdfGeneration.get().getDebtorMetadata().getStatusCode()));
-        assertNull((pdfGeneration.get().getPayerMetadata()));
+        assertTrue(pdfGeneration.isGenerateOnlyDebtor());
+        assertNotNull((pdfGeneration.getDebtorMetadata()));
+        assertNotNull((pdfGeneration.getDebtorMetadata().getErrorMessage()));
+        assertNull((pdfGeneration.getDebtorMetadata().getDocumentName()));
+        assertNull((pdfGeneration.getDebtorMetadata().getDocumentUrl()));
+        assertEquals(ReasonErrorCode.ERROR_BLOB_STORAGE.getCode(), (pdfGeneration.getDebtorMetadata().getStatusCode()));
+        assertNull((pdfGeneration.getPayerMetadata()));
 
+        verify(buildTemplateServiceMock).buildTemplate(any(), anyBoolean());
         verify(pdfEngineClientMock).generatePDF(any(), any());
         verify(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
     }
