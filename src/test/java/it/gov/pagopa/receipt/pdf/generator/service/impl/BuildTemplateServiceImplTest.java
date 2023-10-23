@@ -15,12 +15,9 @@ import static org.junit.jupiter.api.Assertions.*;
 import static uk.org.webcompere.systemstubs.SystemStubs.withEnvironmentVariables;
 
 class BuildTemplateServiceImplTest {
-
-    public static final String PSP_KEY_CITY = "city";
     public static final String COMPANY_NAME = "PA paolo";
     public static final String OFFICE_NAME = "office PA";
     public static final String ID_PSP = "ID_PSP";
-    public static final String PSP_NAME = "PSP Paolo";
     public static final String DEBTOR_FULL_NAME = "John Doe";
     public static final String DEBTOR_VALID_CF = "CF_DEBTOR";
     public static final String PAYER_FULL_NAME = "John Doe PAYER";
@@ -43,11 +40,12 @@ class BuildTemplateServiceImplTest {
     public static final String AUTH_CODE = "authCode";
     public static final String DATE_TIME_TIMESTAMP_MILLISECONDS = "2023-04-12T16:32:27.022486";
     public static final String DATE_TIME_TIMESTAMP_ZONED = "2023-04-12T16:32:27Z";
-    public static final String BUSINESS_NAME = "Nexi";
     public static final boolean PARTIAL_TEMPLATE = true;
     public static final boolean COMPLETE_TEMPLATE = false;
+    public static final String PSP_NAME = "name";
     public static final String PSP_LOGO = "logo";
     public static final String PSP_COMPANY = "companyName";
+    public static final String PSP_CITY = "city";
     public static final String PSP_POSTAL_CODE = "postalCode";
     public static final String PSP_ADDRESS = "address";
     public static final String PSP_BUILDING_NUMBER = "buildingNumber";
@@ -111,7 +109,7 @@ class BuildTemplateServiceImplTest {
                                 .authorizationCode(AUTH_CODE)
                                 .creationDate(DATE_TIME_TIMESTAMP_ZONED)
                                 .psp(TransactionPsp.builder()
-                                        .businessName(BUSINESS_NAME)
+                                        .businessName(PSP_NAME)
                                         .build())
                                 .build())
                         .build())
@@ -127,8 +125,8 @@ class BuildTemplateServiceImplTest {
         assertEquals(FORMATTED_GRAND_TOTAL, transaction.getAmount());
         assertEquals(PSP_LOGO, transaction.getPsp().getLogo());
         assertEquals(FORMATTED_FEE, transaction.getPsp().getFee().getAmount());
-        assertEquals(BUSINESS_NAME, transaction.getPsp().getName());
-        assertEquals(PSP_KEY_CITY, transaction.getPsp().getCity());
+        assertEquals(PSP_NAME, transaction.getPsp().getName());
+        assertEquals(PSP_CITY, transaction.getPsp().getCity());
         assertEquals(PSP_COMPANY, transaction.getPsp().getCompanyName());
         assertEquals(PSP_POSTAL_CODE, transaction.getPsp().getPostalCode());
         assertEquals(PSP_ADDRESS, transaction.getPsp().getAddress());
@@ -197,7 +195,7 @@ class BuildTemplateServiceImplTest {
                                 .authorizationCode(AUTH_CODE)
                                 .creationDate(DATE_TIME_TIMESTAMP_ZONED)
                                 .psp(TransactionPsp.builder()
-                                        .businessName(BUSINESS_NAME)
+                                        .businessName(PSP_NAME)
                                         .build())
                                 .build())
                         .build())
@@ -213,8 +211,8 @@ class BuildTemplateServiceImplTest {
         assertEquals(FORMATTED_GRAND_TOTAL, transaction.getAmount());
         assertEquals(PSP_LOGO, transaction.getPsp().getLogo());
         assertEquals(FORMATTED_FEE, transaction.getPsp().getFee().getAmount());
-        assertEquals(BUSINESS_NAME, transaction.getPsp().getName());
-        assertEquals(PSP_KEY_CITY, transaction.getPsp().getCity());
+        assertEquals(PSP_NAME, transaction.getPsp().getName());
+        assertEquals(PSP_CITY, transaction.getPsp().getCity());
         assertEquals(PSP_COMPANY, transaction.getPsp().getCompanyName());
         assertEquals(PSP_POSTAL_CODE, transaction.getPsp().getPostalCode());
         assertEquals(PSP_ADDRESS, transaction.getPsp().getAddress());
@@ -284,7 +282,7 @@ class BuildTemplateServiceImplTest {
         assertEquals(PSP_LOGO, transaction.getPsp().getLogo());
         assertNull(transaction.getPsp().getFee().getAmount());
         assertEquals(PSP_NAME, transaction.getPsp().getName());
-        assertEquals(PSP_KEY_CITY, transaction.getPsp().getCity());
+        assertEquals(PSP_CITY, transaction.getPsp().getCity());
         assertEquals(PSP_COMPANY, transaction.getPsp().getCompanyName());
         assertEquals(PSP_POSTAL_CODE, transaction.getPsp().getPostalCode());
         assertEquals(PSP_ADDRESS, transaction.getPsp().getAddress());
@@ -354,7 +352,7 @@ class BuildTemplateServiceImplTest {
         assertEquals(PSP_LOGO, transaction.getPsp().getLogo());
         assertNull(transaction.getPsp().getFee().getAmount());
         assertEquals(PSP_NAME, transaction.getPsp().getName());
-        assertEquals(PSP_KEY_CITY, transaction.getPsp().getCity());
+        assertEquals(PSP_CITY, transaction.getPsp().getCity());
         assertEquals(PSP_COMPANY, transaction.getPsp().getCompanyName());
         assertEquals(PSP_POSTAL_CODE, transaction.getPsp().getPostalCode());
         assertEquals(PSP_ADDRESS, transaction.getPsp().getAddress());
@@ -476,7 +474,7 @@ class BuildTemplateServiceImplTest {
                         .amount(AMOUNT_WITHOUT_CENTS)
                         .build())
                 .psp(Psp.builder()
-                        .idPsp(ID_PSP)
+                        .idPsp("noName")
                         .build())
                 .build();
         TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(event, COMPLETE_TEMPLATE));
