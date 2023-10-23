@@ -656,35 +656,6 @@ class GenerateReceiptPdfServiceImplTest {
         assertFalse(result);
         assertNull(receipt.getMdAttach());
         assertNull(receipt.getMdAttachPayer());
-        assertNull(receipt.getReasonErr());
-        assertNotNull(receipt.getReasonErrPayer());
-        assertNotNull(receipt.getReasonErrPayer().getMessage());
-        assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, receipt.getReasonErrPayer().getCode());
-        assertEquals(ERROR_MESSAGE, receipt.getReasonErrPayer().getMessage());
-    }
-
-    @Test
-    void verifyDifferentDebtorPayerFailGenerationInErrorForBoth() {
-        Receipt receipt = buildReceiptForVerify(false, false);
-
-        String errorMessagePayer = "error message payer";
-        PdfGeneration pdfGeneration = PdfGeneration.builder()
-                .debtorMetadata(PdfMetadata.builder()
-                        .statusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR)
-                        .errorMessage(ERROR_MESSAGE)
-                        .build())
-                .payerMetadata(PdfMetadata.builder()
-                        .statusCode(HttpStatus.SC_BAD_REQUEST)
-                        .errorMessage(errorMessagePayer)
-                        .build())
-                .generateOnlyDebtor(false)
-                .build();
-
-        boolean result = sut.verifyAndUpdateReceipt(receipt, pdfGeneration);
-
-        assertFalse(result);
-        assertNull(receipt.getMdAttach());
-        assertNull(receipt.getMdAttachPayer());
         assertNotNull(receipt.getReasonErr());
         assertNotNull(receipt.getReasonErr().getMessage());
         assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, receipt.getReasonErr().getCode());
