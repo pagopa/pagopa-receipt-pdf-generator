@@ -204,7 +204,8 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
         PdfEngineResponse pdfEngineResponse = pdfEngineClient.generatePDF(request, workingDirPath);
 
         if (pdfEngineResponse.getStatusCode() != HttpStatus.SC_OK) {
-            throw new GeneratePDFException(pdfEngineResponse.getErrorMessage(), pdfEngineResponse.getStatusCode());
+            String errMsg = String.format("PDF-Engine response KO (%s): %s", pdfEngineResponse.getStatusCode(), pdfEngineResponse.getErrorMessage());
+            throw new GeneratePDFException(errMsg, pdfEngineResponse.getStatusCode());
         }
 
         return pdfEngineResponse;
