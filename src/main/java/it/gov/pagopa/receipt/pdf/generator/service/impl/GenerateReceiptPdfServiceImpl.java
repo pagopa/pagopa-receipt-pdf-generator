@@ -162,7 +162,7 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
             PdfEngineResponse pdfEngineResponse = generatePDFReceipt(template, workingDirPath);
             return saveToBlobStorage(pdfEngineResponse, blobName);
         } catch (PDFReceiptGenerationException e) {
-            logger.error("An error occurred when generating or saving the PDF receipt for biz-event {}", bizEvent.getId(), e);
+            logger.error("An error occurred when generating or saving the PDF receipt for biz-event {}. Error: {}", bizEvent.getId(), e.getMessage(), e);
             return PdfMetadata.builder().statusCode(e.getStatusCode()).errorMessage(e.getMessage()).build();
         }
     }
@@ -204,7 +204,8 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
         PdfEngineResponse pdfEngineResponse = pdfEngineClient.generatePDF(request, workingDirPath);
 
         if (pdfEngineResponse.getStatusCode() != HttpStatus.SC_OK) {
-            throw new GeneratePDFException(pdfEngineResponse.getErrorMessage(), pdfEngineResponse.getStatusCode());
+            String errMsg = String.format("PDF-Engine response KO (%s): %s", pdfEngineResponse.getStatusCode(), pdfEngineResponse.getErrorMessage());
+            throw new GeneratePDFException(errMsg, pdfEngineResponse.getStatusCode());
         }
 
         return pdfEngineResponse;
