@@ -10,6 +10,16 @@
         "city": "city",
         "province": "province"
     },
+    "noName": {
+        "logo": "logo",
+        "fiscalCode": "fiscalCode",
+        "address": "address",
+        "buildingNumber": "buildingNumber",
+        "companyName": "companyName",
+        "postalCode": "postalCode",
+        "city": "city",
+        "province": "province"
+    },
     "noCompanyName": {
         "logo": "logo",
         "fiscalCode": "fiscalCode",

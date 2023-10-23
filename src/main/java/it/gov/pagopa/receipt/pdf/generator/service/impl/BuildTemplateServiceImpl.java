@@ -294,27 +294,13 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
         return null;
     }
 
-    private String getPspName(BizEvent event) throws TemplateDataMappingException {
-        if (  event.getTransactionDetails() != null &&
-                event.getTransactionDetails().getTransaction() != null &&
-                event.getTransactionDetails().getTransaction().getPsp() != null &&
-                event.getTransactionDetails().getTransaction().getPsp().getBusinessName() != null
-        ) {
-            return event.getTransactionDetails().getTransaction().getPsp().getBusinessName();
-        }
-        if (event.getPsp().getPsp() != null) {
-            return event.getPsp().getPsp();
-        }
-        throw new TemplateDataMappingException(formatErrorMessage(TemplateDataField.TRANSACTION_PSP_NAME), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
-    }
-
     private PSP getPsp(BizEvent event) throws TemplateDataMappingException {
         if (event.getPsp() != null && event.getPsp().getIdPsp() != null) {
             LinkedHashMap<String, String> info = (LinkedHashMap<String, String>) pspMap
                     .getOrDefault(event.getPsp().getIdPsp(), new LinkedHashMap<>());
             String pspFee = getPspFee(event);
             return PSP.builder()
-                    .name(getPspName(event))
+                    .name(getOrThrow(info, "name", TemplateDataField.TRANSACTION_PSP_NAME))
                     .fee(PSPFee.builder()
                             .amount(pspFee)
                             .build())
