@@ -14,6 +14,7 @@ import it.gov.pagopa.receipt.pdf.generator.entity.receipt.ReasonError;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.enumeration.ReceiptStatusType;
 import it.gov.pagopa.receipt.pdf.generator.exception.BizEventNotValidException;
+import it.gov.pagopa.receipt.pdf.generator.exception.ReceiptGenerationNotToRetryException;
 import it.gov.pagopa.receipt.pdf.generator.exception.ReceiptNotFoundException;
 import it.gov.pagopa.receipt.pdf.generator.model.PdfGeneration;
 import it.gov.pagopa.receipt.pdf.generator.service.GenerateReceiptPdfService;
@@ -163,29 +164,38 @@ public class GenerateReceiptPdf {
         }
 
         //Verify PDF generation success
-        boolean success = generateReceiptPdfService.verifyAndUpdateReceipt(receipt, pdfGeneration);
-        if (success) {
-            receipt.setStatus(ReceiptStatusType.GENERATED);
-            receipt.setGenerated_at(System.currentTimeMillis());
-            logger.info("[{}] Receipt with id {} being saved with status {}",
-                    context.getFunctionName(),
-                    receipt.getEventId(),
-                    receipt.getStatus());
-        } else {
-            ReceiptStatusType receiptStatusType;
-            //Verify if the max number of retry have been passed
-            if (receipt.getNumRetry() > MAX_NUMBER_RETRY) {
-                receiptStatusType = ReceiptStatusType.FAILED;
+        boolean success;
+        try {
+            success = generateReceiptPdfService.verifyAndUpdateReceipt(receipt, pdfGeneration);
+            if (success) {
+                receipt.setStatus(ReceiptStatusType.GENERATED);
+                receipt.setGenerated_at(System.currentTimeMillis());
+                logger.info("[{}] Receipt with id {} being saved with status {}",
+                        context.getFunctionName(),
+                        receipt.getEventId(),
+                        receipt.getStatus());
             } else {
-                receiptStatusType = ReceiptStatusType.RETRY;
-                receipt.setNumRetry(receipt.getNumRetry() + 1);
-                requeueMessage.setValue(bizEventMessage);
+                ReceiptStatusType receiptStatusType;
+                //Verify if the max number of retry have been passed
+                if (receipt.getNumRetry() > MAX_NUMBER_RETRY) {
+                    receiptStatusType = ReceiptStatusType.FAILED;
+                } else {
+                    receiptStatusType = ReceiptStatusType.RETRY;
+                    receipt.setNumRetry(receipt.getNumRetry() + 1);
+                    requeueMessage.setValue(bizEventMessage);
+                }
+                receipt.setStatus(receiptStatusType);
+                logger.error("[{}] Error generating receipt for Receipt {} will be saved with status {}",
+                        context.getFunctionName(),
+                        receipt.getId(),
+                        receiptStatusType);
             }
-            receipt.setStatus(receiptStatusType);
-            logger.error("[{}] Error generating receipt for Receipt {} will be saved with status {}",
+        } catch (ReceiptGenerationNotToRetryException e) {
+            receipt.setStatus(ReceiptStatusType.FAILED);
+            logger.error("[{}] PDF Receipt generation for Receipt {} failed. This error will not be retried, the receipt will be saved with status {}",
                     context.getFunctionName(),
                     receipt.getId(),
-                    receiptStatusType);
+                    ReceiptStatusType.FAILED, e);
         }
         documentdb.setValue(receipt);
     }

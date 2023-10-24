@@ -20,6 +20,7 @@ import it.gov.pagopa.receipt.pdf.generator.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.ReceiptMetadata;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.enumeration.ReasonErrorCode;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.enumeration.ReceiptStatusType;
+import it.gov.pagopa.receipt.pdf.generator.exception.ReceiptGenerationNotToRetryException;
 import it.gov.pagopa.receipt.pdf.generator.exception.TemplateDataMappingException;
 import it.gov.pagopa.receipt.pdf.generator.model.PdfGeneration;
 import it.gov.pagopa.receipt.pdf.generator.model.PdfMetadata;
@@ -44,6 +45,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.any;
@@ -377,7 +379,7 @@ class GenerateReceiptPdfServiceImplTest {
     }
 
     @Test
-    void verifyPayerNullOrSameDebtorPayerWithSuccess() {
+    void verifyPayerNullOrSameDebtorPayerWithSuccess() throws ReceiptGenerationNotToRetryException {
         Receipt receipt = buildReceiptForVerify(false, false);
 
         PdfGeneration pdfGeneration = PdfGeneration.builder()
@@ -403,7 +405,7 @@ class GenerateReceiptPdfServiceImplTest {
     }
 
     @Test
-    void verifyDifferentDebtorPayerWithSuccess() {
+    void verifyDifferentDebtorPayerWithSuccess() throws ReceiptGenerationNotToRetryException {
         Receipt receipt = buildReceiptForVerify(false, false);
 
         PdfGeneration pdfGeneration = PdfGeneration.builder()
@@ -438,7 +440,7 @@ class GenerateReceiptPdfServiceImplTest {
     }
 
     @Test
-    void verifyPayerNullOrSameDebtorPayerFailMetadataNull() {
+    void verifyPayerNullOrSameDebtorPayerFailMetadataNull() throws ReceiptGenerationNotToRetryException {
         Receipt receipt = buildReceiptForVerify(false, false);
 
         PdfGeneration pdfGeneration = PdfGeneration.builder()
@@ -455,7 +457,7 @@ class GenerateReceiptPdfServiceImplTest {
     }
 
     @Test
-    void verifyPayerNullOrSameDebtorPayerAlreadyCreatedSuccess() {
+    void verifyPayerNullOrSameDebtorPayerAlreadyCreatedSuccess() throws ReceiptGenerationNotToRetryException {
         Receipt receipt = buildReceiptForVerify(true, false);
 
         PdfGeneration pdfGeneration = PdfGeneration.builder()
@@ -479,7 +481,7 @@ class GenerateReceiptPdfServiceImplTest {
     }
 
     @Test
-    void verifyPayerNullOrSameDebtorPayerFailReceiptGenerationInError() {
+    void verifyPayerNullOrSameDebtorPayerFailReceiptGenerationInError() throws ReceiptGenerationNotToRetryException {
         Receipt receipt = buildReceiptForVerify(false, false);
 
         PdfGeneration pdfGeneration = PdfGeneration.builder()
@@ -503,7 +505,30 @@ class GenerateReceiptPdfServiceImplTest {
     }
 
     @Test
-    void verifyDifferentDebtorPayerAndDebtorAlreadyGeneratedSuccess() {
+    void verifyPayerNullOrSameDebtorPayerFailThrowsReceiptGenerationNotToRetryException() {
+        Receipt receipt = buildReceiptForVerify(false, false);
+
+        PdfGeneration pdfGeneration = PdfGeneration.builder()
+                .debtorMetadata(PdfMetadata.builder()
+                        .statusCode(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode())
+                        .errorMessage(ERROR_MESSAGE)
+                        .build())
+                .generateOnlyDebtor(true)
+                .build();
+
+        assertThrows(ReceiptGenerationNotToRetryException.class, () -> sut.verifyAndUpdateReceipt(receipt, pdfGeneration));
+
+        assertNull(receipt.getMdAttach());
+        assertNull(receipt.getMdAttachPayer());
+        assertNotNull(receipt.getReasonErr());
+        assertNotNull(receipt.getReasonErr().getMessage());
+        assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), receipt.getReasonErr().getCode());
+        assertEquals(ERROR_MESSAGE, receipt.getReasonErr().getMessage());
+        assertNull(receipt.getReasonErrPayer());
+    }
+
+    @Test
+    void verifyDifferentDebtorPayerAndDebtorAlreadyGeneratedSuccess() throws ReceiptGenerationNotToRetryException {
         Receipt receipt = buildReceiptForVerify(true, false);
 
         PdfGeneration pdfGeneration = PdfGeneration.builder()
@@ -536,7 +561,7 @@ class GenerateReceiptPdfServiceImplTest {
     }
 
     @Test
-    void verifyDifferentDebtorPayerAndPayerAlreadyGeneratedSuccess() {
+    void verifyDifferentDebtorPayerAndPayerAlreadyGeneratedSuccess() throws ReceiptGenerationNotToRetryException {
         Receipt receipt = buildReceiptForVerify(false, true);
 
         PdfGeneration pdfGeneration = PdfGeneration.builder()
@@ -569,7 +594,7 @@ class GenerateReceiptPdfServiceImplTest {
     }
 
     @Test
-    void verifyDifferentDebtorPayerFailDebtorGenerationInError() {
+    void verifyDifferentDebtorPayerFailDebtorGenerationInError() throws ReceiptGenerationNotToRetryException {
         Receipt receipt = buildReceiptForVerify(false, false);
 
         PdfGeneration pdfGeneration = PdfGeneration.builder()
@@ -602,7 +627,7 @@ class GenerateReceiptPdfServiceImplTest {
     }
 
     @Test
-    void verifyDifferentDebtorPayerFailPayerGenerationInError() {
+    void verifyDifferentDebtorPayerFailPayerGenerationInError() throws ReceiptGenerationNotToRetryException {
         Receipt receipt = buildReceiptForVerify(false, false);
 
         PdfGeneration pdfGeneration = PdfGeneration.builder()
@@ -635,7 +660,7 @@ class GenerateReceiptPdfServiceImplTest {
     }
 
     @Test
-    void verifyDifferentDebtorPayerFailGenerationInErrorForBoth() {
+    void verifyDifferentDebtorPayerFailGenerationInErrorForBoth() throws ReceiptGenerationNotToRetryException {
         Receipt receipt = buildReceiptForVerify(false, false);
 
         String errorMessagePayer = "error message payer";
@@ -667,7 +692,7 @@ class GenerateReceiptPdfServiceImplTest {
     }
 
     @Test
-    void verifyDifferentDebtorPayerFailPayerReceiptMetadataNull() {
+    void verifyDifferentDebtorPayerFailPayerReceiptMetadataNull() throws ReceiptGenerationNotToRetryException {
         Receipt receipt = buildReceiptForVerify(false, false);
 
         PdfGeneration pdfGeneration = PdfGeneration.builder()
@@ -690,6 +715,68 @@ class GenerateReceiptPdfServiceImplTest {
         assertNull(receipt.getMdAttachPayer());
         assertNull(receipt.getReasonErr());
         assertNull(receipt.getReasonErrPayer());
+    }
+
+    @Test
+    void verifyDifferentDebtorPayerFailThrowsReceiptGenerationNotToRetryException() {
+        Receipt receipt = buildReceiptForVerify(false, false);
+
+        String errorMessagePayer = "error message payer";
+        PdfGeneration pdfGeneration = PdfGeneration.builder()
+                .debtorMetadata(PdfMetadata.builder()
+                        .statusCode(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode())
+                        .errorMessage(ERROR_MESSAGE)
+                        .build())
+                .payerMetadata(PdfMetadata.builder()
+                        .statusCode(HttpStatus.SC_BAD_REQUEST)
+                        .errorMessage(errorMessagePayer)
+                        .build())
+                .generateOnlyDebtor(false)
+                .build();
+
+        assertThrows(ReceiptGenerationNotToRetryException.class, () -> sut.verifyAndUpdateReceipt(receipt, pdfGeneration));
+
+        assertNull(receipt.getMdAttach());
+        assertNull(receipt.getMdAttachPayer());
+        assertNotNull(receipt.getReasonErr());
+        assertNotNull(receipt.getReasonErr().getMessage());
+        assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), receipt.getReasonErr().getCode());
+        assertEquals(ERROR_MESSAGE, receipt.getReasonErr().getMessage());
+        assertNotNull(receipt.getReasonErrPayer());
+        assertNotNull(receipt.getReasonErrPayer().getMessage());
+        assertEquals(HttpStatus.SC_BAD_REQUEST, receipt.getReasonErrPayer().getCode());
+        assertEquals(errorMessagePayer, receipt.getReasonErrPayer().getMessage());
+    }
+
+    @Test
+    void verifyDifferentDebtorPayerFailBothThrowsReceiptGenerationNotToRetryException() {
+        Receipt receipt = buildReceiptForVerify(false, false);
+
+        String errorMessagePayer = "error message payer";
+        PdfGeneration pdfGeneration = PdfGeneration.builder()
+                .debtorMetadata(PdfMetadata.builder()
+                        .statusCode(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode())
+                        .errorMessage(ERROR_MESSAGE)
+                        .build())
+                .payerMetadata(PdfMetadata.builder()
+                        .statusCode(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode())
+                        .errorMessage(errorMessagePayer)
+                        .build())
+                .generateOnlyDebtor(false)
+                .build();
+
+        assertThrows(ReceiptGenerationNotToRetryException.class, () -> sut.verifyAndUpdateReceipt(receipt, pdfGeneration));
+
+        assertNull(receipt.getMdAttach());
+        assertNull(receipt.getMdAttachPayer());
+        assertNotNull(receipt.getReasonErr());
+        assertNotNull(receipt.getReasonErr().getMessage());
+        assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), receipt.getReasonErr().getCode());
+        assertEquals(ERROR_MESSAGE, receipt.getReasonErr().getMessage());
+        assertNotNull(receipt.getReasonErrPayer());
+        assertNotNull(receipt.getReasonErrPayer().getMessage());
+        assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), receipt.getReasonErrPayer().getCode());
+        assertEquals(errorMessagePayer, receipt.getReasonErrPayer().getMessage());
     }
 
     private Receipt buildReceiptForVerify(boolean debtorAlreadyCreated, boolean payerAlreadyCreated) {

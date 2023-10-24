@@ -2,6 +2,7 @@ package it.gov.pagopa.receipt.pdf.generator.service;
 
 import it.gov.pagopa.receipt.pdf.generator.entity.event.BizEvent;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.Receipt;
+import it.gov.pagopa.receipt.pdf.generator.exception.ReceiptGenerationNotToRetryException;
 import it.gov.pagopa.receipt.pdf.generator.model.PdfGeneration;
 
 import java.nio.file.Path;
@@ -24,6 +25,7 @@ public interface GenerateReceiptPdfService {
      * @param receipt the Receipt that hold the status of the elaboration
      * @param pdfGeneration {@link PdfGeneration} object with the result of the PDF generation
      * @return true if the process succeeded, otherwise false
+     * @throws ReceiptGenerationNotToRetryException when the receipt generation fail with an error that will not be retried
      */
-    boolean verifyAndUpdateReceipt(Receipt receipt, PdfGeneration pdfGeneration);
+    boolean verifyAndUpdateReceipt(Receipt receipt, PdfGeneration pdfGeneration) throws ReceiptGenerationNotToRetryException;
 }
