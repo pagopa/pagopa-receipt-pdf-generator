@@ -11,6 +11,7 @@ import it.gov.pagopa.receipt.pdf.generator.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.ReceiptMetadata;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.enumeration.ReasonErrorCode;
 import it.gov.pagopa.receipt.pdf.generator.exception.GeneratePDFException;
+import it.gov.pagopa.receipt.pdf.generator.exception.ReceiptGenerationNotToRetryException;
 import it.gov.pagopa.receipt.pdf.generator.exception.PDFReceiptGenerationException;
 import it.gov.pagopa.receipt.pdf.generator.exception.SavePDFToBlobException;
 import it.gov.pagopa.receipt.pdf.generator.model.PdfGeneration;
@@ -110,7 +111,7 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
      * {@inheritDoc}
      */
     @Override
-    public boolean verifyAndUpdateReceipt(Receipt receipt, PdfGeneration pdfGeneration) {
+    public boolean verifyAndUpdateReceipt(Receipt receipt, PdfGeneration pdfGeneration) throws ReceiptGenerationNotToRetryException {
         PdfMetadata debtorMetadata = pdfGeneration.getDebtorMetadata();
         boolean result = true;
         if (debtorMetadata == null) {
@@ -131,6 +132,10 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
         }
 
         if (pdfGeneration.isGenerateOnlyDebtor()) {
+            if (debtorMetadata.getStatusCode() == ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode()) {
+                String errMsg = String.format("Debtor receipt generation fail with status %s", debtorMetadata.getStatusCode());
+                throw new ReceiptGenerationNotToRetryException(errMsg);
+            }
             return result;
         }
 
@@ -150,6 +155,13 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
             ReasonError reasonErrorPayer = new ReasonError(payerMetadata.getStatusCode(), payerMetadata.getErrorMessage());
             receipt.setReasonErrPayer(reasonErrorPayer);
             result = false;
+        }
+
+        if (debtorMetadata.getStatusCode() == ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode()
+                || payerMetadata.getStatusCode() == ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode()) {
+            String errMsg = String.format("Receipt generation fail for debtor (status: %s) and/or payer (status: %s)",
+                    debtorMetadata.getStatusCode(), payerMetadata.getStatusCode());
+            throw new ReceiptGenerationNotToRetryException(errMsg);
         }
         return result;
     }

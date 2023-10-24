@@ -7,6 +7,7 @@ import it.gov.pagopa.receipt.pdf.generator.entity.receipt.EventData;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.enumeration.ReceiptStatusType;
 import it.gov.pagopa.receipt.pdf.generator.exception.BizEventNotValidException;
+import it.gov.pagopa.receipt.pdf.generator.exception.ReceiptGenerationNotToRetryException;
 import it.gov.pagopa.receipt.pdf.generator.exception.ReceiptNotFoundException;
 import it.gov.pagopa.receipt.pdf.generator.model.PdfGeneration;
 import it.gov.pagopa.receipt.pdf.generator.service.GenerateReceiptPdfService;
@@ -15,13 +16,21 @@ import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-import static uk.org.webcompere.systemstubs.SystemStubs.withEnvironmentVariable;
-import static uk.org.webcompere.systemstubs.SystemStubs.withEnvironmentVariables;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class GenerateReceiptPdfTest {
@@ -346,6 +355,30 @@ class GenerateReceiptPdfTest {
         doReturn(receipt).when(receiptCosmosClientMock).getReceiptDocument(anyString());
         doReturn(new PdfGeneration()).when(generateReceiptPdfServiceMock).generateReceipts(any(), any(), any());
         doReturn(false).when(generateReceiptPdfServiceMock).verifyAndUpdateReceipt(any(), any());
+
+        sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, requeueMessageMock, executionContextMock);
+
+        assertEquals(ReceiptStatusType.FAILED, receipt.getStatus());
+        assertEquals(ORIGINAL_GENERATED_AT, receipt.getGenerated_at());
+        assertEquals(numRetry, receipt.getNumRetry());
+        assertNull(receipt.getReasonErr());
+
+        verify(receiptCosmosClientMock).getReceiptDocument(anyString());
+        verify(generateReceiptPdfServiceMock).generateReceipts(any(), any(), any());
+        verify(generateReceiptPdfServiceMock).verifyAndUpdateReceipt(any(), any());
+        verify(documentReceiptsMock).setValue(any());
+        verify(requeueMessageMock, never()).setValue(any());
+    }
+
+    @Test
+    @SneakyThrows
+    void generatePDFFailVerifyThrowsReceiptGenerationNotToRetryException() {
+        int numRetry = 0;
+        Receipt receipt = buildReceiptWithStatus(ReceiptStatusType.RETRY, numRetry);
+
+        doReturn(receipt).when(receiptCosmosClientMock).getReceiptDocument(anyString());
+        doReturn(new PdfGeneration()).when(generateReceiptPdfServiceMock).generateReceipts(any(), any(), any());
+        doThrow(ReceiptGenerationNotToRetryException.class).when(generateReceiptPdfServiceMock).verifyAndUpdateReceipt(any(), any());
 
         sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, requeueMessageMock, executionContextMock);
 
