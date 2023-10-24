@@ -17,10 +17,7 @@ import java.text.NumberFormat;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
 public class BuildTemplateServiceImpl implements BuildTemplateService {
 
@@ -30,6 +27,8 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
 
     private static final String BRAND_LOGO_MAP_ENV_KEY = "BRAND_LOGO_MAP";
     private static final String PSP_CONFIG_FILE_JSON_FILE_NAME = "psp_config_file.json";
+    private static final String PAGO_PA_CHANNEL_IO = "IO";
+    private static final String PAGO_PA_CHANNEL_IO_PAY = "IO-PAY";
 
     /**
      * Hide from public usage.
@@ -77,6 +76,7 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
                                 .build())
                         .authCode(getAuthCode(bizEvent))
                         .requestedByDebtor(partialTemplate)
+                        .processedByPagoPA(getProcessedByPagoPA(bizEvent))
                         .build())
                 .user(partialTemplate ?
                         null :
@@ -322,6 +322,18 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
             throw new TemplateDataMappingException(formatErrorMessage(errorKey), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
         }
         return value;
+    }
+
+    public boolean getProcessedByPagoPA(BizEvent event){
+        if(event.getTransactionDetails() != null && event.getTransactionDetails().getWallet() != null){
+            String onboardingChannel = event.getTransactionDetails().getWallet().getOnboardingChannel();
+            return onboardingChannel != null &&
+                    (onboardingChannel.equals(PAGO_PA_CHANNEL_IO) ||
+                            onboardingChannel.equals(PAGO_PA_CHANNEL_IO_PAY)
+                    );
+        }
+
+        return false;
     }
 
     private String currencyFormat(String value) {

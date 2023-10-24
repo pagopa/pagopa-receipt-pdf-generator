@@ -19,4 +19,5 @@ public class Transaction {
     private String authCode;
     private PaymentMethod paymentMethod;
     private boolean requestedByDebtor;
+    private boolean processedByPagoPA;
 }
