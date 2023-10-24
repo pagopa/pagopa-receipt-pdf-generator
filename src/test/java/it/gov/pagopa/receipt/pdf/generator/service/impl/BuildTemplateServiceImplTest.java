@@ -58,6 +58,8 @@ class BuildTemplateServiceImplTest {
     private static final String MODEL_TYPE_NOTICE_TEXT = "codiceAvviso";
     private static final String MODEL_TYPE_IUV_TEXT = "IUV";
     private static final String DATE_TIME_TIMESTAMP_FORMATTED = "12 aprile 2023, 16:32:27";
+    private static final String PAGO_PA_CHANNEL_IO = "IO";
+    private static final String PAGO_PA_CHANNEL_IO_PAY = "IO-PAY";
     private BuildTemplateServiceImpl buildTemplateService;
 
     @BeforeEach
@@ -99,7 +101,10 @@ class BuildTemplateServiceImplTest {
                         .IUR(IUR)
                         .build())
                 .transactionDetails(TransactionDetails.builder()
-                        .wallet(WalletItem.builder().info(Info.builder().brand(BRAND).holder(HOLDER_FULL_NAME).build()).build())
+                        .wallet(WalletItem.builder()
+                                .info(Info.builder().brand(BRAND).holder(HOLDER_FULL_NAME).build())
+                                .onboardingChannel(PAGO_PA_CHANNEL_IO)
+                                .build())
                         .transaction(Transaction.builder()
                                 .idTransaction(ID_TRANSACTION)
                                 .grandTotal(GRAND_TOTAL_LONG)
@@ -138,6 +143,7 @@ class BuildTemplateServiceImplTest {
         assertEquals(HOLDER_FULL_NAME, transaction.getPaymentMethod().getAccountHolder());
         assertEquals(AUTH_CODE, transaction.getAuthCode());
         assertEquals(COMPLETE_TEMPLATE, transaction.isRequestedByDebtor());
+        assertTrue(transaction.isProcessedByPagoPA());
 
         it.gov.pagopa.receipt.pdf.generator.model.template.UserData userData = receiptPdfTemplate.getUser().getData();
         assertEquals(PAYER_VALID_CF, userData.getTaxCode());
@@ -185,7 +191,10 @@ class BuildTemplateServiceImplTest {
                         .IUR(IUR)
                         .build())
                 .transactionDetails(TransactionDetails.builder()
-                        .wallet(WalletItem.builder().info(Info.builder().brand(BRAND).holder(HOLDER_FULL_NAME).build()).build())
+                        .wallet(WalletItem.builder()
+                                .info(Info.builder().brand(BRAND).holder(HOLDER_FULL_NAME).build())
+                                .onboardingChannel(PAGO_PA_CHANNEL_IO_PAY)
+                                .build())
                         .transaction(Transaction.builder()
                                 .idTransaction(ID_TRANSACTION)
                                 .grandTotal(GRAND_TOTAL_LONG)
@@ -224,6 +233,7 @@ class BuildTemplateServiceImplTest {
         assertEquals(HOLDER_FULL_NAME, transaction.getPaymentMethod().getAccountHolder());
         assertEquals(AUTH_CODE, transaction.getAuthCode());
         assertEquals(PARTIAL_TEMPLATE, transaction.isRequestedByDebtor());
+        assertTrue(transaction.isProcessedByPagoPA());
 
         it.gov.pagopa.receipt.pdf.generator.model.template.User user = receiptPdfTemplate.getUser();
         assertNull(user);
@@ -294,6 +304,7 @@ class BuildTemplateServiceImplTest {
         assertNull(transaction.getPaymentMethod().getAccountHolder());
         assertNull(transaction.getAuthCode());
         assertEquals(COMPLETE_TEMPLATE, transaction.isRequestedByDebtor());
+        assertFalse(transaction.isProcessedByPagoPA());
 
         it.gov.pagopa.receipt.pdf.generator.model.template.UserData userData = receiptPdfTemplate.getUser().getData();
         assertEquals(PAYER_VALID_CF, userData.getTaxCode());
