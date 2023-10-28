@@ -6667,7 +6667,7 @@
     },
     "LB000484": {
         "logo": "https://assets.cdn.io.italia.it/logos/abi/REVOL.png",
-        "fiscalCode": "LT100011706713",
+        "fiscalCode": "100011706713",
         "name": "Revolut",
         "companyName": "Revolut Bank Uab",
         "address": "Konstitucijos Ave.",
@@ -6736,10 +6736,10 @@
         "fiscalCode": "BG175325806",
         "name": "iCard",
         "companyName": "Icard Ad",
-        "address": "Bulgaria",
+        "address": "",
         "buildingNumber": "",
         "postalCode": "00000",
-        "city": "Varna",
+        "city": "Ee",
         "province": "EE"
     },
     "ABI03667": {
@@ -6774,5 +6774,38 @@
         "postalCode": "42040",
         "city": "Campegine",
         "province": "RE"
+    },
+    "ABI03385": {
+        "logo": "https://assets.cdn.io.italia.it/logos/abi/03385.png",
+        "fiscalCode": "05435910962",
+        "name": "Isybank",
+        "companyName": "Isybank S.P.A.",
+        "address": "Via Monte Di Piet\u00e0",
+        "buildingNumber": "8",
+        "postalCode": "20121",
+        "city": "Milano",
+        "province": "MI"
+    },
+    "ABI36964": {
+        "logo": "https://assets.cdn.io.italia.it/logos/abi/36964.png",
+        "fiscalCode": "15539261006",
+        "name": "BCC Pay",
+        "companyName": "Bcc Pay S.P.A.",
+        "address": "Via Lucrezia Romana",
+        "buildingNumber": "41/47",
+        "postalCode": "00178",
+        "city": "Roma",
+        "province": "RM"
+    },
+    "ABI10640": {
+        "logo": "https://assets.cdn.io.italia.it/logos/abi/10640.png",
+        "fiscalCode": "00269390308",
+        "name": "BCC Financing",
+        "companyName": "Bcc Financing",
+        "address": "Via Aquileia",
+        "buildingNumber": "1",
+        "postalCode": "33100",
+        "city": "Udine",
+        "province": "UD"
     }
 }
