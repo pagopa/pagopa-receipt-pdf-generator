@@ -1,3 +1,5 @@
+const FISCAL_CODE = "AAAAAA00A00A000A";
+const TOKENIZED_FISCAL_CODE = "cd07268c-73e8-4df4-8305-a35085e32eff";
 
 export function randomString(length, charset) {
     let res = '';
@@ -41,7 +43,7 @@ export function createEvent(id) {
 		"debtor": {
 			"fullName": "paGetPaymentName",
 			"entityUniqueIdentifierType": "G",
-			"entityUniqueIdentifierValue": "JHNDOE00A01F205N",
+			"entityUniqueIdentifierValue": FISCAL_CODE,
 			"streetName": "paGetPaymentStreet",
 			"civicNumber": "paGetPayment99",
 			"postalCode": "20155",
@@ -53,7 +55,7 @@ export function createEvent(id) {
 		"payer": {
 			"fullName": "name",
 			"entityUniqueIdentifierType": "G",
-			"entityUniqueIdentifierValue": "JHNDOE00A01F205S",
+			"entityUniqueIdentifierValue": FISCAL_CODE,
 			"streetName": "street",
 			"civicNumber": "civic",
 			"postalCode": "postal",
@@ -96,7 +98,7 @@ export function createEvent(id) {
 			"user": {
 				"fullName": "John Doe",
 				"type": "F",
-				"fiscalCode": "JHNDOE00A01F205N",
+				"fiscalCode": FISCAL_CODE,
 				"notificationEmail": "john.doe@mail.it",
 				"userId": "1234",
 				"userStatus": "11",
@@ -126,8 +128,8 @@ export function createReceipt(id) {
 	{
 		"eventId": id,
 		"eventData": {
-			"payerFiscalCode": "GENERATOR_PERF_TEST",
-			"debtorFiscalCode": "GENERATOR_PERF_TEST",
+			"payerFiscalCode": TOKENIZED_FISCAL_CODE,
+			"debtorFiscalCode": TOKENIZED_FISCAL_CODE,
 			"amount": "200",
 			"cart": [
 				{
