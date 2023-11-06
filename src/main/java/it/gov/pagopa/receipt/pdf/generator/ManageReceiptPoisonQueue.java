@@ -14,6 +14,7 @@ import it.gov.pagopa.receipt.pdf.generator.entity.event.BizEvent;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.ReceiptError;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.enumeration.ReceiptErrorStatusType;
 import it.gov.pagopa.receipt.pdf.generator.exception.UnableToQueueException;
+import it.gov.pagopa.receipt.pdf.generator.utils.Aes256Utils;
 import it.gov.pagopa.receipt.pdf.generator.utils.ObjectMapperUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,6 +29,8 @@ import java.util.Objects;
 public class ManageReceiptPoisonQueue {
 
     private final Logger logger = LoggerFactory.getLogger(ManageReceiptPoisonQueue.class);
+    private static final String AES_SECRET_KEY = System.getenv().getOrDefault("AES_SECRET_KEY", "");
+    private static final String AES_SALT = System.getenv().getOrDefault("AES_SALT", "");
 
     /**
      * This function will be invoked when a Queue trigger occurs
@@ -103,8 +106,8 @@ public class ManageReceiptPoisonQueue {
                                 OutputBinding<ReceiptError> documentdb) {
          logger.info("[{}] saving new entry to the retry error to review with payload {}",
                  context.getFunctionName(), errorMessage);
-        documentdb.setValue(ReceiptError.builder().messagePayload(Base64.getMimeEncoder()
-                        .encodeToString(errorMessage.getBytes()))
+         String encodedEvent = Aes256Utils.encrypt(errorMessage, AES_SECRET_KEY, AES_SALT);
+        documentdb.setValue(ReceiptError.builder().messagePayload(encodedEvent)
                 .status(ReceiptErrorStatusType.TO_REVIEW).build());
     }
 }
