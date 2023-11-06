@@ -9,7 +9,7 @@ function createEventForQueue(id) {
 	return createEventForPoisonQueue(id, false, true);
 }
 
-function createEventForPoisonQueue(id, attemptedPoisonRetry, untokenizedFiscalCode) {
+function createEventForPoisonQueue(id, attemptedPoisonRetry) {
 	let json_event = {
 		"id": id,
 		"version": "2",
@@ -46,7 +46,7 @@ function createEventForPoisonQueue(id, attemptedPoisonRetry, untokenizedFiscalCo
 		"debtor": {
 			"fullName": "paGetPaymentName",
 			"entityUniqueIdentifierType": "G",
-			"entityUniqueIdentifierValue": untokenizedFiscalCode ? FISCAL_CODE : TOKENIZED_FISCAL_CODE,
+			"entityUniqueIdentifierValue": FISCAL_CODE,
 			"streetName": "paGetPaymentStreet",
 			"civicNumber": "paGetPayment99",
 			"postalCode": "20155",
@@ -58,7 +58,7 @@ function createEventForPoisonQueue(id, attemptedPoisonRetry, untokenizedFiscalCo
 		"payer": {
 			"fullName": "name",
 			"entityUniqueIdentifierType": "G",
-			"entityUniqueIdentifierValue": untokenizedFiscalCode ? FISCAL_CODE : TOKENIZED_FISCAL_CODE,
+			"entityUniqueIdentifierValue": FISCAL_CODE,
 			"streetName": "street",
 			"civicNumber": "civic",
 			"postalCode": "postal",
@@ -101,7 +101,7 @@ function createEventForPoisonQueue(id, attemptedPoisonRetry, untokenizedFiscalCo
 			"user": {
 				"fullName": "John Doe",
 				"type": "F",
-				"fiscalCode": untokenizedFiscalCode ? FISCAL_CODE : TOKENIZED_FISCAL_CODE,
+				"fiscalCode": FISCAL_CODE,
 				"notificationEmail": "john.doe@mail.it",
 				"userId": "1234",
 				"userStatus": "11",

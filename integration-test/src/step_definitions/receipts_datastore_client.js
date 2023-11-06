@@ -48,11 +48,11 @@ async function deleteDocumentFromReceiptsDatastore(id, partitionKey) {
 
 // receipts-message-error datastore
 
-async function getDocumentByMessagePayloadFromErrorReceiptsDatastore(messagePayload) {
+async function getDocumentByBizEventIdFromErrorReceiptsDatastore(bizEventId) {
     return await errorReceiptContainer.items
         .query({
-            query: "SELECT * from c WHERE c.messagePayload=@messagePayload",
-            parameters: [{ name: "@messagePayload", value: JSON.stringify(messagePayload) }]
+            query: "SELECT * from c WHERE c.bizEventId=@bizEventId",
+            parameters: [{ name: "@bizEventId", value: JSON.stringify(bizEventId) }]
         })
         .fetchNext();
 }
@@ -61,6 +61,7 @@ async function createDocumentInErrorReceiptsDatastore(id) {
     let event = createEventForPoisonQueue(id, true);
     let payload = {
         "messagePayload": JSON.stringify(event),
+        "bizEventId": id,
         "status": "REVIEWED",
         "id": id,
         "_rid": "Z9AJAJpW0pIhAAAAAAAAAA==",
@@ -86,8 +87,8 @@ async function deleteDocumentFromErrorReceiptsDatastore(id) {
     }
 }
 
-async function deleteDocumentFromErrorReceiptsDatastoreByMessagePayload(messagePayload) {
-    let documents = await getDocumentByMessagePayloadFromErrorReceiptsDatastore(messagePayload);
+async function deleteDocumentFromErrorReceiptsDatastoreByBizEventId(bizEventId) {
+    let documents = await getDocumentByBizEventIdFromErrorReceiptsDatastore(bizEventId);
 
     documents?.resources?.forEach((el) => {
         deleteDocumentFromErrorReceiptsDatastore(el.id);
@@ -95,5 +96,5 @@ async function deleteDocumentFromErrorReceiptsDatastoreByMessagePayload(messageP
 }
 
 module.exports = {
-    getDocumentByIdFromReceiptsDatastore, deleteDocumentFromReceiptsDatastoreByEventId, createDocumentInReceiptsDatastore, deleteDocumentFromReceiptsDatastore, getDocumentByMessagePayloadFromErrorReceiptsDatastore, createDocumentInErrorReceiptsDatastore, deleteDocumentFromErrorReceiptsDatastore, deleteDocumentFromErrorReceiptsDatastoreByMessagePayload
+    getDocumentByIdFromReceiptsDatastore, deleteDocumentFromReceiptsDatastoreByEventId, createDocumentInReceiptsDatastore, deleteDocumentFromReceiptsDatastore, getDocumentByBizEventIdFromErrorReceiptsDatastore, createDocumentInErrorReceiptsDatastore, deleteDocumentFromErrorReceiptsDatastore, deleteDocumentFromErrorReceiptsDatastoreByBizEventId
 }
