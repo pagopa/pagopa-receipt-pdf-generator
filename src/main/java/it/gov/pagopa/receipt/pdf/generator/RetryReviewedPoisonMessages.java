@@ -13,10 +13,12 @@ import it.gov.pagopa.receipt.pdf.generator.client.impl.ReceiptQueueClientImpl;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.ReceiptError;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.enumeration.ReceiptErrorStatusType;
 import it.gov.pagopa.receipt.pdf.generator.exception.UnableToQueueException;
+import it.gov.pagopa.receipt.pdf.generator.utils.Aes256Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 
 /**
@@ -25,6 +27,8 @@ import java.util.List;
 public class RetryReviewedPoisonMessages {
 
      private final Logger logger = LoggerFactory.getLogger(RetryReviewedPoisonMessages.class);
+     private static final String AES_SECRET_KEY = System.getenv().getOrDefault("AES_SECRET_KEY", "");
+     private static final String AES_SALT = System.getenv().getOrDefault("AES_SALT", "");
 
     /**
      * This function will be invoked when an CosmosDB trigger occurs
@@ -72,9 +76,9 @@ public class RetryReviewedPoisonMessages {
                 if (receiptError != null && receiptError.getStatus().equals(ReceiptErrorStatusType.REVIEWED)) {
 
                     try {
-
+                        String decodedEvent = Aes256Utils.decrypt(receiptError.getMessagePayload(), AES_SECRET_KEY, AES_SALT);
                         Response<SendMessageResult> sendMessageResult =
-                            queueService.sendMessageToQueue(receiptError.getMessagePayload());
+                            queueService.sendMessageToQueue(Base64.getMimeEncoder().encodeToString(decodedEvent.getBytes()));
                         if (sendMessageResult.getStatusCode() != HttpStatus.CREATED.value()) {
                             throw new UnableToQueueException("Unable to queue due to error: " +
                                     sendMessageResult.getStatusCode());

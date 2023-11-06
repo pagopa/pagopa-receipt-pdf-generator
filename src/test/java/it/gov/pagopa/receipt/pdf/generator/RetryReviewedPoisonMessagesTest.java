@@ -9,6 +9,7 @@ import it.gov.pagopa.receipt.pdf.generator.client.impl.ReceiptQueueClientImpl;
 import it.gov.pagopa.receipt.pdf.generator.entity.event.BizEvent;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.ReceiptError;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.enumeration.ReceiptErrorStatusType;
+import it.gov.pagopa.receipt.pdf.generator.utils.Aes256Utils;
 import it.gov.pagopa.receipt.pdf.generator.utils.ObjectMapperUtils;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.AfterEach;
@@ -19,6 +20,9 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 
 import java.lang.reflect.Field;
 import java.util.Base64;
@@ -29,7 +33,12 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@ExtendWith(SystemStubsExtension.class)
 class RetryReviewedPoisonMessagesTest {
+
+    private final String AES_SALT = "salt";
+    private final String AES_KEY = "key";
+    private final String ENCRYPTED_VALID_CONTENT_TO_RETRY = Aes256Utils.encrypt("{\"id\":\"bizEventId\"}", AES_KEY, AES_SALT);
 
     @Spy
     private RetryReviewedPoisonMessages function;
@@ -43,8 +52,8 @@ class RetryReviewedPoisonMessagesTest {
     @Captor
     private ArgumentCaptor<List<ReceiptError>> documentCaptor;
 
-    private final String BASE_64_VALID_CONTENT_TO_RETRY = Base64.getMimeEncoder().encodeToString("{\"id\":\"bizEventId\"}".getBytes());
-
+    @SystemStub
+    private EnvironmentVariables environment = new EnvironmentVariables("AES_SALT", AES_SALT, "AES_SECRET_KEY", AES_KEY);
 
     @AfterEach
     public void teardown() throws Exception {
@@ -57,7 +66,7 @@ class RetryReviewedPoisonMessagesTest {
     @Test
     void successfulRun() throws JsonProcessingException {
         ReceiptError receiptError = new ReceiptError();
-        receiptError.setMessagePayload(BASE_64_VALID_CONTENT_TO_RETRY);
+        receiptError.setMessagePayload(ENCRYPTED_VALID_CONTENT_TO_RETRY);
         receiptError.setStatus(ReceiptErrorStatusType.REVIEWED);
         receiptError.setId("1");
 
@@ -79,7 +88,7 @@ class RetryReviewedPoisonMessagesTest {
 
         verify(errorToCosmos).setValue(documentCaptor.capture());
         ReceiptError documentCaptorValue = documentCaptor.getValue().get(0);
-        assertEquals(BASE_64_VALID_CONTENT_TO_RETRY, documentCaptorValue.getMessagePayload());
+        assertEquals(ENCRYPTED_VALID_CONTENT_TO_RETRY, documentCaptorValue.getMessagePayload());
         assertEquals(ReceiptErrorStatusType.REQUEUED, documentCaptorValue.getStatus());
 
     }
@@ -87,7 +96,7 @@ class RetryReviewedPoisonMessagesTest {
     @Test
     void successfulRunWithoutElementToRequeue() {
         ReceiptError receiptError = new ReceiptError();
-        receiptError.setMessagePayload(BASE_64_VALID_CONTENT_TO_RETRY);
+        receiptError.setMessagePayload(ENCRYPTED_VALID_CONTENT_TO_RETRY);
         receiptError.setStatus(ReceiptErrorStatusType.TO_REVIEW);
         receiptError.setId("1");
 
@@ -105,7 +114,7 @@ class RetryReviewedPoisonMessagesTest {
     @Test
     void resendToCosmosIfQueueFailed() throws JsonProcessingException {
         ReceiptError receiptError = new ReceiptError();
-        receiptError.setMessagePayload(BASE_64_VALID_CONTENT_TO_RETRY);
+        receiptError.setMessagePayload(ENCRYPTED_VALID_CONTENT_TO_RETRY);
         receiptError.setStatus(ReceiptErrorStatusType.REVIEWED);
         receiptError.setId("1");
 
@@ -127,7 +136,7 @@ class RetryReviewedPoisonMessagesTest {
 
         verify(errorToCosmos).setValue(documentCaptor.capture());
         ReceiptError documentCaptorValue = documentCaptor.getValue().get(0);
-        assertEquals(BASE_64_VALID_CONTENT_TO_RETRY, documentCaptorValue.getMessagePayload());
+        assertEquals(ENCRYPTED_VALID_CONTENT_TO_RETRY, documentCaptorValue.getMessagePayload());
         assertEquals(ReceiptErrorStatusType.TO_REVIEW, documentCaptorValue.getStatus());
         assertNotNull(documentCaptorValue.getMessageError());
 
