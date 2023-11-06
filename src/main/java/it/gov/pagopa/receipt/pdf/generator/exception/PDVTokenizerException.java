@@ -4,8 +4,7 @@ import lombok.Getter;
 
 /**
  * Thrown in case an error occur when invoking PDV Tokenizer service
- *
- * //TODO Unused, needed when the BizEvent will be adequately tokenized
+ * Unused, needed when the BizEvent will be adequately tokenized
  */
 @Getter
 public class PDVTokenizerException extends Exception {

@@ -7,8 +7,7 @@ import java.net.http.HttpResponse;
 
 /**
  * Client for invoking PDV Tokenizer service
- *
- * //TODO Unused, needed when the BizEvent will be adequately tokenized
+ * Unused, needed when the BizEvent will be adequately tokenized
  */
 public interface PDVTokenizerClient {
 

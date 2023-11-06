@@ -9,6 +9,7 @@ import it.gov.pagopa.receipt.pdf.generator.client.impl.ReceiptQueueClientImpl;
 import it.gov.pagopa.receipt.pdf.generator.entity.event.BizEvent;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.ReceiptError;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.enumeration.ReceiptErrorStatusType;
+import it.gov.pagopa.receipt.pdf.generator.exception.Aes256Exception;
 import it.gov.pagopa.receipt.pdf.generator.utils.Aes256Utils;
 import it.gov.pagopa.receipt.pdf.generator.utils.ObjectMapperUtils;
 import org.apache.http.HttpStatus;
@@ -58,7 +59,7 @@ class RetryReviewedPoisonMessagesTest {
     private EnvironmentVariables environment = new EnvironmentVariables("AES_SALT", AES_SALT, "AES_SECRET_KEY", AES_KEY);
 
     @BeforeEach
-    public void initiate() {
+    public void initiate() throws Aes256Exception {
         ENCRYPTED_VALID_CONTENT_TO_RETRY = Aes256Utils.encrypt(String.format("{\"id\":\"%s\"}", BIZ_EVENT_ID));
     }
 
