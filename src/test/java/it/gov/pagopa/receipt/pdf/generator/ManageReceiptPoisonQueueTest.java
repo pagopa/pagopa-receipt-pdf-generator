@@ -8,6 +8,7 @@ import it.gov.pagopa.receipt.pdf.generator.client.impl.ReceiptQueueClientImpl;
 import it.gov.pagopa.receipt.pdf.generator.entity.event.BizEvent;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.ReceiptError;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.enumeration.ReceiptErrorStatusType;
+import it.gov.pagopa.receipt.pdf.generator.exception.Aes256Exception;
 import it.gov.pagopa.receipt.pdf.generator.utils.Aes256Utils;
 import it.gov.pagopa.receipt.pdf.generator.utils.ObjectMapperUtils;
 import org.apache.http.HttpStatus;
@@ -86,7 +87,7 @@ class ManageReceiptPoisonQueueTest {
     }
 
     @Test
-    void successRunWithValidPayloadNotToRetry() {
+    void successRunWithValidPayloadNotToRetry() throws Aes256Exception {
         ReceiptQueueClientImpl serviceMock = mock(ReceiptQueueClientImpl.class);
 
         ManageReceiptPoisonQueueTest.setMock(serviceMock);
@@ -104,7 +105,7 @@ class ManageReceiptPoisonQueueTest {
     }
 
     @Test
-    void successRunWithInvalidPayload() {
+    void successRunWithInvalidPayload() throws Aes256Exception {
         ReceiptQueueClientImpl serviceMock = mock(ReceiptQueueClientImpl.class);
 
         ManageReceiptPoisonQueueTest.setMock(serviceMock);
@@ -122,7 +123,7 @@ class ManageReceiptPoisonQueueTest {
     }
 
     @Test
-    void KoRunForRequeueError() {
+    void KoRunForRequeueError() throws Aes256Exception {
         ReceiptQueueClientImpl serviceMock = mock(ReceiptQueueClientImpl.class);
         Response<SendMessageResult> response = mock(Response.class);
         when(response.getStatusCode()).thenReturn(HttpStatus.SC_BAD_REQUEST);

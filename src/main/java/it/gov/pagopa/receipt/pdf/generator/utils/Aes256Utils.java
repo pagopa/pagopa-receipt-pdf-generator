@@ -1,8 +1,8 @@
 package it.gov.pagopa.receipt.pdf.generator.utils;
 
-import javax.crypto.Cipher;
-import javax.crypto.SecretKey;
-import javax.crypto.SecretKeyFactory;
+import it.gov.pagopa.receipt.pdf.generator.exception.Aes256Exception;
+
+import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
@@ -22,6 +22,8 @@ public class Aes256Utils {
 
     public static final String ALGORITHM = "AES";
 
+    private static final int AES_UNEXPECTED_ERROR = 701;
+
 
     /**
      * Hide from public usage.
@@ -29,7 +31,7 @@ public class Aes256Utils {
     private Aes256Utils() {
     }
 
-    public static String encrypt(String strToEncrypt) {
+    public static String encrypt(String strToEncrypt) throws Aes256Exception {
 
         try {
 
@@ -53,15 +55,12 @@ public class Aes256Utils {
 
             return Base64.getEncoder().encodeToString(encryptedData);
         } catch (Exception e) {
-            //TODO Handle exception
-            return null;
+            throw new Aes256Exception("Unexpected error when encrypting the given string", AES_UNEXPECTED_ERROR, e);
         }
     }
 
-    public static String decrypt(String strToDecrypt) {
-
-        try {
-
+    public static String decrypt(String strToDecrypt) throws Aes256Exception {
+        try{
             byte[] encryptedData = Base64.getDecoder().decode(strToDecrypt);
             byte[] iv = new byte[16];
             System.arraycopy(encryptedData, 0, iv, 0, iv.length);
@@ -81,8 +80,7 @@ public class Aes256Utils {
             byte[] decryptedText = cipher.doFinal(cipherText);
             return new String(decryptedText, StandardCharsets.UTF_8);
         } catch (Exception e) {
-            //TODO Handle exception
-            return null;
+            throw new Aes256Exception("Unexpected error when decrypting the given string", AES_UNEXPECTED_ERROR, e);
         }
     }
 }
