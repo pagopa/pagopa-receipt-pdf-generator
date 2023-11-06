@@ -29,8 +29,6 @@ import java.util.Objects;
 public class ManageReceiptPoisonQueue {
 
     private final Logger logger = LoggerFactory.getLogger(ManageReceiptPoisonQueue.class);
-    private static final String AES_SECRET_KEY = System.getenv().getOrDefault("AES_SECRET_KEY", "");
-    private static final String AES_SALT = System.getenv().getOrDefault("AES_SALT", "");
 
     /**
      * This function will be invoked when a Queue trigger occurs
@@ -95,19 +93,21 @@ public class ManageReceiptPoisonQueue {
                  logger.error("[{}] error for the function called at {} when attempting" +
                                  "to requeue BizEvent wit id {}, saving to cosmos for review",
                          context.getFunctionName(), LocalDateTime.now(), bizEvent.getId(), e);
-                saveToDocument(context, errorMessage, documentdb);
+                saveToDocument(context, errorMessage, bizEvent.getId(), documentdb);
             }
         } else {
-            saveToDocument(context, errorMessage, documentdb);
+            saveToDocument(context, errorMessage, bizEvent != null ? bizEvent.getId() : null, documentdb);
         }
     }
 
-    private void saveToDocument(ExecutionContext context, String errorMessage,
+    private void saveToDocument(ExecutionContext context, String errorMessage, String bizEventId,
                                 OutputBinding<ReceiptError> documentdb) {
          logger.info("[{}] saving new entry to the retry error to review with payload {}",
                  context.getFunctionName(), errorMessage);
-         String encodedEvent = Aes256Utils.encrypt(errorMessage, AES_SECRET_KEY, AES_SALT);
-        documentdb.setValue(ReceiptError.builder().messagePayload(encodedEvent)
+         String encodedEvent = Aes256Utils.encrypt(errorMessage);
+        documentdb.setValue(ReceiptError.builder()
+                .messagePayload(encodedEvent)
+                .bizEventId(bizEventId)
                 .status(ReceiptErrorStatusType.TO_REVIEW).build());
     }
 }

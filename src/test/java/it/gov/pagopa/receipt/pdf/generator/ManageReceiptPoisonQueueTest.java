@@ -33,10 +33,11 @@ import static org.mockito.Mockito.*;
 @ExtendWith(SystemStubsExtension.class)
 class ManageReceiptPoisonQueueTest {
 
+    public static final String BIZ_EVENT_ID = "bizEventId";
     private final String AES_SALT = "salt";
     private final String AES_KEY = "key";
-    private final String VALID_CONTENT_TO_RETRY = "{\"id\":\"bizEventId\"}";
-    private final String VALID_CONTENT_NOT_TO_RETRY = "{\"attemptedPoisonRetry\":\"true\",\"id\":\"bizEventId\"}";
+    private final String VALID_CONTENT_TO_RETRY = String.format("{\"id\":\"%s\"}", BIZ_EVENT_ID);
+    private final String VALID_CONTENT_NOT_TO_RETRY = String.format("{\"attemptedPoisonRetry\":\"true\",\"id\":\"%s\"}", BIZ_EVENT_ID);
     private final String INVALID_MESSAGE = "invalid message";
 
     @Spy
@@ -78,7 +79,7 @@ class ManageReceiptPoisonQueueTest {
         verify(serviceMock).sendMessageToQueue(messageCaptor.capture());
         BizEvent captured = ObjectMapperUtils.mapString(
                 new String(Base64.getMimeDecoder().decode(messageCaptor.getValue())), BizEvent.class);
-        assertEquals("bizEventId", captured.getId());
+        assertEquals(BIZ_EVENT_ID, captured.getId());
         assertTrue(captured.getAttemptedPoisonRetry());
 
         verifyNoInteractions(errorToCosmos);
@@ -97,7 +98,8 @@ class ManageReceiptPoisonQueueTest {
         verify(errorToCosmos).setValue(documentCaptor.capture());
         ReceiptError captured = documentCaptor.getValue();
         assertNotNull(captured.getMessagePayload());
-        assertEquals(VALID_CONTENT_NOT_TO_RETRY, Aes256Utils.decrypt(captured.getMessagePayload(), AES_KEY, AES_SALT));
+        assertEquals(VALID_CONTENT_NOT_TO_RETRY, Aes256Utils.decrypt(captured.getMessagePayload()));
+        assertEquals(BIZ_EVENT_ID, captured.getBizEventId());
         assertEquals(ReceiptErrorStatusType.TO_REVIEW, captured.getStatus());
     }
 
@@ -113,7 +115,8 @@ class ManageReceiptPoisonQueueTest {
         verify(errorToCosmos).setValue(documentCaptor.capture());
         ReceiptError captured = documentCaptor.getValue();
         assertNotNull(captured.getMessagePayload());
-        assertEquals(INVALID_MESSAGE,  Aes256Utils.decrypt(captured.getMessagePayload(), AES_KEY, AES_SALT));
+        assertEquals(INVALID_MESSAGE,  Aes256Utils.decrypt(captured.getMessagePayload()));
+        assertNull(captured.getBizEventId());
         assertEquals(ReceiptErrorStatusType.TO_REVIEW, captured.getStatus());
 
     }
@@ -133,7 +136,8 @@ class ManageReceiptPoisonQueueTest {
         verify(errorToCosmos).setValue(documentCaptor.capture());
         ReceiptError captured = documentCaptor.getValue();
         assertNotNull(captured.getMessagePayload());
-        assertEquals(VALID_CONTENT_TO_RETRY, Aes256Utils.decrypt(captured.getMessagePayload(), AES_KEY, AES_SALT));
+        assertEquals(VALID_CONTENT_TO_RETRY, Aes256Utils.decrypt(captured.getMessagePayload()));
+        assertEquals(BIZ_EVENT_ID, captured.getBizEventId());
         assertEquals(ReceiptErrorStatusType.TO_REVIEW, captured.getStatus());
 
     }

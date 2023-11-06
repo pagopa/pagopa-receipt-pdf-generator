@@ -13,6 +13,8 @@ import java.util.Base64;
 
 public class Aes256Utils {
 
+    private static final String AES_SECRET_KEY = System.getenv().getOrDefault("AES_SECRET_KEY", "");
+    private static final String AES_SALT = System.getenv().getOrDefault("AES_SALT", "");
     private static final int KEY_LENGTH = 256;
     private static final int ITERATION_COUNT = 65536;
     public static final String PBKDF_2_WITH_HMAC_SHA_256 = "PBKDF2WithHmacSHA256";
@@ -27,7 +29,7 @@ public class Aes256Utils {
     private Aes256Utils() {
     }
 
-    public static String encrypt(String strToEncrypt, String secretKey, String salt) {
+    public static String encrypt(String strToEncrypt) {
 
         try {
 
@@ -37,7 +39,7 @@ public class Aes256Utils {
             IvParameterSpec ivspec = new IvParameterSpec(iv);
 
             SecretKeyFactory factory = SecretKeyFactory.getInstance(PBKDF_2_WITH_HMAC_SHA_256);
-            KeySpec spec = new PBEKeySpec(secretKey.toCharArray(), salt.getBytes(), ITERATION_COUNT, KEY_LENGTH);
+            KeySpec spec = new PBEKeySpec(AES_SECRET_KEY.toCharArray(), AES_SALT.getBytes(), ITERATION_COUNT, KEY_LENGTH);
             SecretKey tmp = factory.generateSecret(spec);
             SecretKeySpec secretKeySpec = new SecretKeySpec(tmp.getEncoded(), ALGORITHM);
 
@@ -51,13 +53,12 @@ public class Aes256Utils {
 
             return Base64.getEncoder().encodeToString(encryptedData);
         } catch (Exception e) {
-            // Handle the exception properly
-            e.printStackTrace();
+            //TODO Handle exception
             return null;
         }
     }
 
-    public static String decrypt(String strToDecrypt, String secretKey, String salt) {
+    public static String decrypt(String strToDecrypt) {
 
         try {
 
@@ -67,7 +68,7 @@ public class Aes256Utils {
             IvParameterSpec ivspec = new IvParameterSpec(iv);
 
             SecretKeyFactory factory = SecretKeyFactory.getInstance(PBKDF_2_WITH_HMAC_SHA_256);
-            KeySpec spec = new PBEKeySpec(secretKey.toCharArray(), salt.getBytes(), ITERATION_COUNT, KEY_LENGTH);
+            KeySpec spec = new PBEKeySpec(AES_SECRET_KEY.toCharArray(), AES_SALT.getBytes(), ITERATION_COUNT, KEY_LENGTH);
             SecretKey tmp = factory.generateSecret(spec);
             SecretKeySpec secretKeySpec = new SecretKeySpec(tmp.getEncoded(), ALGORITHM);
 
@@ -80,8 +81,7 @@ public class Aes256Utils {
             byte[] decryptedText = cipher.doFinal(cipherText);
             return new String(decryptedText, StandardCharsets.UTF_8);
         } catch (Exception e) {
-            // Handle the exception properly
-            e.printStackTrace();
+            //TODO Handle exception
             return null;
         }
     }

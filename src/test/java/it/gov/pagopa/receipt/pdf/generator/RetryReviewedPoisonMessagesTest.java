@@ -13,6 +13,7 @@ import it.gov.pagopa.receipt.pdf.generator.utils.Aes256Utils;
 import it.gov.pagopa.receipt.pdf.generator.utils.ObjectMapperUtils;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -36,9 +37,11 @@ import static org.mockito.Mockito.*;
 @ExtendWith(SystemStubsExtension.class)
 class RetryReviewedPoisonMessagesTest {
 
+    public static final String BIZ_EVENT_ID = "bizEventId";
     private final String AES_SALT = "salt";
     private final String AES_KEY = "key";
-    private final String ENCRYPTED_VALID_CONTENT_TO_RETRY = Aes256Utils.encrypt("{\"id\":\"bizEventId\"}", AES_KEY, AES_SALT);
+
+    private String ENCRYPTED_VALID_CONTENT_TO_RETRY;
 
     @Spy
     private RetryReviewedPoisonMessages function;
@@ -51,9 +54,13 @@ class RetryReviewedPoisonMessagesTest {
 
     @Captor
     private ArgumentCaptor<List<ReceiptError>> documentCaptor;
-
     @SystemStub
     private EnvironmentVariables environment = new EnvironmentVariables("AES_SALT", AES_SALT, "AES_SECRET_KEY", AES_KEY);
+
+    @BeforeEach
+    public void initiate() {
+        ENCRYPTED_VALID_CONTENT_TO_RETRY = Aes256Utils.encrypt(String.format("{\"id\":\"%s\"}", BIZ_EVENT_ID));
+    }
 
     @AfterEach
     public void teardown() throws Exception {
@@ -68,6 +75,7 @@ class RetryReviewedPoisonMessagesTest {
         ReceiptError receiptError = new ReceiptError();
         receiptError.setMessagePayload(ENCRYPTED_VALID_CONTENT_TO_RETRY);
         receiptError.setStatus(ReceiptErrorStatusType.REVIEWED);
+        receiptError.setBizEventId(BIZ_EVENT_ID);
         receiptError.setId("1");
 
         ReceiptQueueClientImpl serviceMock = mock(ReceiptQueueClientImpl.class);
@@ -84,12 +92,13 @@ class RetryReviewedPoisonMessagesTest {
         verify(serviceMock).sendMessageToQueue(messageCaptor.capture());
         BizEvent captured = ObjectMapperUtils.mapString(new String(Base64.getMimeDecoder()
                 .decode(messageCaptor.getValue())), BizEvent.class);
-        assertEquals("bizEventId", captured.getId());
+        assertEquals(BIZ_EVENT_ID, captured.getId());
 
         verify(errorToCosmos).setValue(documentCaptor.capture());
         ReceiptError documentCaptorValue = documentCaptor.getValue().get(0);
         assertEquals(ENCRYPTED_VALID_CONTENT_TO_RETRY, documentCaptorValue.getMessagePayload());
         assertEquals(ReceiptErrorStatusType.REQUEUED, documentCaptorValue.getStatus());
+        assertEquals(BIZ_EVENT_ID, documentCaptorValue.getBizEventId());
 
     }
 
@@ -116,6 +125,7 @@ class RetryReviewedPoisonMessagesTest {
         ReceiptError receiptError = new ReceiptError();
         receiptError.setMessagePayload(ENCRYPTED_VALID_CONTENT_TO_RETRY);
         receiptError.setStatus(ReceiptErrorStatusType.REVIEWED);
+        receiptError.setBizEventId(BIZ_EVENT_ID);
         receiptError.setId("1");
 
         ReceiptQueueClientImpl serviceMock = mock(ReceiptQueueClientImpl.class);
@@ -132,12 +142,13 @@ class RetryReviewedPoisonMessagesTest {
         verify(serviceMock).sendMessageToQueue(messageCaptor.capture());
         BizEvent captured = ObjectMapperUtils.mapString(new String(Base64.getMimeDecoder().decode(
                 messageCaptor.getValue())), BizEvent.class);
-        assertEquals("bizEventId", captured.getId());
+        assertEquals(BIZ_EVENT_ID, captured.getId());
 
         verify(errorToCosmos).setValue(documentCaptor.capture());
         ReceiptError documentCaptorValue = documentCaptor.getValue().get(0);
         assertEquals(ENCRYPTED_VALID_CONTENT_TO_RETRY, documentCaptorValue.getMessagePayload());
         assertEquals(ReceiptErrorStatusType.TO_REVIEW, documentCaptorValue.getStatus());
+        assertEquals(BIZ_EVENT_ID, documentCaptorValue.getBizEventId());
         assertNotNull(documentCaptorValue.getMessageError());
 
     }

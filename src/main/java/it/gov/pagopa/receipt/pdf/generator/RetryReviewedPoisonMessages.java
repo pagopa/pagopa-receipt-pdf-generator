@@ -27,8 +27,6 @@ import java.util.List;
 public class RetryReviewedPoisonMessages {
 
      private final Logger logger = LoggerFactory.getLogger(RetryReviewedPoisonMessages.class);
-     private static final String AES_SECRET_KEY = System.getenv().getOrDefault("AES_SECRET_KEY", "");
-     private static final String AES_SALT = System.getenv().getOrDefault("AES_SALT", "");
 
     /**
      * This function will be invoked when an CosmosDB trigger occurs
@@ -76,7 +74,7 @@ public class RetryReviewedPoisonMessages {
                 if (receiptError != null && receiptError.getStatus().equals(ReceiptErrorStatusType.REVIEWED)) {
 
                     try {
-                        String decodedEvent = Aes256Utils.decrypt(receiptError.getMessagePayload(), AES_SECRET_KEY, AES_SALT);
+                        String decodedEvent = Aes256Utils.decrypt(receiptError.getMessagePayload());
                         Response<SendMessageResult> sendMessageResult =
                             queueService.sendMessageToQueue(Base64.getMimeEncoder().encodeToString(decodedEvent.getBytes()));
                         if (sendMessageResult.getStatusCode() != HttpStatus.CREATED.value()) {
