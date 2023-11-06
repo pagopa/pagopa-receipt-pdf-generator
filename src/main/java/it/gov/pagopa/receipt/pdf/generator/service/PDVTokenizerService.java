@@ -6,6 +6,8 @@ import it.gov.pagopa.receipt.pdf.generator.exception.PDVTokenizerException;
 
 /**
  * Service that handle the input and output for the {@link PDVTokenizerClient}
+ *
+ * //TODO Unused, needed when the BizEvent will be adequately tokenized
  */
 public interface PDVTokenizerService {
 

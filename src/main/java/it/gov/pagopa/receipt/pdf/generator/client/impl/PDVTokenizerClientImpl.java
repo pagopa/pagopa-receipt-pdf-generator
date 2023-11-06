@@ -13,6 +13,8 @@ import java.net.http.HttpResponse;
 
 /**
  * {@inheritDoc}
+ *
+ * //TODO Unused, needed when the BizEvent will be adequately tokenized
  */
 public class PDVTokenizerClientImpl implements PDVTokenizerClient {
 

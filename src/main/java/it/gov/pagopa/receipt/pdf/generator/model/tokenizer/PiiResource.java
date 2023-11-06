@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 
 /**
  * Model class that hold Personal Identifiable Information
+ *
+ * //TODO Unused, needed when the BizEvent will be adequately tokenized
  */
 @Data
 @Builder

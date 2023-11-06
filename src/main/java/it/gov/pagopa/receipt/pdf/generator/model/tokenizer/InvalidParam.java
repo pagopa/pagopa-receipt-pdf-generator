@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 
 /**
  * Model class for the details of invalid param error
+ *
+ * //TODO Unused, needed when the BizEvent will be adequately tokenized
  */
 @Data
 @Builder

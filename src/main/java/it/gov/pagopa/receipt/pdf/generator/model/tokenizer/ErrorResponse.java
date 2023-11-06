@@ -9,6 +9,8 @@ import java.util.List;
 
 /**
  * Model class for the error response of the PDV Tokenizer
+ *
+ * //TODO Unused, needed when the BizEvent will be adequately tokenized
  */
 @Data
 @Builder
