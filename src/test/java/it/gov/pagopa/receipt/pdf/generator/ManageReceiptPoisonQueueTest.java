@@ -10,6 +10,7 @@ import it.gov.pagopa.receipt.pdf.generator.entity.event.BizEvent;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.ReceiptError;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.enumeration.ReceiptErrorStatusType;
 import it.gov.pagopa.receipt.pdf.generator.utils.ObjectMapperUtils;
+import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,12 +29,14 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class ManageReceiptPoisonQueueTest {
 
-    private final String VALID_CONTENT_TO_RETRY = "{\"id\":\"variant062-a330-4210-9c67-465b7d641aVS\",\"version\":\"2\",\"idPaymentManager\":null,\"complete\":\"false\",\"receiptId\":\"9a9bad2caf604b86a339476373c659b0\",\"missingInfo\":[\"idPaymentManager\",\"psp.pspPartitaIVA\",\"paymentInfo.primaryCiIncurredFee\",\"paymentInfo.idBundle\",\"paymentInfo.idCiBundle\",\"paymentInfo.metadata\"],\"debtorPosition\":{\"modelType\":\"2\",\"noticeNumber\":\"302119891614290410\",\"iuv\":\"02119891614290410\"},\"creditor\":{\"idPA\":\"66666666666\",\"idBrokerPA\":\"66666666666\",\"idStation\":\"66666666666_01\",\"companyName\":\"PA paolo\",\"officeName\":\"office PA\"},\"psp\":{\"idPsp\":\"60000000001\",\"idBrokerPsp\":\"60000000001\",\"idChannel\":\"60000000001_01\",\"psp\":\"PSP Paolo\",\"pspPartitaIVA\":null,\"pspFiscalCode\":\"CF60000000006\",\"channelDescription\":\"app\"},\"debtor\":{\"fullName\":\"John Doe\",\"entityUniqueIdentifierType\":\"F\",\"entityUniqueIdentifierValue\":\"JHNDOE00A01F205N\",\"streetName\":\"street\",\"civicNumber\":\"12\",\"postalCode\":\"89020\",\"city\":\"city\",\"stateProvinceRegion\":\"MI\",\"country\":\"IT\",\"eMail\":\"john.doe@test.it\"},\"payer\":{\"fullName\":\"John Doe\",\"entityUniqueIdentifierType\":\"F\",\"entityUniqueIdentifierValue\":\"JHNDOE00A01F205N\",\"streetName\":\"street\",\"civicNumber\":\"12\",\"postalCode\":\"89020\",\"city\":\"city\",\"stateProvinceRegion\":\"MI\",\"country\":\"IT\",\"eMail\":\"john.doe@test.it\"},\"paymentInfo\":{\"paymentDateTime\":\"2023-04-12T16:21:39.022486\",\"applicationDate\":\"2021-10-01\",\"transferDate\":\"2021-10-02\",\"dueDate\":\"2021-07-31\",\"paymentToken\":\"9a9bad2caf604b86a339476373c659b0\",\"amount\":\"7000\",\"fee\":\"200\",\"primaryCiIncurredFee\":null,\"idBundle\":null,\"idCiBundle\":null,\"totalNotice\":\"1\",\"paymentMethod\":\"creditCard\",\"touchpoint\":\"app\",\"remittanceInformation\":\"TARI 2021\",\"description\":\"TARI 2021\",\"metadata\":null},\"transferList\":[{\"idTransfer\":\"1\",\"fiscalCodePA\":\"77777777777\",\"companyName\":\"Pa Salvo\",\"amount\":\"7000\",\"transferCategory\":\"0101101IM\",\"remittanceInformation\":\"TARI Comune EC_TE\",\"metadata\":null,\"mbdattachment\":null,\"iban\":\"IT96R0123454321000000012345\"}],\"transactionDetails\":null,\"timestamp\":1686919660002,\"properties\":{},\"eventStatus\":\"DONE\",\"eventRetryEnrichmentCount\":0,\"eventTriggeredBySchedule\":false,\"eventErrorMessage\":null}";
-
-    private final String VALID_CONTENT_NOT_TO_RETRY = "{\"attemptedPoisonRetry\":\"true\",\"id\":\"variant062-a330-4210-9c67-465b7d641aVS\",\"version\":\"2\",\"idPaymentManager\":null,\"complete\":\"false\",\"receiptId\":\"9a9bad2caf604b86a339476373c659b0\",\"missingInfo\":[\"idPaymentManager\",\"psp.pspPartitaIVA\",\"paymentInfo.primaryCiIncurredFee\",\"paymentInfo.idBundle\",\"paymentInfo.idCiBundle\",\"paymentInfo.metadata\"],\"debtorPosition\":{\"modelType\":\"2\",\"noticeNumber\":\"302119891614290410\",\"iuv\":\"02119891614290410\"},\"creditor\":{\"idPA\":\"66666666666\",\"idBrokerPA\":\"66666666666\",\"idStation\":\"66666666666_01\",\"companyName\":\"PA paolo\",\"officeName\":\"office PA\"},\"psp\":{\"idPsp\":\"60000000001\",\"idBrokerPsp\":\"60000000001\",\"idChannel\":\"60000000001_01\",\"psp\":\"PSP Paolo\",\"pspPartitaIVA\":null,\"pspFiscalCode\":\"CF60000000006\",\"channelDescription\":\"app\"},\"debtor\":{\"fullName\":\"John Doe\",\"entityUniqueIdentifierType\":\"F\",\"entityUniqueIdentifierValue\":\"JHNDOE00A01F205N\",\"streetName\":\"street\",\"civicNumber\":\"12\",\"postalCode\":\"89020\",\"city\":\"city\",\"stateProvinceRegion\":\"MI\",\"country\":\"IT\",\"eMail\":\"john.doe@test.it\"},\"payer\":{\"fullName\":\"John Doe\",\"entityUniqueIdentifierType\":\"F\",\"entityUniqueIdentifierValue\":\"JHNDOE00A01F205N\",\"streetName\":\"street\",\"civicNumber\":\"12\",\"postalCode\":\"89020\",\"city\":\"city\",\"stateProvinceRegion\":\"MI\",\"country\":\"IT\",\"eMail\":\"john.doe@test.it\"},\"paymentInfo\":{\"paymentDateTime\":\"2023-04-12T16:21:39.022486\",\"applicationDate\":\"2021-10-01\",\"transferDate\":\"2021-10-02\",\"dueDate\":\"2021-07-31\",\"paymentToken\":\"9a9bad2caf604b86a339476373c659b0\",\"amount\":\"7000\",\"fee\":\"200\",\"primaryCiIncurredFee\":null,\"idBundle\":null,\"idCiBundle\":null,\"totalNotice\":\"1\",\"paymentMethod\":\"creditCard\",\"touchpoint\":\"app\",\"remittanceInformation\":\"TARI 2021\",\"description\":\"TARI 2021\",\"metadata\":null},\"transferList\":[{\"idTransfer\":\"1\",\"fiscalCodePA\":\"77777777777\",\"companyName\":\"Pa Salvo\",\"amount\":\"7000\",\"transferCategory\":\"0101101IM\",\"remittanceInformation\":\"TARI Comune EC_TE\",\"metadata\":null,\"mbdattachment\":null,\"iban\":\"IT96R0123454321000000012345\"}],\"transactionDetails\":null,\"timestamp\":1686919660002,\"properties\":{},\"eventStatus\":\"DONE\",\"eventRetryEnrichmentCount\":0,\"eventTriggeredBySchedule\":false,\"eventErrorMessage\":null}";
+    private final String VALID_CONTENT_TO_RETRY = "{\"id\":\"bizEventId\"}";
+    private final String BASE_64_VALID_CONTENT_TO_RETRY = Base64.getMimeEncoder().encodeToString(VALID_CONTENT_TO_RETRY.getBytes());
+    private final String VALID_CONTENT_NOT_TO_RETRY = "{\"attemptedPoisonRetry\":\"true\",\"id\":\"bizEventId\"}";
+    private final String BASE_64_VALID_CONTENT_NOT_TO_RETRY = Base64.getMimeEncoder().encodeToString(VALID_CONTENT_NOT_TO_RETRY.getBytes());
 
 
     private final String INVALID_MESSAGE = "invalid message";
+    private final String BASE_64_INVALID_MESSAGE = Base64.getMimeEncoder().encodeToString(INVALID_MESSAGE.getBytes());
 
     @Spy
     private ManageReceiptPoisonQueue function;
@@ -59,7 +62,7 @@ class ManageReceiptPoisonQueueTest {
     void successRunWithValidPayloadToRetryInQueue() throws JsonProcessingException {
         ReceiptQueueClientImpl serviceMock = mock(ReceiptQueueClientImpl.class);
         Response<SendMessageResult> response = mock(Response.class);
-        when(response.getStatusCode()).thenReturn(201);
+        when(response.getStatusCode()).thenReturn(HttpStatus.SC_CREATED);
         when(serviceMock.sendMessageToQueue(anyString())).thenReturn(response);
 
         setMock(serviceMock);
@@ -71,7 +74,7 @@ class ManageReceiptPoisonQueueTest {
         verify(serviceMock).sendMessageToQueue(messageCaptor.capture());
         BizEvent captured = ObjectMapperUtils.mapString(
                 new String(Base64.getMimeDecoder().decode(messageCaptor.getValue())), BizEvent.class);
-        assertEquals("variant062-a330-4210-9c67-465b7d641aVS", captured.getId());
+        assertEquals("bizEventId", captured.getId());
         assertTrue(captured.getAttemptedPoisonRetry());
 
         verifyNoInteractions(errorToCosmos);
@@ -90,7 +93,7 @@ class ManageReceiptPoisonQueueTest {
 
         verify(errorToCosmos).setValue(documentCaptor.capture());
         ReceiptError captured = documentCaptor.getValue();
-        assertEquals(VALID_CONTENT_NOT_TO_RETRY, captured.getMessagePayload());
+        assertEquals(BASE_64_VALID_CONTENT_NOT_TO_RETRY, captured.getMessagePayload());
         assertEquals(ReceiptErrorStatusType.TO_REVIEW, captured.getStatus());
     }
 
@@ -105,7 +108,7 @@ class ManageReceiptPoisonQueueTest {
 
         verify(errorToCosmos).setValue(documentCaptor.capture());
         ReceiptError captured = documentCaptor.getValue();
-        assertEquals(INVALID_MESSAGE, captured.getMessagePayload());
+        assertEquals(BASE_64_INVALID_MESSAGE, captured.getMessagePayload());
         assertEquals(ReceiptErrorStatusType.TO_REVIEW, captured.getStatus());
 
     }
@@ -114,7 +117,7 @@ class ManageReceiptPoisonQueueTest {
     void KoRunForRequeueError() {
         ReceiptQueueClientImpl serviceMock = mock(ReceiptQueueClientImpl.class);
         Response<SendMessageResult> response = mock(Response.class);
-        when(response.getStatusCode()).thenReturn(400);
+        when(response.getStatusCode()).thenReturn(HttpStatus.SC_BAD_REQUEST);
         when(serviceMock.sendMessageToQueue(anyString())).thenReturn(response);
 
         setMock(serviceMock);
@@ -124,7 +127,7 @@ class ManageReceiptPoisonQueueTest {
 
         verify(errorToCosmos).setValue(documentCaptor.capture());
         ReceiptError captured = documentCaptor.getValue();
-        assertEquals(VALID_CONTENT_TO_RETRY, captured.getMessagePayload());
+        assertEquals(BASE_64_VALID_CONTENT_TO_RETRY, captured.getMessagePayload());
         assertEquals(ReceiptErrorStatusType.TO_REVIEW, captured.getStatus());
 
     }

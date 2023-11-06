@@ -17,7 +17,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 
 /**
@@ -75,8 +74,7 @@ public class RetryReviewedPoisonMessages {
                     try {
 
                         Response<SendMessageResult> sendMessageResult =
-                            queueService.sendMessageToQueue(Base64.getMimeEncoder().encodeToString(
-                                    receiptError.getMessagePayload().getBytes()));
+                            queueService.sendMessageToQueue(receiptError.getMessagePayload());
                         if (sendMessageResult.getStatusCode() != HttpStatus.CREATED.value()) {
                             throw new UnableToQueueException("Unable to queue due to error: " +
                                     sendMessageResult.getStatusCode());

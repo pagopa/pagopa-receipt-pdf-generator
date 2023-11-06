@@ -103,7 +103,8 @@ public class ManageReceiptPoisonQueue {
                                 OutputBinding<ReceiptError> documentdb) {
          logger.info("[{}] saving new entry to the retry error to review with payload {}",
                  context.getFunctionName(), errorMessage);
-        documentdb.setValue(ReceiptError.builder().messagePayload(errorMessage)
+        documentdb.setValue(ReceiptError.builder().messagePayload(Base64.getMimeEncoder()
+                        .encodeToString(errorMessage.getBytes()))
                 .status(ReceiptErrorStatusType.TO_REVIEW).build());
     }
 }
