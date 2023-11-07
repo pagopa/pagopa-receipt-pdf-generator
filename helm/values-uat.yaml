@@ -115,6 +115,8 @@ microservice-chart:
     COSMOS_RECEIPT_KEY: "cosmos-receipt-pkey"
     OTEL_EXPORTER_OTLP_HEADERS: "elastic-otl-secret-token"
     PDV_TOKENIZER_SUBSCRIPTION_KEY: "tokenizer-api-key"
+    AES_SECRET_KEY: "aes-secret-key"
+    AES_SALT: "aes-salt"
   keyvault:
     name: "pagopa-u-receipts-kv"
     tenantId: "7788edaf-0346-4068-9d79-c868aed15b3d"
