@@ -36,7 +36,7 @@ function createEventForPoisonQueue(id, attemptedPoisonRetry) {
 			"officeName": "office"
 		},
 		"psp": {
-			"idPsp": "60000000001",
+			"idPsp": "BNLIITRR",
 			"idBrokerPsp": "60000000001",
 			"idChannel": "60000000001_08",
 			"psp": "PSP Paolo",

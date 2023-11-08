@@ -52,7 +52,7 @@ async function getDocumentByBizEventIdFromErrorReceiptsDatastore(bizEventId) {
     return await errorReceiptContainer.items
         .query({
             query: "SELECT * from c WHERE c.bizEventId=@bizEventId",
-            parameters: [{ name: "@bizEventId", value: JSON.stringify(bizEventId) }]
+            parameters: [{ name: "@bizEventId", value: bizEventId }]
         })
         .fetchNext();
 }
