@@ -59,7 +59,7 @@ public class ManageReceiptPoisonQueue {
 
         BizEvent bizEvent = null;
 
-        logger.info("[{}] function called at {} for payload {}", context.getFunctionName(), LocalDateTime.now(), errorMessage);
+        logger.info("[{}] function called at {}", context.getFunctionName(), LocalDateTime.now());
         boolean retriableContent = false;
 
         try {
@@ -74,8 +74,8 @@ public class ManageReceiptPoisonQueue {
                 retriableContent = true;
             }
         } catch (JsonProcessingException e) {
-             logger.error("[{}] received parsing error in the function called at {} for payload {}",
-                     context.getFunctionName(), LocalDateTime.now(), errorMessage, e);
+             logger.error("[{}] received parsing error in the function called at {}",
+                     context.getFunctionName(), LocalDateTime.now(), e);
         }
 
         if (retriableContent) {
@@ -103,8 +103,6 @@ public class ManageReceiptPoisonQueue {
 
     private void saveToDocument(ExecutionContext context, String errorMessage, String bizEventId,
                                 OutputBinding<ReceiptError> documentdb) {
-         logger.info("[{}] saving new entry to the retry error to review with payload {}",
-                 context.getFunctionName(), errorMessage);
 
          ReceiptError receiptError = ReceiptError.builder()
                  .bizEventId(bizEventId)
@@ -114,6 +112,8 @@ public class ManageReceiptPoisonQueue {
             String encodedEvent = Aes256Utils.encrypt(errorMessage);
             receiptError.setMessagePayload(encodedEvent);
 
+            logger.info("[{}] saving new entry to the retry error to review with payload {}",
+                    context.getFunctionName(), encodedEvent);
         } catch (Aes256Exception e) {
             receiptError.setMessageError(e.getMessage());
         }
