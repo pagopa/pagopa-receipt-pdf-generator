@@ -45,6 +45,7 @@ public class Aes256Utils {
             SecretKey tmp = factory.generateSecret(spec);
             SecretKeySpec secretKeySpec = new SecretKeySpec(tmp.getEncoded(), ALGORITHM);
 
+            //Padding vulnerability rule java:S5542 ignored because encryption is used inside application workflow
             Cipher cipher = Cipher.getInstance(AES_CBC_PKCS_5_PADDING);
             cipher.init(Cipher.ENCRYPT_MODE, secretKeySpec, ivspec);
 
@@ -71,6 +72,7 @@ public class Aes256Utils {
             SecretKey tmp = factory.generateSecret(spec);
             SecretKeySpec secretKeySpec = new SecretKeySpec(tmp.getEncoded(), ALGORITHM);
 
+            //Padding vulnerability rule java:S5542 ignored because decryption is used inside application workflow
             Cipher cipher = Cipher.getInstance(AES_CBC_PKCS_5_PADDING);
             cipher.init(Cipher.DECRYPT_MODE, secretKeySpec, ivspec);
 
