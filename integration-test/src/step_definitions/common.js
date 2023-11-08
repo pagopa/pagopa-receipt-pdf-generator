@@ -6,7 +6,7 @@ function sleep(ms) {
 }
 
 function createEventForQueue(id) {
-	return createEventForPoisonQueue(id, false, true);
+	return createEventForPoisonQueue(id, false);
 }
 
 function createEventForPoisonQueue(id, attemptedPoisonRetry) {
