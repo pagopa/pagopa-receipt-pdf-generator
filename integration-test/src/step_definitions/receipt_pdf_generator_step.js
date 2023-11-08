@@ -1,8 +1,8 @@
 const assert = require('assert');
 const { After, Given, When, Then, setDefaultTimeout } = require('@cucumber/cucumber');
 const { sleep, createEventForQueue, createEventForPoisonQueue } = require("./common");
-const { getDocumentByIdFromReceiptsDatastore, deleteDocumentFromErrorReceiptsDatastoreByMessagePayload, deleteDocumentFromReceiptsDatastore, createDocumentInReceiptsDatastore, createDocumentInErrorReceiptsDatastore, deleteDocumentFromErrorReceiptsDatastore, getDocumentByMessagePayloadFromErrorReceiptsDatastore } = require("./receipts_datastore_client");
-const { putMessageOnPoisonQueue, putMessageOnReceiptQueue } = require("./reqeipt_queue_client");
+const { getDocumentByIdFromReceiptsDatastore, deleteDocumentFromErrorReceiptsDatastoreByBizEventId, deleteDocumentFromReceiptsDatastore, createDocumentInReceiptsDatastore, createDocumentInErrorReceiptsDatastore, deleteDocumentFromErrorReceiptsDatastore, getDocumentByBizEventIdFromErrorReceiptsDatastore } = require("./receipts_datastore_client");
+const { putMessageOnPoisonQueue, putMessageOnReceiptQueue } = require("./receipts_queue_client");
 const { receiptPDFExist } = require("./receipts_blob_storage_client");
 
 // set timeout for Hooks function, it allows to wait for long task
@@ -78,14 +78,14 @@ Then('the blob storage has the PDF document', async function () {
 Given('a random biz event with id {string} enqueued on receipts poison queue with poison retry {string}', async function (id, value) {
     let attemptedPoisonRetry = (value === 'true');
     this.event = createEventForPoisonQueue(id, attemptedPoisonRetry);
-    await deleteDocumentFromErrorReceiptsDatastoreByMessagePayload(this.event);
+    await deleteDocumentFromErrorReceiptsDatastoreByBizEventId(id);
     await putMessageOnPoisonQueue(this.event);
 });
 
 When('the biz event has been properly stored on receipt-message-error datastore after {int} ms', async function (time) {
     // boundary time spent by azure function to process event
     await sleep(time);
-    this.responseToCheck = await getDocumentByMessagePayloadFromErrorReceiptsDatastore(this.event);
+    this.responseToCheck = await getDocumentByBizEventIdFromErrorReceiptsDatastore(this.event.id);
 });
 
 Then('the receipt-message-error datastore returns the error receipt', async function () {

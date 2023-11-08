@@ -13,7 +13,9 @@ import it.gov.pagopa.receipt.pdf.generator.client.impl.ReceiptQueueClientImpl;
 import it.gov.pagopa.receipt.pdf.generator.entity.event.BizEvent;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.ReceiptError;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.enumeration.ReceiptErrorStatusType;
+import it.gov.pagopa.receipt.pdf.generator.exception.Aes256Exception;
 import it.gov.pagopa.receipt.pdf.generator.exception.UnableToQueueException;
+import it.gov.pagopa.receipt.pdf.generator.utils.Aes256Utils;
 import it.gov.pagopa.receipt.pdf.generator.utils.ObjectMapperUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,18 +94,30 @@ public class ManageReceiptPoisonQueue {
                  logger.error("[{}] error for the function called at {} when attempting" +
                                  "to requeue BizEvent wit id {}, saving to cosmos for review",
                          context.getFunctionName(), LocalDateTime.now(), bizEvent.getId(), e);
-                saveToDocument(context, errorMessage, documentdb);
+                saveToDocument(context, errorMessage, bizEvent.getId(), documentdb);
             }
         } else {
-            saveToDocument(context, errorMessage, documentdb);
+            saveToDocument(context, errorMessage, bizEvent != null ? bizEvent.getId() : null, documentdb);
         }
     }
 
-    private void saveToDocument(ExecutionContext context, String errorMessage,
+    private void saveToDocument(ExecutionContext context, String errorMessage, String bizEventId,
                                 OutputBinding<ReceiptError> documentdb) {
          logger.info("[{}] saving new entry to the retry error to review with payload {}",
                  context.getFunctionName(), errorMessage);
-        documentdb.setValue(ReceiptError.builder().messagePayload(errorMessage)
-                .status(ReceiptErrorStatusType.TO_REVIEW).build());
+
+         ReceiptError receiptError = ReceiptError.builder()
+                 .bizEventId(bizEventId)
+                 .status(ReceiptErrorStatusType.TO_REVIEW).build();
+
+        try {
+            String encodedEvent = Aes256Utils.encrypt(errorMessage);
+            receiptError.setMessagePayload(encodedEvent);
+
+        } catch (Aes256Exception e) {
+            receiptError.setMessageError(e.getMessage());
+        }
+
+        documentdb.setValue(receiptError);
     }
 }

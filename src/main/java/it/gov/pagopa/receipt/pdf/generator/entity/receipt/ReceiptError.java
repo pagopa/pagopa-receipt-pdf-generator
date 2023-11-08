@@ -11,6 +11,7 @@ import lombok.*;
 public class ReceiptError {
 
     private String id;
+    private String bizEventId;
     private String messagePayload;
     private String messageError;
     private ReceiptErrorStatusType status;

@@ -13,6 +13,7 @@ import it.gov.pagopa.receipt.pdf.generator.client.impl.ReceiptQueueClientImpl;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.ReceiptError;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.enumeration.ReceiptErrorStatusType;
 import it.gov.pagopa.receipt.pdf.generator.exception.UnableToQueueException;
+import it.gov.pagopa.receipt.pdf.generator.utils.Aes256Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,10 +74,9 @@ public class RetryReviewedPoisonMessages {
                 if (receiptError != null && receiptError.getStatus().equals(ReceiptErrorStatusType.REVIEWED)) {
 
                     try {
-
+                        String decodedEvent = Aes256Utils.decrypt(receiptError.getMessagePayload());
                         Response<SendMessageResult> sendMessageResult =
-                            queueService.sendMessageToQueue(Base64.getMimeEncoder().encodeToString(
-                                    receiptError.getMessagePayload().getBytes()));
+                            queueService.sendMessageToQueue(Base64.getMimeEncoder().encodeToString(decodedEvent.getBytes()));
                         if (sendMessageResult.getStatusCode() != HttpStatus.CREATED.value()) {
                             throw new UnableToQueueException("Unable to queue due to error: " +
                                     sendMessageResult.getStatusCode());
