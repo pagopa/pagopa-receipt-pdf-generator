@@ -59,7 +59,7 @@ public class ManageReceiptPoisonQueue {
 
         BizEvent bizEvent = null;
 
-        logger.info("[{}] function called at {} for payload {}", context.getFunctionName(), LocalDateTime.now(), errorMessage);
+        logger.info("[{}] function called at {}", context.getFunctionName(), LocalDateTime.now());
         boolean retriableContent = false;
 
         try {
@@ -74,8 +74,8 @@ public class ManageReceiptPoisonQueue {
                 retriableContent = true;
             }
         } catch (JsonProcessingException e) {
-             logger.error("[{}] received parsing error in the function called at {} for payload {}",
-                     context.getFunctionName(), LocalDateTime.now(), errorMessage, e);
+             logger.error("[{}] received parsing error in the function called at {}",
+                     context.getFunctionName(), LocalDateTime.now(), e);
         }
 
         if (retriableContent) {
