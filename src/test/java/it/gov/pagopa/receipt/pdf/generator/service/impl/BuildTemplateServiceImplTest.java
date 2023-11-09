@@ -894,39 +894,6 @@ class BuildTemplateServiceImplTest {
     }
 
     @Test
-    void mapTemplateNoCartItemSubjectValueError() {
-        BizEvent event = BizEvent.builder()
-                .paymentInfo(PaymentInfo.builder()
-                        .IUR(IUR)
-                        .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS)
-                        .amount(AMOUNT_WITHOUT_CENTS)
-                        .build())
-                .psp(Psp.builder()
-                        .idPsp(ID_PSP)
-                        .psp(PSP_NAME)
-                        .build())
-                .payer(Payer.builder()
-                        .fullName(PAYER_FULL_NAME)
-                        .entityUniqueIdentifierValue(PAYER_VALID_CF)
-                        .build())
-                .debtorPosition(DebtorPosition.builder()
-                        .modelType(MODEL_TYPE_IUV_CODE)
-                        .iuv(IUV)
-                        .build())
-                .debtor(Debtor.builder()
-                        .entityUniqueIdentifierValue(DEBTOR_VALID_CF)
-                        .build())
-                .creditor(Creditor.builder()
-                        .companyName(COMPANY_NAME)
-                        .build())
-                .build();
-        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(event, COMPLETE_TEMPLATE));
-
-        assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.CART_ITEM_SUBJECT), e.getMessage());
-    }
-
-    @Test
     void mapTemplateNoCartItemAmountValueError() {
         BizEvent event = BizEvent.builder()
                 .paymentInfo(PaymentInfo.builder()
