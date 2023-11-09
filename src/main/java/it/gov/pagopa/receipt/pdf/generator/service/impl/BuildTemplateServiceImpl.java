@@ -268,11 +268,12 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
         throw new TemplateDataMappingException(formatErrorMessage(TemplateDataField.CART_ITEM_PAYEE_TAX_CODE), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
     }
 
-    private String getItemSubject(BizEvent event) throws TemplateDataMappingException {
+    private String getItemSubject(BizEvent event)  {
         if (event.getPaymentInfo() != null && event.getPaymentInfo().getRemittanceInformation() != null) {
             return event.getPaymentInfo().getRemittanceInformation();
         }
-        throw new TemplateDataMappingException(formatErrorMessage(TemplateDataField.CART_ITEM_SUBJECT), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
+        
+        return null;
     }
 
     private String getItemAmount(BizEvent event) throws TemplateDataMappingException {
