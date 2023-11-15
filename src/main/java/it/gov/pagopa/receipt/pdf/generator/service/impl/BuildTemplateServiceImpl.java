@@ -258,12 +258,12 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
     }
 
     private String getPayeeName(BizEvent event) {
-        return event.getCreditor() != null ? event.getCreditor().getOfficeName() : null;
+        return event.getCreditor() != null ? event.getCreditor().getCompanyName() : null;
     }
 
     private String getPayeeTaxCode(BizEvent event) throws TemplateDataMappingException {
-        if (event.getCreditor() != null && event.getCreditor().getCompanyName() != null) {
-            return event.getCreditor().getCompanyName();
+        if (event.getCreditor() != null && event.getCreditor().getIdPA() != null) {
+            return event.getCreditor().getIdPA();
         }
         throw new TemplateDataMappingException(formatErrorMessage(TemplateDataField.CART_ITEM_PAYEE_TAX_CODE), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
     }
