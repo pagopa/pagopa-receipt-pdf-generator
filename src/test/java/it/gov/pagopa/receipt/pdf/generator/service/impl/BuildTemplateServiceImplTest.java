@@ -16,7 +16,6 @@ import static uk.org.webcompere.systemstubs.SystemStubs.withEnvironmentVariables
 
 class BuildTemplateServiceImplTest {
     public static final String COMPANY_NAME = "PA paolo";
-    public static final String OFFICE_NAME = "office PA";
     public static final String ID_PSP = "ID_PSP";
     public static final String DEBTOR_FULL_NAME = "John Doe";
     public static final String DEBTOR_VALID_CF = "CF_DEBTOR";
@@ -61,6 +60,7 @@ class BuildTemplateServiceImplTest {
     private static final String PAGO_PA_CHANNEL_IO = "IO";
     private static final String PAGO_PA_CHANNEL_IO_PAY = "IO-PAY";
     private static final String NOT_PAGO_PA_CHANNEL = "NOT_PAGO_PA_CHANNEL";
+    public static final String ID_PA = "idPa";
     private BuildTemplateServiceImpl buildTemplateService;
 
     @BeforeEach
@@ -81,8 +81,8 @@ class BuildTemplateServiceImplTest {
                         .modelType(MODEL_TYPE_IUV_CODE)
                         .build())
                 .creditor(Creditor.builder()
-                        .companyName(COMPANY_NAME)
-                        .officeName(OFFICE_NAME)
+                     .companyName(COMPANY_NAME)
+                        .idPA(ID_PA)
                         .build())
                 .psp(Psp.builder()
                         .idPsp(ID_PSP)
@@ -156,8 +156,8 @@ class BuildTemplateServiceImplTest {
         assertEquals(DEBTOR_FULL_NAME, cart.getItems().get(0).getDebtor().getFullName());
         assertEquals(DEBTOR_VALID_CF, cart.getItems().get(0).getDebtor().getTaxCode());
         assertEquals(REMITTANCE_INFORMATION, cart.getItems().get(0).getSubject());
-        assertEquals(OFFICE_NAME, cart.getItems().get(0).getPayee().getName());
-        assertEquals(COMPANY_NAME, cart.getItems().get(0).getPayee().getTaxCode());
+        assertEquals(COMPANY_NAME, cart.getItems().get(0).getPayee().getName());
+        assertEquals(ID_PA, cart.getItems().get(0).getPayee().getTaxCode());
         assertEquals(MODEL_TYPE_IUV_TEXT, cart.getItems().get(0).getRefNumber().getType());
         assertEquals(IUV, cart.getItems().get(0).getRefNumber().getValue());
     }
@@ -171,8 +171,8 @@ class BuildTemplateServiceImplTest {
                         .modelType(MODEL_TYPE_IUV_CODE)
                         .build())
                 .creditor(Creditor.builder()
-                        .companyName(COMPANY_NAME)
-                        .officeName(OFFICE_NAME)
+                     .companyName(COMPANY_NAME)
+                        .idPA(ID_PA)
                         .build())
                 .psp(Psp.builder()
                         .idPsp(ID_PSP)
@@ -246,8 +246,8 @@ class BuildTemplateServiceImplTest {
         assertEquals(DEBTOR_FULL_NAME, cart.getItems().get(0).getDebtor().getFullName());
         assertEquals(DEBTOR_VALID_CF, cart.getItems().get(0).getDebtor().getTaxCode());
         assertEquals(REMITTANCE_INFORMATION, cart.getItems().get(0).getSubject());
-        assertEquals(OFFICE_NAME, cart.getItems().get(0).getPayee().getName());
-        assertEquals(COMPANY_NAME, cart.getItems().get(0).getPayee().getTaxCode());
+        assertEquals(COMPANY_NAME, cart.getItems().get(0).getPayee().getName());
+        assertEquals(ID_PA, cart.getItems().get(0).getPayee().getTaxCode());
         assertEquals(MODEL_TYPE_IUV_TEXT, cart.getItems().get(0).getRefNumber().getType());
         assertEquals(IUV, cart.getItems().get(0).getRefNumber().getValue());
     }
@@ -261,8 +261,8 @@ class BuildTemplateServiceImplTest {
                         .modelType(MODEL_TYPE_NOTICE_CODE)
                         .build())
                 .creditor(Creditor.builder()
-                        .companyName(COMPANY_NAME)
-                        .officeName(OFFICE_NAME)
+                     .companyName(COMPANY_NAME)
+                        .idPA(ID_PA)
                         .build())
                 .psp(Psp.builder()
                         .idPsp(ID_PSP)
@@ -335,8 +335,8 @@ class BuildTemplateServiceImplTest {
         assertEquals(DEBTOR_FULL_NAME, cart.getItems().get(0).getDebtor().getFullName());
         assertEquals(DEBTOR_VALID_CF, cart.getItems().get(0).getDebtor().getTaxCode());
         assertEquals(REMITTANCE_INFORMATION, cart.getItems().get(0).getSubject());
-        assertEquals(OFFICE_NAME, cart.getItems().get(0).getPayee().getName());
-        assertEquals(COMPANY_NAME, cart.getItems().get(0).getPayee().getTaxCode());
+        assertEquals(COMPANY_NAME, cart.getItems().get(0).getPayee().getName());
+        assertEquals(ID_PA, cart.getItems().get(0).getPayee().getTaxCode());
         assertEquals(MODEL_TYPE_NOTICE_TEXT, cart.getItems().get(0).getRefNumber().getType());
         assertEquals(IUV, cart.getItems().get(0).getRefNumber().getValue());
     }
@@ -350,8 +350,8 @@ class BuildTemplateServiceImplTest {
                         .modelType(MODEL_TYPE_IUV_CODE)
                         .build())
                 .creditor(Creditor.builder()
-                        .companyName(COMPANY_NAME)
-                        .officeName(OFFICE_NAME)
+                     .companyName(COMPANY_NAME)
+                        .idPA(ID_PA)
                         .build())
                 .psp(Psp.builder()
                         .idPsp(ID_PSP)
@@ -407,8 +407,8 @@ class BuildTemplateServiceImplTest {
         assertEquals(DEBTOR_FULL_NAME, cart.getItems().get(0).getDebtor().getFullName());
         assertEquals(DEBTOR_VALID_CF, cart.getItems().get(0).getDebtor().getTaxCode());
         assertEquals(REMITTANCE_INFORMATION, cart.getItems().get(0).getSubject());
-        assertEquals(OFFICE_NAME, cart.getItems().get(0).getPayee().getName());
-        assertEquals(COMPANY_NAME, cart.getItems().get(0).getPayee().getTaxCode());
+        assertEquals(COMPANY_NAME, cart.getItems().get(0).getPayee().getName());
+        assertEquals(ID_PA, cart.getItems().get(0).getPayee().getTaxCode());
         assertEquals(MODEL_TYPE_IUV_TEXT, cart.getItems().get(0).getRefNumber().getType());
         assertEquals(IUV, cart.getItems().get(0).getRefNumber().getValue());
     }
@@ -422,8 +422,8 @@ class BuildTemplateServiceImplTest {
                         .modelType(MODEL_TYPE_IUV_CODE)
                         .build())
                 .creditor(Creditor.builder()
-                        .companyName(COMPANY_NAME)
-                        .officeName(OFFICE_NAME)
+                     .companyName(COMPANY_NAME)
+                        .idPA(ID_PA)
                         .build())
                 .psp(Psp.builder()
                         .idPsp(ID_PSP)
@@ -477,8 +477,8 @@ class BuildTemplateServiceImplTest {
         assertEquals(DEBTOR_FULL_NAME, cart.getItems().get(0).getDebtor().getFullName());
         assertEquals(DEBTOR_VALID_CF, cart.getItems().get(0).getDebtor().getTaxCode());
         assertEquals(REMITTANCE_INFORMATION, cart.getItems().get(0).getSubject());
-        assertEquals(OFFICE_NAME, cart.getItems().get(0).getPayee().getName());
-        assertEquals(COMPANY_NAME, cart.getItems().get(0).getPayee().getTaxCode());
+        assertEquals(COMPANY_NAME, cart.getItems().get(0).getPayee().getName());
+        assertEquals(ID_PA, cart.getItems().get(0).getPayee().getTaxCode());
         assertEquals(MODEL_TYPE_IUV_TEXT, cart.getItems().get(0).getRefNumber().getType());
         assertEquals(IUV, cart.getItems().get(0).getRefNumber().getValue());
     }
@@ -508,7 +508,7 @@ class BuildTemplateServiceImplTest {
                         .entityUniqueIdentifierValue(DEBTOR_VALID_CF)
                         .build())
                 .creditor(Creditor.builder()
-                        .companyName(COMPANY_NAME)
+                        .idPA(ID_PA)
                         .build())
                 .transactionDetails(TransactionDetails.builder()
                         .transaction(Transaction.builder()
@@ -917,7 +917,8 @@ class BuildTemplateServiceImplTest {
                         .entityUniqueIdentifierValue(DEBTOR_VALID_CF)
                         .build())
                 .creditor(Creditor.builder()
-                        .companyName(COMPANY_NAME)
+                     .companyName(COMPANY_NAME)
+                        .idPA(ID_PA)
                         .build())
                 .transactionDetails(TransactionDetails.builder()
                         .transaction(Transaction.builder()
