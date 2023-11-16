@@ -17,7 +17,10 @@ import java.text.NumberFormat;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Locale;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -249,7 +252,7 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
     }
 
     private String getDebtorFullName(BizEvent event) {
-        return event.getDebtor() != null ? regexFullName(event.getDebtor().getFullName()) : null;
+        return event.getDebtor() != null ? formatFullName(event.getDebtor().getFullName(), event.getDebtor().getEntityUniqueIdentifierValue()) : null;
     }
 
     private String getDebtorTaxCode(BizEvent event) throws TemplateDataMappingException {
@@ -270,11 +273,11 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
         throw new TemplateDataMappingException(formatErrorMessage(TemplateDataField.CART_ITEM_PAYEE_TAX_CODE), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
     }
 
-    private String getItemSubject(BizEvent event)  {
+    private String getItemSubject(BizEvent event) {
         if (event.getPaymentInfo() != null && event.getPaymentInfo().getRemittanceInformation() != null) {
             return event.getPaymentInfo().getRemittanceInformation();
         }
-        
+
         return null;
     }
 
@@ -327,8 +330,8 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
         return value;
     }
 
-    public boolean getProcessedByPagoPA(BizEvent event){
-        if(event.getTransactionDetails() != null && event.getTransactionDetails().getWallet() != null){
+    public boolean getProcessedByPagoPA(BizEvent event) {
+        if (event.getTransactionDetails() != null && event.getTransactionDetails().getWallet() != null) {
             String onboardingChannel = event.getTransactionDetails().getWallet().getOnboardingChannel();
             return onboardingChannel != null &&
                     (onboardingChannel.equals(PAGO_PA_CHANNEL_IO) ||
@@ -359,14 +362,17 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
         return String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, missingProperty);
     }
 
-    private String regexFullName(String fullName){
-        if(fullName != null){
-            Pattern pattern = Pattern.compile("^[\\d\\s\\W_]+$", Pattern.CASE_INSENSITIVE);
-            Matcher matcher = pattern.matcher(fullName);
-            if(matcher.find()){
-                return null;
-            }
+    private String formatFullName(String fullName, String fiscalCode) {
+        if (fullName == null || fullName.equals(fiscalCode)) {
+            return null;
         }
-        return fullName;
+
+        Pattern pattern = Pattern.compile("^[\\d\\s\\W_]+$", Pattern.CASE_INSENSITIVE);
+        Matcher matcher = pattern.matcher(fullName);
+        if (matcher.find()) {
+            return null;
+        }
+
+       return fullName.replaceAll("[,;:]+", " ");
     }
 }
