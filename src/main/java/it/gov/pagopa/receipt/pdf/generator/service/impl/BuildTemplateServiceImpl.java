@@ -18,6 +18,8 @@ import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class BuildTemplateServiceImpl implements BuildTemplateService {
 
@@ -247,7 +249,7 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
     }
 
     private String getDebtorFullName(BizEvent event) {
-        return event.getDebtor() != null ? event.getDebtor().getFullName() : null;
+        return event.getDebtor() != null ? regexFullName(event.getDebtor().getFullName()) : null;
     }
 
     private String getDebtorTaxCode(BizEvent event) throws TemplateDataMappingException {
@@ -355,5 +357,16 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
 
     private String formatErrorMessage(String missingProperty) {
         return String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, missingProperty);
+    }
+
+    private String regexFullName(String fullName){
+        if(fullName != null){
+            Pattern pattern = Pattern.compile("^[\\d\\s\\W_]+$", Pattern.CASE_INSENSITIVE);
+            Matcher matcher = pattern.matcher(fullName);
+            if(matcher.find()){
+                return null;
+            }
+        }
+        return fullName;
     }
 }
