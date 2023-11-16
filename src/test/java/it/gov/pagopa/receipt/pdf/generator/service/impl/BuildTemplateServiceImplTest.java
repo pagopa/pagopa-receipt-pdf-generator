@@ -18,6 +18,7 @@ class BuildTemplateServiceImplTest {
     public static final String COMPANY_NAME = "PA paolo";
     public static final String ID_PSP = "ID_PSP";
     public static final String DEBTOR_FULL_NAME = "John Doe";
+    public static final String DEBTOR_FULL_NAME_INVALID = "-- --";
     public static final String DEBTOR_VALID_CF = "CF_DEBTOR";
     public static final String PAYER_FULL_NAME = "John Doe PAYER";
     public static final String PAYER_VALID_CF = "CF_PAYER";
@@ -475,6 +476,96 @@ class BuildTemplateServiceImplTest {
         assertEquals(FORMATTED_AMOUNT, cart.getAmountPartial());
         assertEquals(FORMATTED_AMOUNT, cart.getItems().get(0).getAmount());
         assertEquals(DEBTOR_FULL_NAME, cart.getItems().get(0).getDebtor().getFullName());
+        assertEquals(DEBTOR_VALID_CF, cart.getItems().get(0).getDebtor().getTaxCode());
+        assertEquals(REMITTANCE_INFORMATION, cart.getItems().get(0).getSubject());
+        assertEquals(COMPANY_NAME, cart.getItems().get(0).getPayee().getName());
+        assertEquals(ID_PA, cart.getItems().get(0).getPayee().getTaxCode());
+        assertEquals(MODEL_TYPE_IUV_TEXT, cart.getItems().get(0).getRefNumber().getType());
+        assertEquals(IUV, cart.getItems().get(0).getRefNumber().getValue());
+    }
+
+    @Test
+    void mapTemplateAllFieldsSuccessDebtorFullNameEmpty() throws Exception {
+        BizEvent event = BizEvent.builder()
+                .id(BIZ_EVENT_ID)
+                .debtorPosition(DebtorPosition.builder()
+                        .iuv(IUV)
+                        .modelType(MODEL_TYPE_IUV_CODE)
+                        .build())
+                .creditor(Creditor.builder()
+                        .companyName(COMPANY_NAME)
+                        .idPA(ID_PA)
+                        .build())
+                .psp(Psp.builder()
+                        .idPsp(ID_PSP)
+                        .psp(PSP_NAME)
+                        .build())
+                .debtor(Debtor.builder()
+                        .fullName(DEBTOR_FULL_NAME_INVALID)
+                        .entityUniqueIdentifierValue(DEBTOR_VALID_CF)
+                        .build())
+                .payer(Payer.builder().fullName(PAYER_FULL_NAME).entityUniqueIdentifierValue(PAYER_VALID_CF).build())
+                .paymentInfo(PaymentInfo.builder()
+                        .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS)
+                        .paymentToken(PAYMENT_TOKEN)
+                        .amount(AMOUNT_WITHOUT_CENTS)
+                        .fee(FEE_WITH_SINGLE_DIGIT_CENTS)
+                        .remittanceInformation(REMITTANCE_INFORMATION)
+                        .IUR(IUR)
+                        .build())
+                .transactionDetails(TransactionDetails.builder()
+                        .wallet(WalletItem.builder()
+                                .info(Info.builder().brand(BRAND).holder(HOLDER_FULL_NAME).build())
+                                .onboardingChannel(PAGO_PA_CHANNEL_IO)
+                                .build())
+                        .transaction(Transaction.builder()
+                                .idTransaction(ID_TRANSACTION)
+                                .grandTotal(GRAND_TOTAL_LONG)
+                                .amount(AMOUNT_LONG)
+                                .fee(FEE_LONG)
+                                .rrn(RRN)
+                                .authorizationCode(AUTH_CODE)
+                                .creationDate(DATE_TIME_TIMESTAMP_ZONED)
+                                .psp(TransactionPsp.builder()
+                                        .businessName(PSP_NAME)
+                                        .build())
+                                .build())
+                        .build())
+                .eventStatus(BizEventStatusType.DONE)
+                .build();
+        ReceiptPDFTemplate receiptPdfTemplate = buildTemplateService.buildTemplate(event, COMPLETE_TEMPLATE);
+
+        assertNotNull(receiptPdfTemplate);
+
+        it.gov.pagopa.receipt.pdf.generator.model.template.Transaction transaction = receiptPdfTemplate.getTransaction();
+        assertEquals(String.valueOf(ID_TRANSACTION), transaction.getId());
+        assertEquals(DATE_TIME_TIMESTAMP_FORMATTED, transaction.getTimestamp());
+        assertEquals(FORMATTED_GRAND_TOTAL, transaction.getAmount());
+        assertEquals(PSP_LOGO, transaction.getPsp().getLogo());
+        assertEquals(FORMATTED_FEE, transaction.getPsp().getFee().getAmount());
+        assertEquals(PSP_NAME, transaction.getPsp().getName());
+        assertEquals(PSP_CITY, transaction.getPsp().getCity());
+        assertEquals(PSP_COMPANY, transaction.getPsp().getCompanyName());
+        assertEquals(PSP_POSTAL_CODE, transaction.getPsp().getPostalCode());
+        assertEquals(PSP_ADDRESS, transaction.getPsp().getAddress());
+        assertEquals(PSP_BUILDING_NUMBER, transaction.getPsp().getBuildingNumber());
+        assertEquals(PSP_PROVINCE, transaction.getPsp().getProvince());
+        assertEquals(RRN, transaction.getRrn());
+        assertEquals(BRAND, transaction.getPaymentMethod().getName());
+        assertEquals(BRAND_ASSET_URL, transaction.getPaymentMethod().getLogo());
+        assertEquals(HOLDER_FULL_NAME, transaction.getPaymentMethod().getAccountHolder());
+        assertEquals(AUTH_CODE, transaction.getAuthCode());
+        assertEquals(COMPLETE_TEMPLATE, transaction.isRequestedByDebtor());
+        assertTrue(transaction.isProcessedByPagoPA());
+
+        it.gov.pagopa.receipt.pdf.generator.model.template.UserData userData = receiptPdfTemplate.getUser().getData();
+        assertEquals(PAYER_VALID_CF, userData.getTaxCode());
+        assertEquals(PAYER_FULL_NAME, userData.getFullName());
+
+        it.gov.pagopa.receipt.pdf.generator.model.template.Cart cart = receiptPdfTemplate.getCart();
+        assertEquals(FORMATTED_AMOUNT, cart.getAmountPartial());
+        assertEquals(FORMATTED_AMOUNT, cart.getItems().get(0).getAmount());
+        assertNull(cart.getItems().get(0).getDebtor().getFullName());
         assertEquals(DEBTOR_VALID_CF, cart.getItems().get(0).getDebtor().getTaxCode());
         assertEquals(REMITTANCE_INFORMATION, cart.getItems().get(0).getSubject());
         assertEquals(COMPANY_NAME, cart.getItems().get(0).getPayee().getName());
