@@ -180,7 +180,7 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
 
     private String getAuthCode(BizEvent event) {
         if (event.getTransactionDetails() != null && event.getTransactionDetails().getTransaction() != null) {
-            return event.getTransactionDetails().getTransaction().getAuthorizationCode();
+            return event.getTransactionDetails().getTransaction().getNumAut();
         }
         return null;
     }
