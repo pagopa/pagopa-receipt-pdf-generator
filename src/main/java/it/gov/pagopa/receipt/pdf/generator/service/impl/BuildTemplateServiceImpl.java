@@ -5,7 +5,18 @@ import it.gov.pagopa.receipt.pdf.generator.entity.event.BizEvent;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.enumeration.ReasonErrorCode;
 import it.gov.pagopa.receipt.pdf.generator.exception.PdfJsonMappingException;
 import it.gov.pagopa.receipt.pdf.generator.exception.TemplateDataMappingException;
-import it.gov.pagopa.receipt.pdf.generator.model.template.*;
+import it.gov.pagopa.receipt.pdf.generator.model.template.Cart;
+import it.gov.pagopa.receipt.pdf.generator.model.template.Debtor;
+import it.gov.pagopa.receipt.pdf.generator.model.template.Item;
+import it.gov.pagopa.receipt.pdf.generator.model.template.PSP;
+import it.gov.pagopa.receipt.pdf.generator.model.template.PSPFee;
+import it.gov.pagopa.receipt.pdf.generator.model.template.Payee;
+import it.gov.pagopa.receipt.pdf.generator.model.template.PaymentMethod;
+import it.gov.pagopa.receipt.pdf.generator.model.template.ReceiptPDFTemplate;
+import it.gov.pagopa.receipt.pdf.generator.model.template.RefNumber;
+import it.gov.pagopa.receipt.pdf.generator.model.template.Transaction;
+import it.gov.pagopa.receipt.pdf.generator.model.template.User;
+import it.gov.pagopa.receipt.pdf.generator.model.template.UserData;
 import it.gov.pagopa.receipt.pdf.generator.service.BuildTemplateService;
 import it.gov.pagopa.receipt.pdf.generator.utils.ObjectMapperUtils;
 import it.gov.pagopa.receipt.pdf.generator.utils.TemplateDataField;
@@ -14,15 +25,20 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
+import java.util.Date;
+import java.util.TimeZone;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 
 public class BuildTemplateServiceImpl implements BuildTemplateService {
 
@@ -34,6 +50,8 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
     private static final String PSP_CONFIG_FILE_JSON_FILE_NAME = "psp_config_file.json";
     private static final String PAGO_PA_CHANNEL_IO = "IO";
     private static final String PAGO_PA_CHANNEL_IO_PAY = "IO-PAY";
+    private static final String RECEIPT_DATE_FORMAT = "dd MMMM yyyy, HH:mm:ss";
+    private static final String ZONED_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss'Z'";
 
     /**
      * Hide from public usage.
@@ -52,7 +70,7 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
     }
 
     static {
-        try (InputStream data = BuildTemplateServiceImpl.class.getClassLoader().getResourceAsStream(PSP_CONFIG_FILE_JSON_FILE_NAME)) {
+        try (InputStream  data = BuildTemplateServiceImpl.class.getClassLoader().getResourceAsStream(PSP_CONFIG_FILE_JSON_FILE_NAME)) {
             if (data == null) {
                 throw new IOException("PSP config file not found");
             }
@@ -141,10 +159,10 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
                         event.getTransactionDetails().getTransaction() != null &&
                         event.getTransactionDetails().getTransaction().getCreationDate() != null
         ) {
-            return dateFormat(event.getTransactionDetails().getTransaction().getCreationDate(), true);
+            return dateFormatZoned(event.getTransactionDetails().getTransaction().getCreationDate());
         }
         if (event.getPaymentInfo() != null && event.getPaymentInfo().getPaymentDateTime() != null) {
-            return dateFormat(event.getPaymentInfo().getPaymentDateTime(), false);
+            return dateFormat(event.getPaymentInfo().getPaymentDateTime());
         }
         throw new TemplateDataMappingException(formatErrorMessage(TemplateDataField.TRANSACTION_TIMESTAMP), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
     }
@@ -350,11 +368,21 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
         return numberFormat.format(valueToFormat);
     }
 
-    private String dateFormat(String date, boolean withTimeZone) {
-        DateTimeFormatter simpleDateFormat = DateTimeFormatter.ofPattern("dd MMMM yyyy, HH:mm:ss").withLocale(Locale.ITALY);
-        if (withTimeZone) {
-            return ZonedDateTime.parse(date).format(simpleDateFormat);
+    private String dateFormatZoned(String date) throws TemplateDataMappingException {
+        SimpleDateFormat stringDateFormat = new SimpleDateFormat(ZONED_DATE_FORMAT, Locale.ITALY);
+        stringDateFormat.setTimeZone(TimeZone.getTimeZone(ZoneOffset.UTC));
+        Date parsed;
+        try {
+            parsed = stringDateFormat.parse(date);
+        } catch (ParseException e) {
+            String errMsg = String.format("Error mapping bizEvent data to template, parse failed for property %s", TemplateDataField.TRANSACTION_TIMESTAMP);
+            throw new TemplateDataMappingException(errMsg, ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e);
         }
+        SimpleDateFormat dateFormat = new SimpleDateFormat(RECEIPT_DATE_FORMAT, Locale.ITALY);
+        return dateFormat.format(parsed);
+    }
+    private String dateFormat(String date) {
+        DateTimeFormatter simpleDateFormat = DateTimeFormatter.ofPattern(RECEIPT_DATE_FORMAT).withLocale(Locale.ITALY);
         return LocalDateTime.parse(date).format(simpleDateFormat);
     }
 

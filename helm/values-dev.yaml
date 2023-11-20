@@ -78,6 +78,7 @@ microservice-chart:
           value: "70"
   fileConfig: {}
   envConfig:
+    TZ: "Europe/Rome"
     ENV: "dev"
     WEBSITE_SITE_NAME: "pagopareceiptpdfgenerator" # required to show cloud role name in application insights
     FUNCTIONS_WORKER_RUNTIME: "java"

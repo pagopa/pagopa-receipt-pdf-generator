@@ -40,8 +40,8 @@ class BuildTemplateServiceImplTest {
     public static final long ID_TRANSACTION = 1L;
     public static final String RRN = "rrn";
     public static final String AUTH_CODE = "authCode";
-    public static final String DATE_TIME_TIMESTAMP_MILLISECONDS = "2023-04-12T16:32:27.022486";
-    public static final String DATE_TIME_TIMESTAMP_ZONED = "2023-04-12T16:32:27Z";
+    public static final String DATE_TIME_TIMESTAMP_MILLISECONDS = "2023-11-14T19:31:55.484065";
+    public static final String DATE_TIME_TIMESTAMP_ZONED = "2023-11-14T18:31:55Z";
     public static final boolean PARTIAL_TEMPLATE = true;
     public static final boolean COMPLETE_TEMPLATE = false;
     public static final String PSP_NAME = "name";
@@ -59,7 +59,7 @@ class BuildTemplateServiceImplTest {
     private static final String MODEL_TYPE_IUV_CODE = "2";
     private static final String MODEL_TYPE_NOTICE_TEXT = "codiceAvviso";
     private static final String MODEL_TYPE_IUV_TEXT = "IUV";
-    private static final String DATE_TIME_TIMESTAMP_FORMATTED = "12 aprile 2023, 16:32:27";
+    private static final String DATE_TIME_TIMESTAMP_FORMATTED = "14 novembre 2023, 19:31:55";
     private static final String PAGO_PA_CHANNEL_IO = "IO";
     private static final String PAGO_PA_CHANNEL_IO_PAY = "IO-PAY";
     private static final String NOT_PAGO_PA_CHANNEL = "NOT_PAGO_PA_CHANNEL";
