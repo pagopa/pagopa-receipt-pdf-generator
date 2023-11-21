@@ -86,8 +86,8 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
     @Override
     public ReceiptPDFTemplate buildTemplate(BizEvent bizEvent, boolean partialTemplate) throws TemplateDataMappingException {
         return ReceiptPDFTemplate.builder()
+                .serviceCustomerId(getServiceCustomerId(bizEvent))
                 .transaction(Transaction.builder()
-                        .id(getId(bizEvent))
                         .timestamp(getTimestamp(bizEvent))
                         .amount(getAmount(bizEvent))
                         .psp(getPsp(bizEvent))
@@ -134,23 +134,11 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
                 .build();
     }
 
-    private String getId(BizEvent event) throws TemplateDataMappingException {
-        if (
-                event.getTransactionDetails() != null &&
-                        event.getTransactionDetails().getTransaction() != null &&
-                        event.getTransactionDetails().getTransaction().getIdTransaction() != 0L
-        ) {
-            return String.valueOf(event.getTransactionDetails().getTransaction().getIdTransaction());
+    private String getServiceCustomerId(BizEvent event) throws TemplateDataMappingException {
+        if (event.getId() != null) {
+            return event.getId();
         }
-        if (event.getPaymentInfo() != null) {
-            if (event.getPaymentInfo().getPaymentToken() != null) {
-                return event.getPaymentInfo().getPaymentToken();
-            }
-            if (event.getPaymentInfo().getIUR() != null) {
-                return event.getPaymentInfo().getIUR();
-            }
-        }
-        throw new TemplateDataMappingException(formatErrorMessage(TemplateDataField.TRANSACTION_ID), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
+        throw new TemplateDataMappingException(formatErrorMessage(TemplateDataField.SERVICE_CUSTOMER_ID), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
     }
 
     private String getTimestamp(BizEvent event) throws TemplateDataMappingException {

@@ -127,9 +127,9 @@ class BuildTemplateServiceImplTest {
         ReceiptPDFTemplate receiptPdfTemplate = buildTemplateService.buildTemplate(event, COMPLETE_TEMPLATE);
 
         assertNotNull(receiptPdfTemplate);
+        assertEquals(BIZ_EVENT_ID, receiptPdfTemplate.getServiceCustomerId());
 
         it.gov.pagopa.receipt.pdf.generator.model.template.Transaction transaction = receiptPdfTemplate.getTransaction();
-        assertEquals(String.valueOf(ID_TRANSACTION), transaction.getId());
         assertEquals(DATE_TIME_TIMESTAMP_FORMATTED, transaction.getTimestamp());
         assertEquals(FORMATTED_GRAND_TOTAL, transaction.getAmount());
         assertEquals(PSP_LOGO, transaction.getPsp().getLogo());
@@ -217,9 +217,9 @@ class BuildTemplateServiceImplTest {
         ReceiptPDFTemplate receiptPdfTemplate = buildTemplateService.buildTemplate(event, COMPLETE_TEMPLATE);
 
         assertNotNull(receiptPdfTemplate);
+        assertEquals(BIZ_EVENT_ID, receiptPdfTemplate.getServiceCustomerId());
 
         it.gov.pagopa.receipt.pdf.generator.model.template.Transaction transaction = receiptPdfTemplate.getTransaction();
-        assertEquals(String.valueOf(ID_TRANSACTION), transaction.getId());
         assertEquals(DATE_TIME_TIMESTAMP_FORMATTED, transaction.getTimestamp());
         assertEquals(FORMATTED_GRAND_TOTAL, transaction.getAmount());
         assertEquals(PSP_LOGO, transaction.getPsp().getLogo());
@@ -307,9 +307,9 @@ class BuildTemplateServiceImplTest {
         ReceiptPDFTemplate receiptPdfTemplate = buildTemplateService.buildTemplate(event, PARTIAL_TEMPLATE);
 
         assertNotNull(receiptPdfTemplate);
+        assertEquals(BIZ_EVENT_ID, receiptPdfTemplate.getServiceCustomerId());
 
         it.gov.pagopa.receipt.pdf.generator.model.template.Transaction transaction = receiptPdfTemplate.getTransaction();
-        assertEquals(String.valueOf(ID_TRANSACTION), transaction.getId());
         assertEquals(DATE_TIME_TIMESTAMP_FORMATTED, transaction.getTimestamp());
         assertEquals(FORMATTED_GRAND_TOTAL, transaction.getAmount());
         assertEquals(PSP_LOGO, transaction.getPsp().getLogo());
@@ -378,9 +378,9 @@ class BuildTemplateServiceImplTest {
         ReceiptPDFTemplate receiptPdfTemplate = buildTemplateService.buildTemplate(event, COMPLETE_TEMPLATE);
 
         assertNotNull(receiptPdfTemplate);
+        assertEquals(BIZ_EVENT_ID, receiptPdfTemplate.getServiceCustomerId());
 
         it.gov.pagopa.receipt.pdf.generator.model.template.Transaction transaction = receiptPdfTemplate.getTransaction();
-        assertEquals(PAYMENT_TOKEN, transaction.getId());
         assertEquals(DATE_TIME_TIMESTAMP_FORMATTED, transaction.getTimestamp());
         assertEquals(FORMATTED_AMOUNT, transaction.getAmount());
         assertEquals(PSP_LOGO, transaction.getPsp().getLogo());
@@ -449,9 +449,9 @@ class BuildTemplateServiceImplTest {
         ReceiptPDFTemplate receiptPdfTemplate = buildTemplateService.buildTemplate(event, COMPLETE_TEMPLATE);
 
         assertNotNull(receiptPdfTemplate);
+        assertEquals(BIZ_EVENT_ID, receiptPdfTemplate.getServiceCustomerId());
 
         it.gov.pagopa.receipt.pdf.generator.model.template.Transaction transaction = receiptPdfTemplate.getTransaction();
-        assertEquals(IUR, transaction.getId());
         assertEquals(DATE_TIME_TIMESTAMP_FORMATTED, transaction.getTimestamp());
         assertEquals(FORMATTED_AMOUNT, transaction.getAmount());
         assertEquals(PSP_LOGO, transaction.getPsp().getLogo());
@@ -538,9 +538,9 @@ class BuildTemplateServiceImplTest {
         ReceiptPDFTemplate receiptPdfTemplate = buildTemplateService.buildTemplate(event, COMPLETE_TEMPLATE);
 
         assertNotNull(receiptPdfTemplate);
+        assertEquals(BIZ_EVENT_ID, receiptPdfTemplate.getServiceCustomerId());
 
         it.gov.pagopa.receipt.pdf.generator.model.template.Transaction transaction = receiptPdfTemplate.getTransaction();
-        assertEquals(String.valueOf(ID_TRANSACTION), transaction.getId());
         assertEquals(DATE_TIME_TIMESTAMP_FORMATTED, transaction.getTimestamp());
         assertEquals(FORMATTED_GRAND_TOTAL, transaction.getAmount());
         assertEquals(PSP_LOGO, transaction.getPsp().getLogo());
@@ -628,9 +628,9 @@ class BuildTemplateServiceImplTest {
         ReceiptPDFTemplate receiptPdfTemplate = buildTemplateService.buildTemplate(event, COMPLETE_TEMPLATE);
 
         assertNotNull(receiptPdfTemplate);
+        assertEquals(BIZ_EVENT_ID, receiptPdfTemplate.getServiceCustomerId());
 
         it.gov.pagopa.receipt.pdf.generator.model.template.Transaction transaction = receiptPdfTemplate.getTransaction();
-        assertEquals(String.valueOf(ID_TRANSACTION), transaction.getId());
         assertEquals(DATE_TIME_TIMESTAMP_FORMATTED, transaction.getTimestamp());
         assertEquals(FORMATTED_GRAND_TOTAL, transaction.getAmount());
         assertEquals(PSP_LOGO, transaction.getPsp().getLogo());
@@ -718,9 +718,9 @@ class BuildTemplateServiceImplTest {
         ReceiptPDFTemplate receiptPdfTemplate = buildTemplateService.buildTemplate(event, COMPLETE_TEMPLATE);
 
         assertNotNull(receiptPdfTemplate);
+        assertEquals(BIZ_EVENT_ID, receiptPdfTemplate.getServiceCustomerId());
 
         it.gov.pagopa.receipt.pdf.generator.model.template.Transaction transaction = receiptPdfTemplate.getTransaction();
-        assertEquals(String.valueOf(ID_TRANSACTION), transaction.getId());
         assertEquals(DATE_TIME_TIMESTAMP_FORMATTED, transaction.getTimestamp());
         assertEquals(FORMATTED_GRAND_TOTAL, transaction.getAmount());
         assertEquals(PSP_LOGO, transaction.getPsp().getLogo());
@@ -759,6 +759,7 @@ class BuildTemplateServiceImplTest {
     @Test
     void mapTemplateLeastAmountOfInfoSuccess() {
         BizEvent event = BizEvent.builder()
+                .id(BIZ_EVENT_ID)
                 .paymentInfo(PaymentInfo.builder()
                         .IUR(IUR)
                         .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS)
@@ -794,17 +795,17 @@ class BuildTemplateServiceImplTest {
     }
 
     @Test
-    void mapTemplateNoTransactionIdError() {
+    void mapTemplateNoServiceCustomerIdError() {
         BizEvent event = new BizEvent();
         TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(event, COMPLETE_TEMPLATE));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_ID), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.SERVICE_CUSTOMER_ID), e.getMessage());
     }
 
     @Test
     void mapTemplateNoTransactionTimestampError() {
-        BizEvent event = BizEvent.builder().paymentInfo(PaymentInfo.builder().IUR(IUR).build()).build();
+        BizEvent event = BizEvent.builder().id(BIZ_EVENT_ID).paymentInfo(PaymentInfo.builder().IUR(IUR).build()).build();
         TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(event, COMPLETE_TEMPLATE));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
@@ -814,6 +815,7 @@ class BuildTemplateServiceImplTest {
     @Test
     void mapTemplateNoTransactionAmountError() {
         BizEvent event = BizEvent.builder()
+                .id(BIZ_EVENT_ID)
                 .paymentInfo(PaymentInfo.builder()
                         .IUR(IUR)
                         .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS)
@@ -828,6 +830,7 @@ class BuildTemplateServiceImplTest {
     @Test
     void mapTemplateNoPspError() {
         BizEvent event = BizEvent.builder()
+                .id(BIZ_EVENT_ID)
                 .paymentInfo(PaymentInfo.builder()
                         .IUR(IUR)
                         .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS)
@@ -843,6 +846,7 @@ class BuildTemplateServiceImplTest {
     @Test
     void mapTemplateNoPspNameError() {
         BizEvent event = BizEvent.builder()
+                .id(BIZ_EVENT_ID)
                 .paymentInfo(PaymentInfo.builder()
                         .IUR(IUR)
                         .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS)
@@ -861,6 +865,7 @@ class BuildTemplateServiceImplTest {
     @Test
     void mapTemplateNoPspCompanyNameError() {
         BizEvent event = BizEvent.builder()
+                .id(BIZ_EVENT_ID)
                 .paymentInfo(PaymentInfo.builder()
                         .IUR(IUR)
                         .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS)
@@ -880,6 +885,7 @@ class BuildTemplateServiceImplTest {
     @Test
     void mapTemplateNoPspAddressError() {
         BizEvent event = BizEvent.builder()
+                .id(BIZ_EVENT_ID)
                 .paymentInfo(PaymentInfo.builder()
                         .IUR(IUR)
                         .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS)
@@ -899,6 +905,7 @@ class BuildTemplateServiceImplTest {
     @Test
     void mapTemplateNoPspCityError() {
         BizEvent event = BizEvent.builder()
+                .id(BIZ_EVENT_ID)
                 .paymentInfo(PaymentInfo.builder()
                         .IUR(IUR)
                         .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS)
@@ -918,6 +925,7 @@ class BuildTemplateServiceImplTest {
     @Test
     void mapTemplateNoPspProvinceError() {
         BizEvent event = BizEvent.builder()
+                .id(BIZ_EVENT_ID)
                 .paymentInfo(PaymentInfo.builder()
                         .IUR(IUR)
                         .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS)
@@ -937,6 +945,7 @@ class BuildTemplateServiceImplTest {
     @Test
     void mapTemplateNoPspBuildingNumberError() {
         BizEvent event = BizEvent.builder()
+                .id(BIZ_EVENT_ID)
                 .paymentInfo(PaymentInfo.builder()
                         .IUR(IUR)
                         .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS)
@@ -956,6 +965,7 @@ class BuildTemplateServiceImplTest {
     @Test
     void mapTemplateNoPspPostalCodeError() {
         BizEvent event = BizEvent.builder()
+                .id(BIZ_EVENT_ID)
                 .paymentInfo(PaymentInfo.builder()
                         .IUR(IUR)
                         .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS)
@@ -975,6 +985,7 @@ class BuildTemplateServiceImplTest {
     @Test
     void mapTemplateNoPspLogoError() {
         BizEvent event = BizEvent.builder()
+                .id(BIZ_EVENT_ID)
                 .paymentInfo(PaymentInfo.builder()
                         .IUR(IUR)
                         .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS)
@@ -999,6 +1010,7 @@ class BuildTemplateServiceImplTest {
     @Test
     void mapTemplateNoRrnError() {
         BizEvent event = BizEvent.builder()
+                .id(BIZ_EVENT_ID)
                 .paymentInfo(PaymentInfo.builder()
                         .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS)
                         .amount(AMOUNT_WITHOUT_CENTS)
@@ -1022,6 +1034,7 @@ class BuildTemplateServiceImplTest {
     @Test
     void mapTemplateNoUserDataFullNameError() {
         BizEvent event = BizEvent.builder()
+                .id(BIZ_EVENT_ID)
                 .paymentInfo(PaymentInfo.builder()
                         .IUR(IUR)
                         .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS)
@@ -1041,6 +1054,7 @@ class BuildTemplateServiceImplTest {
     @Test
     void mapTemplateNoUserDataTaxCodeError() {
         BizEvent event = BizEvent.builder()
+                .id(BIZ_EVENT_ID)
                 .paymentInfo(PaymentInfo.builder()
                         .IUR(IUR)
                         .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS)
@@ -1063,6 +1077,7 @@ class BuildTemplateServiceImplTest {
     @Test
     void mapTemplateNoCartItemRefNumberTypeError() {
         BizEvent event = BizEvent.builder()
+                .id(BIZ_EVENT_ID)
                 .paymentInfo(PaymentInfo.builder()
                         .IUR(IUR)
                         .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS)
@@ -1086,6 +1101,7 @@ class BuildTemplateServiceImplTest {
     @Test
     void mapTemplateNoCartItemRefNumberValueError() {
         BizEvent event = BizEvent.builder()
+                .id(BIZ_EVENT_ID)
                 .paymentInfo(PaymentInfo.builder()
                         .IUR(IUR)
                         .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS)
@@ -1112,6 +1128,7 @@ class BuildTemplateServiceImplTest {
     @Test
     void mapTemplateNoCartItemDebtorTaxCodeValueError() {
         BizEvent event = BizEvent.builder()
+                .id(BIZ_EVENT_ID)
                 .paymentInfo(PaymentInfo.builder()
                         .IUR(IUR)
                         .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS)
@@ -1139,6 +1156,7 @@ class BuildTemplateServiceImplTest {
     @Test
     void mapTemplateNoCartItemPayeeTaxCodeValueError() {
         BizEvent event = BizEvent.builder()
+                .id(BIZ_EVENT_ID)
                 .paymentInfo(PaymentInfo.builder()
                         .IUR(IUR)
                         .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS)
@@ -1169,6 +1187,7 @@ class BuildTemplateServiceImplTest {
     @Test
     void mapTemplateNoCartItemAmountValueError() {
         BizEvent event = BizEvent.builder()
+                .id(BIZ_EVENT_ID)
                 .paymentInfo(PaymentInfo.builder()
                         .IUR(IUR)
                         .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS)
