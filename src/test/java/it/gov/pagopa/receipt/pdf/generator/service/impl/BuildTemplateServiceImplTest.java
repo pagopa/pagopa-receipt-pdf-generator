@@ -535,7 +535,7 @@ class BuildTemplateServiceImplTest {
                                 .amount(AMOUNT_LONG)
                                 .fee(FEE_LONG)
                                 .rrn(RRN)
-                                .authorizationCode(AUTH_CODE)
+                                .numAut(AUTH_CODE)
                                 .creationDate(DATE_TIME_TIMESTAMP_ZONED)
                                 .psp(TransactionPsp.builder()
                                         .businessName(PSP_NAME)
@@ -544,7 +544,8 @@ class BuildTemplateServiceImplTest {
                         .build())
                 .eventStatus(BizEventStatusType.DONE)
                 .build();
-        ReceiptPDFTemplate receiptPdfTemplate = buildTemplateService.buildTemplate(event, COMPLETE_TEMPLATE);
+        Receipt receipt = Receipt.builder().eventData(EventData.builder().cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
+        ReceiptPDFTemplate receiptPdfTemplate = buildTemplateService.buildTemplate(event, COMPLETE_TEMPLATE, receipt);
 
         assertNotNull(receiptPdfTemplate);
 
@@ -625,7 +626,7 @@ class BuildTemplateServiceImplTest {
                                 .amount(AMOUNT_LONG)
                                 .fee(FEE_LONG)
                                 .rrn(RRN)
-                                .authorizationCode(AUTH_CODE)
+                                .numAut(AUTH_CODE)
                                 .creationDate(DATE_TIME_TIMESTAMP_ZONED)
                                 .psp(TransactionPsp.builder()
                                         .businessName(PSP_NAME)
@@ -634,7 +635,8 @@ class BuildTemplateServiceImplTest {
                         .build())
                 .eventStatus(BizEventStatusType.DONE)
                 .build();
-        ReceiptPDFTemplate receiptPdfTemplate = buildTemplateService.buildTemplate(event, COMPLETE_TEMPLATE);
+        Receipt receipt = Receipt.builder().eventData(EventData.builder().cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
+        ReceiptPDFTemplate receiptPdfTemplate = buildTemplateService.buildTemplate(event, COMPLETE_TEMPLATE, receipt);
 
         assertNotNull(receiptPdfTemplate);
 
@@ -715,7 +717,7 @@ class BuildTemplateServiceImplTest {
                                 .amount(AMOUNT_LONG)
                                 .fee(FEE_LONG)
                                 .rrn(RRN)
-                                .authorizationCode(AUTH_CODE)
+                                .numAut(AUTH_CODE)
                                 .creationDate(DATE_TIME_TIMESTAMP_ZONED)
                                 .psp(TransactionPsp.builder()
                                         .businessName(PSP_NAME)
@@ -724,7 +726,8 @@ class BuildTemplateServiceImplTest {
                         .build())
                 .eventStatus(BizEventStatusType.DONE)
                 .build();
-        ReceiptPDFTemplate receiptPdfTemplate = buildTemplateService.buildTemplate(event, COMPLETE_TEMPLATE);
+        Receipt receipt = Receipt.builder().eventData(EventData.builder().cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
+        ReceiptPDFTemplate receiptPdfTemplate = buildTemplateService.buildTemplate(event, COMPLETE_TEMPLATE, receipt);
 
         assertNotNull(receiptPdfTemplate);
 
