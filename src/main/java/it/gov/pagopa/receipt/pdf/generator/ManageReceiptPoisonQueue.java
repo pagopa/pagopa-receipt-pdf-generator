@@ -67,7 +67,7 @@ public class ManageReceiptPoisonQueue {
             bizEvent = ObjectMapperUtils.mapString(errorMessage, BizEvent.class);
              logger.info("[{}] function called at {} recognized as valid BizEvent with id {}",
                      context.getFunctionName(), LocalDateTime.now(), bizEvent.getId());
-            if (bizEvent.getAttemptedPoisonRetry()) {
+            if (Boolean.TRUE.equals(bizEvent.getAttemptedPoisonRetry())) {
                  logger.info("[{}] function called at {} for event with id {} has ingestion already retried, sending to review",
                          context.getFunctionName(), LocalDateTime.now(), bizEvent.getId());
             } else {
