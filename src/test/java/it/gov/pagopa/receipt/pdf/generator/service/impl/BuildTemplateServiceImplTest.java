@@ -83,6 +83,7 @@ class BuildTemplateServiceImplTest {
     void mapTemplateAllFieldsSuccessCompleteTemplateAndIOChannel() throws Exception {
         BizEvent event = BizEvent.builder()
                 .id(BIZ_EVENT_ID)
+                .idPaymentManager(BIZ_EVENT_ID)
                 .debtorPosition(DebtorPosition.builder()
                         .iuv(IUV)
                         .modelType(MODEL_TYPE_IUV_CODE)
@@ -174,6 +175,7 @@ class BuildTemplateServiceImplTest {
     void mapTemplateAllFieldsSuccessCompleteTemplateAndIOPAYChannel() throws Exception {
         BizEvent event = BizEvent.builder()
                 .id(BIZ_EVENT_ID)
+                .idPaymentManager(BIZ_EVENT_ID)
                 .debtorPosition(DebtorPosition.builder()
                         .iuv(IUV)
                         .modelType(MODEL_TYPE_IUV_CODE)
@@ -499,6 +501,7 @@ class BuildTemplateServiceImplTest {
     void mapTemplateAllFieldsSuccessDebtorFullNameEmpty() throws Exception {
         BizEvent event = BizEvent.builder()
                 .id(BIZ_EVENT_ID)
+                .idPaymentManager(BIZ_EVENT_ID)
                 .debtorPosition(DebtorPosition.builder()
                         .iuv(IUV)
                         .modelType(MODEL_TYPE_IUV_CODE)
@@ -590,6 +593,7 @@ class BuildTemplateServiceImplTest {
     void mapTemplateAllFieldsSuccessDebtorFullNameWithSpecialChar() throws Exception {
         BizEvent event = BizEvent.builder()
                 .id(BIZ_EVENT_ID)
+                .idPaymentManager(BIZ_EVENT_ID)
                 .debtorPosition(DebtorPosition.builder()
                         .iuv(IUV)
                         .modelType(MODEL_TYPE_IUV_CODE)
@@ -681,6 +685,7 @@ class BuildTemplateServiceImplTest {
     void mapTemplateAllFieldsSuccessDebtorFullNameEqualsFiscalCode() throws Exception {
         BizEvent event = BizEvent.builder()
                 .id(BIZ_EVENT_ID)
+                .idPaymentManager(BIZ_EVENT_ID)
                 .debtorPosition(DebtorPosition.builder()
                         .iuv(IUV)
                         .modelType(MODEL_TYPE_IUV_CODE)
