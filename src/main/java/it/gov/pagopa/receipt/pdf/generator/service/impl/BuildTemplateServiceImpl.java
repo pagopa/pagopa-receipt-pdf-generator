@@ -2,6 +2,7 @@ package it.gov.pagopa.receipt.pdf.generator.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import it.gov.pagopa.receipt.pdf.generator.entity.event.BizEvent;
+import it.gov.pagopa.receipt.pdf.generator.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.enumeration.ReasonErrorCode;
 import it.gov.pagopa.receipt.pdf.generator.exception.PdfJsonMappingException;
 import it.gov.pagopa.receipt.pdf.generator.exception.TemplateDataMappingException;
@@ -70,7 +71,7 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
     }
 
     static {
-        try (InputStream  data = BuildTemplateServiceImpl.class.getClassLoader().getResourceAsStream(PSP_CONFIG_FILE_JSON_FILE_NAME)) {
+        try (InputStream data = BuildTemplateServiceImpl.class.getClassLoader().getResourceAsStream(PSP_CONFIG_FILE_JSON_FILE_NAME)) {
             if (data == null) {
                 throw new IOException("PSP config file not found");
             }
@@ -84,7 +85,7 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
      * {@inheritDoc}
      */
     @Override
-    public ReceiptPDFTemplate buildTemplate(BizEvent bizEvent, boolean partialTemplate) throws TemplateDataMappingException {
+    public ReceiptPDFTemplate buildTemplate(BizEvent bizEvent, boolean partialTemplate, Receipt receipt) throws TemplateDataMappingException {
         return ReceiptPDFTemplate.builder()
                 .serviceCustomerId(getServiceCustomerId(bizEvent))
                 .transaction(Transaction.builder()
@@ -124,7 +125,7 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
                                                 .name(getPayeeName(bizEvent))
                                                 .taxCode(getPayeeTaxCode(bizEvent))
                                                 .build())
-                                        .subject(getItemSubject(bizEvent))
+                                        .subject(getItemSubject(receipt))
                                         .amount(getItemAmount(bizEvent))
                                         .build()
                         ))
@@ -279,9 +280,12 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
         throw new TemplateDataMappingException(formatErrorMessage(TemplateDataField.CART_ITEM_PAYEE_TAX_CODE), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
     }
 
-    private String getItemSubject(BizEvent event) {
-        if (event.getPaymentInfo() != null && event.getPaymentInfo().getRemittanceInformation() != null) {
-            return event.getPaymentInfo().getRemittanceInformation();
+    private String getItemSubject(Receipt receipt) {
+        if (receipt.getEventData() != null &&
+                !receipt.getEventData().getCart().isEmpty() &&
+                receipt.getEventData().getCart().get(0) != null
+        ) {
+            return receipt.getEventData().getCart().get(0).getSubject();
         }
 
         return null;
