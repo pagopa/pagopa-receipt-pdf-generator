@@ -15,6 +15,7 @@ import static com.fasterxml.jackson.annotation.JsonInclude.*;
 @JsonInclude(Include.NON_NULL)
 public class ReceiptPDFTemplate {
 
+    private String serviceCustomerId;
     private Transaction transaction;
     private User user;
     private Cart cart;
