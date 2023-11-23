@@ -11,7 +11,6 @@ import static com.fasterxml.jackson.annotation.JsonInclude.*;
 @JsonInclude(Include.NON_NULL)
 public class Transaction {
 
-    private String id;
     private String timestamp;
     private String amount;
     private PSP psp;

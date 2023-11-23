@@ -2,7 +2,7 @@ package it.gov.pagopa.receipt.pdf.generator.utils;
 
 public class TemplateDataField {
     public static final String ERROR_MAPPING_MESSAGE = "Error mapping bizEvent data to template, missing property %s";
-    public static final String TRANSACTION_ID = "transaction.id";
+    public static final String SERVICE_CUSTOMER_ID = "serviceCustomerId";
     public static final String TRANSACTION_TIMESTAMP = "transaction.timestamp";
     public static final String TRANSACTION_AMOUNT = "transaction.amount";
     public static final String TRANSACTION_RRN = "transaction.rrn";
