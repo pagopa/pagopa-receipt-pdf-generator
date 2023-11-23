@@ -19,8 +19,8 @@ class BuildTemplateServiceImplTest {
     public static final String ID_PSP = "ID_PSP";
     public static final String DEBTOR_FULL_NAME = "John Doe";
     public static final String DEBTOR_FULL_NAME_INVALID = "-- --";
-    public static final String DEBTOR_FULL_NAME_SPECIAL_CHAR = "John,Doe:Megacorp;SRL::Avenue;";
-    public static final String DEBTOR_FULL_NAME_SPECIAL_CHAR_FORMATTED = "John Doe Megacorp SRL Avenue ";
+    public static final String DEBTOR_FULL_NAME_SPECIAL_CHAR = "John,Doe:Megacorp;SRL::Avenue;Street/";
+    public static final String DEBTOR_FULL_NAME_SPECIAL_CHAR_FORMATTED = "John Doe Megacorp SRL Avenue Street ";
     public static final String DEBTOR_VALID_CF = "CF_DEBTOR";
     public static final String PAYER_FULL_NAME = "John Doe PAYER";
     public static final String PAYER_VALID_CF = "CF_PAYER";
@@ -526,7 +526,7 @@ class BuildTemplateServiceImplTest {
                                 .amount(AMOUNT_LONG)
                                 .fee(FEE_LONG)
                                 .rrn(RRN)
-                                .authorizationCode(AUTH_CODE)
+                                .numAut(AUTH_CODE)
                                 .creationDate(DATE_TIME_TIMESTAMP_ZONED)
                                 .psp(TransactionPsp.builder()
                                         .businessName(PSP_NAME)
@@ -616,7 +616,7 @@ class BuildTemplateServiceImplTest {
                                 .amount(AMOUNT_LONG)
                                 .fee(FEE_LONG)
                                 .rrn(RRN)
-                                .authorizationCode(AUTH_CODE)
+                                .numAut(AUTH_CODE)
                                 .creationDate(DATE_TIME_TIMESTAMP_ZONED)
                                 .psp(TransactionPsp.builder()
                                         .businessName(PSP_NAME)
@@ -706,7 +706,7 @@ class BuildTemplateServiceImplTest {
                                 .amount(AMOUNT_LONG)
                                 .fee(FEE_LONG)
                                 .rrn(RRN)
-                                .authorizationCode(AUTH_CODE)
+                                .numAut(AUTH_CODE)
                                 .creationDate(DATE_TIME_TIMESTAMP_ZONED)
                                 .psp(TransactionPsp.builder()
                                         .businessName(PSP_NAME)
