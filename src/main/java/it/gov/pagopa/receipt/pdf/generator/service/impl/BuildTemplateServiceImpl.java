@@ -393,6 +393,6 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
             return null;
         }
 
-       return fullName.replaceAll("[,;:]+", " ");
+       return fullName.replaceAll("[,;:/]+", " ");
     }
 }
