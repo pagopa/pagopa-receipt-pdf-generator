@@ -79,6 +79,7 @@ class BuildTemplateServiceImplTest {
     void mapTemplateAllFieldsSuccessCompleteTemplateAndIOChannel() throws Exception {
         BizEvent event = BizEvent.builder()
                 .id(BIZ_EVENT_ID)
+                .idPaymentManager(BIZ_EVENT_ID)
                 .debtorPosition(DebtorPosition.builder()
                         .iuv(IUV)
                         .modelType(MODEL_TYPE_IUV_CODE)
@@ -169,6 +170,7 @@ class BuildTemplateServiceImplTest {
     void mapTemplateAllFieldsSuccessCompleteTemplateAndIOPAYChannel() throws Exception {
         BizEvent event = BizEvent.builder()
                 .id(BIZ_EVENT_ID)
+                .idPaymentManager(BIZ_EVENT_ID)
                 .debtorPosition(DebtorPosition.builder()
                         .iuv(IUV)
                         .modelType(MODEL_TYPE_IUV_CODE)
@@ -490,6 +492,7 @@ class BuildTemplateServiceImplTest {
     void mapTemplateAllFieldsSuccessDebtorFullNameEmpty() throws Exception {
         BizEvent event = BizEvent.builder()
                 .id(BIZ_EVENT_ID)
+                .idPaymentManager(BIZ_EVENT_ID)
                 .debtorPosition(DebtorPosition.builder()
                         .iuv(IUV)
                         .modelType(MODEL_TYPE_IUV_CODE)
@@ -526,7 +529,7 @@ class BuildTemplateServiceImplTest {
                                 .amount(AMOUNT_LONG)
                                 .fee(FEE_LONG)
                                 .rrn(RRN)
-                                .authorizationCode(AUTH_CODE)
+                                .numAut(AUTH_CODE)
                                 .creationDate(DATE_TIME_TIMESTAMP_ZONED)
                                 .psp(TransactionPsp.builder()
                                         .businessName(PSP_NAME)
@@ -580,6 +583,7 @@ class BuildTemplateServiceImplTest {
     void mapTemplateAllFieldsSuccessDebtorFullNameWithSpecialChar() throws Exception {
         BizEvent event = BizEvent.builder()
                 .id(BIZ_EVENT_ID)
+                .idPaymentManager(BIZ_EVENT_ID)
                 .debtorPosition(DebtorPosition.builder()
                         .iuv(IUV)
                         .modelType(MODEL_TYPE_IUV_CODE)
@@ -616,7 +620,7 @@ class BuildTemplateServiceImplTest {
                                 .amount(AMOUNT_LONG)
                                 .fee(FEE_LONG)
                                 .rrn(RRN)
-                                .authorizationCode(AUTH_CODE)
+                                .numAut(AUTH_CODE)
                                 .creationDate(DATE_TIME_TIMESTAMP_ZONED)
                                 .psp(TransactionPsp.builder()
                                         .businessName(PSP_NAME)
@@ -670,6 +674,7 @@ class BuildTemplateServiceImplTest {
     void mapTemplateAllFieldsSuccessDebtorFullNameEqualsFiscalCode() throws Exception {
         BizEvent event = BizEvent.builder()
                 .id(BIZ_EVENT_ID)
+                .idPaymentManager(BIZ_EVENT_ID)
                 .debtorPosition(DebtorPosition.builder()
                         .iuv(IUV)
                         .modelType(MODEL_TYPE_IUV_CODE)
@@ -706,7 +711,7 @@ class BuildTemplateServiceImplTest {
                                 .amount(AMOUNT_LONG)
                                 .fee(FEE_LONG)
                                 .rrn(RRN)
-                                .authorizationCode(AUTH_CODE)
+                                .numAut(AUTH_CODE)
                                 .creationDate(DATE_TIME_TIMESTAMP_ZONED)
                                 .psp(TransactionPsp.builder()
                                         .businessName(PSP_NAME)

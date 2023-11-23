@@ -349,15 +349,7 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
     }
 
     public boolean getProcessedByPagoPA(BizEvent event) {
-        if (event.getTransactionDetails() != null && event.getTransactionDetails().getWallet() != null) {
-            String onboardingChannel = event.getTransactionDetails().getWallet().getOnboardingChannel();
-            return onboardingChannel != null &&
-                    (onboardingChannel.equals(PAGO_PA_CHANNEL_IO) ||
-                            onboardingChannel.equals(PAGO_PA_CHANNEL_IO_PAY)
-                    );
-        }
-
-        return false;
+        return event.getIdPaymentManager() != null && !event.getIdPaymentManager().isBlank();
     }
 
     private String currencyFormat(String value) {
