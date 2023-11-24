@@ -35,3 +35,11 @@ Feature: All about payment events consumed by Azure functions receipt-pdf-genera
     And the receipt has not the status "NOT_QUEUE_SENT"
     And the receipt has not the status "INSERTED"
     And the blob storage has the PDF document
+
+
+  Scenario: a receipt stored on datastore with wrong or missing attachment requires regeneration
+    Given a receipt with id "receipt-generator-int-test-id-5" stored into receipt datastore
+    And a biz-event id "receipt-generator-int-test-id-5" stored into biz-event datastore
+    When HTTP regenerate request is called
+    Then response has a 200 Http status
+    And the receipt has the attachment

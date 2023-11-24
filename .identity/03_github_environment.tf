@@ -24,6 +24,7 @@ locals {
     "CLIENT_ID" : module.github_runner_app.application_id,
     "TENANT_ID" : data.azurerm_client_config.current.tenant_id,
     "SUBSCRIPTION_ID" : data.azurerm_subscription.current.subscription_id,
+    "SUBKEY" : data.azurerm_key_vault_secret.key_vault_integration_test_subkey.value,
     "RECEIPTS_STORAGE_CONN_STRING" : data.azurerm_storage_account.receipts_sa.primary_connection_string,
     "RECEIPTS_COSMOS_CONN_STRING" : "AccountEndpoint=https://pagopa-${var.env_short}-${local.location_short}-${local.domain}-ds-cosmos-account.documents.azure.com:443/;AccountKey=${data.azurerm_cosmosdb_account.receipts_cosmos.primary_key};",
   }
@@ -95,4 +96,9 @@ resource "github_actions_secret" "secret_slack_webhook" {
   repository      = local.github.repository
   secret_name     = "SLACK_WEBHOOK_URL"
   plaintext_value = data.azurerm_key_vault_secret.key_vault_integration_test_webhook_slack.value
+}
+
+data "azurerm_key_vault_secret" "key_vault_integration_test_subkey" {
+  name         = "apikey-generator-receipt" # "integration-test-subkey"
+  key_vault_id = data.azurerm_key_vault.key_vault_domain.id
 }

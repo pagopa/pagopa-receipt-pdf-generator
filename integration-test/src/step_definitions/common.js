@@ -1,3 +1,12 @@
+const axios = require("axios");
+
+const datastore_url = process.env.GENERATE_REG_URL;
+
+axios.defaults.headers.common['Ocp-Apim-Subscription-Key'] = process.env.SUBKEY || ""; // for all requests
+if (process.env.canary) {
+  axios.defaults.headers.common['X-CANARY'] = 'canary' // for all requests
+}
+
 const FISCAL_CODE = "AAAAAA00A00A000A";
 const TOKENIZED_FISCAL_CODE = "cd07268c-73e8-4df4-8305-a35085e32eff";
 
@@ -7,6 +16,12 @@ function sleep(ms) {
 
 function createEventForQueue(id) {
 	return createEventForPoisonQueue(id, false);
+}
+
+function createEventForDatastore(id) {
+	let json_event = createEventForPoisonQueue(id, false);
+	json_event.eventStatus = "TEST"
+    return json_event;
 }
 
 function createEventForPoisonQueue(id, attemptedPoisonRetry) {
@@ -153,6 +168,23 @@ function createReceipt(id) {
 	return receipt
 }
 
+async function regeneratePdf(eventId) {
+
+    var data = {}
+    if (eventId != null) {
+        data = JSON.stringify({ "eventId": eventId });
+    }
+
+  	return await axios.put(datastore_url, data, {})
+  		.then(res => {
+  			return res;
+  		})
+  		.catch(error => {
+  			return error.response;
+  		});
+
+}
+
 module.exports = {
-	sleep, createReceipt, createEventForPoisonQueue, createEventForQueue
+	sleep, createReceipt, createEventForPoisonQueue, createEventForDatastore, createEventForQueue, regeneratePdf
 }
