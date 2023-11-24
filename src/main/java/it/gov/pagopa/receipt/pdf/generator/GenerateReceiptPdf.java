@@ -35,6 +35,8 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
+import static it.gov.pagopa.receipt.pdf.generator.utils.GenerateReceiptUtils.*;
+
 /**
  * Azure Functions with Azure Queue trigger.
  */
@@ -43,9 +45,6 @@ public class GenerateReceiptPdf {
     private final Logger logger = LoggerFactory.getLogger(GenerateReceiptPdf.class);
 
     private static final int MAX_NUMBER_RETRY = Integer.parseInt(System.getenv().getOrDefault("COSMOS_RECEIPT_QUEUE_MAX_RETRY", "5"));
-    private static final String WORKING_DIRECTORY_PATH = System.getenv().getOrDefault("WORKING_DIRECTORY_PATH", "");
-
-    private static final String PATTERN_FORMAT = "yyyy.MM.dd.HH.mm.ss";
 
     private final GenerateReceiptPdfService generateReceiptPdfService;
     private final ReceiptCosmosClient receiptCosmosClient;
@@ -123,7 +122,7 @@ public class GenerateReceiptPdf {
                 context.getFunctionName(), LocalDateTime.now(), bizEvent.getId());
 
         //Retrieve receipt's data from CosmosDB
-        Receipt receipt = getReceipt(context, bizEvent);
+        Receipt receipt = getReceipt(context, bizEvent, receiptCosmosClient, logger);
 
         //Verify receipt status
         if (isReceiptInInValidState(receipt)) {
@@ -160,7 +159,7 @@ public class GenerateReceiptPdf {
         try {
             pdfGeneration = generateReceiptPdfService.generateReceipts(receipt, bizEvent, workingDirPath);
         } finally {
-            deleteTempFolder(workingDirPath);
+            deleteTempFolder(workingDirPath, logger);
         }
 
         //Verify PDF generation success
@@ -205,55 +204,6 @@ public class GenerateReceiptPdf {
                 || (!receipt.getStatus().equals(ReceiptStatusType.INSERTED) && !receipt.getStatus().equals(ReceiptStatusType.RETRY));
     }
 
-    private Receipt getReceipt(ExecutionContext context, BizEvent bizEvent) throws ReceiptNotFoundException {
-        Receipt receipt;
-        //Retrieve receipt from CosmosDB
-        try {
-            receipt = receiptCosmosClient.getReceiptDocument(bizEvent.getId());
-        } catch (ReceiptNotFoundException e) {
-            String errorMsg = String.format("[%s] Receipt not found with the biz-event id %s",
-                    context.getFunctionName(), bizEvent.getId());
-            throw new ReceiptNotFoundException(errorMsg, e);
-        }
 
-        if (receipt == null) {
-            String errorMsg = "[{}] Receipt retrieved with the biz-event id {} is null";
-            logger.error(errorMsg, context.getFunctionName(), bizEvent.getId());
-            throw new ReceiptNotFoundException(errorMsg);
-        }
-        return receipt;
-    }
 
-    private BizEvent getBizEventFromMessage(ExecutionContext context, String bizEventMessage) throws BizEventNotValidException {
-        try {
-            return ObjectMapperUtils.mapString(bizEventMessage, BizEvent.class);
-        } catch (JsonProcessingException e) {
-            String errorMsg = String.format("[%s] Error parsing the message coming from the queue",
-                    context.getFunctionName());
-            throw new BizEventNotValidException(errorMsg, e);
-        }
-    }
-
-    private Path createWorkingDirectory() throws IOException {
-        File workingDirectory = new File(WORKING_DIRECTORY_PATH);
-        if (!workingDirectory.exists()) {
-            try {
-                Files.createDirectory(workingDirectory.toPath());
-            } catch (FileAlreadyExistsException ignored) {
-                // The working directory already exist we don't need to create it
-            }
-        }
-        return Files.createTempDirectory(workingDirectory.toPath(),
-                DateTimeFormatter.ofPattern(PATTERN_FORMAT)
-                        .withZone(ZoneId.systemDefault())
-                        .format(Instant.now()));
-    }
-
-    private void deleteTempFolder(Path workingDirPath) {
-        try {
-            FileUtils.deleteDirectory(workingDirPath.toFile());
-        } catch (IOException e) {
-            logger.warn("Unable to clear working directory: {}", workingDirPath, e);
-        }
-    }
 }

@@ -238,4 +238,5 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
                 && !receiptMetadata.getUrl().isEmpty()
                 && !receiptMetadata.getName().isEmpty();
     }
+
 }
