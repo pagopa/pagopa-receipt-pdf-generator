@@ -60,6 +60,8 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
 
     private static final Map<String, String> brandLogoMap;
     private static final Map<String, Object> pspMap;
+    public static final String MODEL_TYPE_IUV = "1";
+    public static final String MODEL_TYPE_NOTICE = "2";
 
     static {
         try {
@@ -241,19 +243,24 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
 
     private String getRefNumberType(BizEvent event) throws TemplateDataMappingException {
         if (event.getDebtorPosition() != null && event.getDebtorPosition().getModelType() != null) {
-            if (event.getDebtorPosition().getModelType().equals("1")) {
-                return REF_TYPE_NOTICE;
-            }
-            if (event.getDebtorPosition().getModelType().equals("2")) {
+            if (event.getDebtorPosition().getModelType().equals(MODEL_TYPE_IUV)) {
                 return REF_TYPE_IUV;
+            }
+            if (event.getDebtorPosition().getModelType().equals(MODEL_TYPE_NOTICE)) {
+                return REF_TYPE_NOTICE;
             }
         }
         throw new TemplateDataMappingException(formatErrorMessage(TemplateDataField.CART_ITEM_REF_NUMBER_TYPE), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
     }
 
     private String getRefNumberValue(BizEvent event) throws TemplateDataMappingException {
-        if (event.getDebtorPosition() != null && event.getDebtorPosition().getIuv() != null) {
-            return event.getDebtorPosition().getIuv();
+        if (event.getDebtorPosition() != null && event.getDebtorPosition().getModelType() != null) {
+            if (event.getDebtorPosition().getModelType().equals(MODEL_TYPE_IUV) && event.getDebtorPosition().getIuv() != null) {
+                return event.getDebtorPosition().getIuv();
+            }
+            if (event.getDebtorPosition().getModelType().equals(MODEL_TYPE_NOTICE) && event.getDebtorPosition().getNoticeNumber() != null) {
+                return event.getDebtorPosition().getNoticeNumber();
+            }
         }
         throw new TemplateDataMappingException(formatErrorMessage(TemplateDataField.CART_ITEM_REF_NUMBER_VALUE), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
     }
