@@ -57,7 +57,8 @@ const dictionary = {
     "IO_ERROR_TO_NOTIFY" :  "🔴",
     "IO_NOTIFIER_RETRY" : "🟡",
     "UNABLE_TO_SEND" : "🔴",
-    "NOT_TO_NOTIFY" : "🟢"
+    "NOT_TO_NOTIFY" : "🟢",
+    "TO_REVIEW": "🔴"
   }
 
 
