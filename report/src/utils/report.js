@@ -65,7 +65,7 @@ let report_ = '{"title":"","detail":[]}'
 
 report=JSON.parse(report_);
 
-report.title = "Report 📈 receipt 🧾 of ${yesterday_} 🧐"
+report.title = `Report 📈 receipt 🧾 of ${yesterday_} 🧐`
 let p = res.then(function(result) {
     // console.log(result.resources.forEach(e => {
     //     console.log(`> ${dictionary[e.status]} ${e.num.toString().padEnd(8, ' ')}\t ${e.status} `);
