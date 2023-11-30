@@ -66,12 +66,23 @@ jobs:
       - name: Run reports
         shell: bash
         run: |
-          export RECEIPTS_COSMOS_CONN_STRING='${{ secrets.RECEIPTS_COSMOS_CONN_STRING }}'
 
-          cd ./report
-          chmod +x ./run.sh
-          ./run.sh local > report.md && grep ">" report.md > report.cp && mv report.cp report.md
-          echo "REPORT_PDF=$(cat report.md)" >> $GITHUB_ENV
+            export RECEIPTS_COSMOS_CONN_STRING='${{ secrets.RECEIPTS_COSMOS_CONN_STRING }}'
+
+            cd ./report
+            chmod +x ./run.sh
+            ./run.sh local > report.md && grep ">" report.md > report.cp && mv report.cp report.md
+            {
+              echo '📈 PDF's daily report 🧾 receipt 👀<<EOF'
+              echo "REPORT_PDF=$(cat report.md)"
+              echo EOF
+            }  >> $GITHUB_ENV
+
+            {
+              echo 'JSON_RESPONSE<<EOF'
+              curl https://example.com
+              echo EOF
+            } >> "$GITHUB_ENV"
 
   debug_script:
     needs: [ report_script ]
