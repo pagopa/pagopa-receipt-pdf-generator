@@ -71,64 +71,48 @@ jobs:
 
           cd ./report
           chmod +x ./run.sh
-          ./run.sh local
+          ./run.sh local > report.md && grep ">" report.md > report.cp && mv report.cp report.md
 
-  notify:
-    needs: [ create_runner, report_script ]
+          echo "REPORT_PDF=$(cat report.md)" >> $GITHUB_ENV
+
+  debug_script:
+    needs: [ report_script ]
+    name: Debug Report ${{(github.event.inputs == null && 'prod') || inputs.environment }}
     runs-on: [ self-hosted, "${{ needs.create_runner.outputs.runner_name }}" ]
-    name: Notify
-    if: always()
+    environment: ${{(github.event.inputs == null && 'prod') || inputs.environment }}
     steps:
-      - name: Report Status
-        if: always()
-        uses: ravsamhq/notify-slack-action@v2
-        with:
-          status: ${{ needs.integration_test.result }}
-          token: ${{ secrets.GITHUB_TOKEN }}
-          notify_when: 'failure,skipped'
-          notification_title: "<{run_url}|Scheduled Integration Test> has {status_message} in ${{( github.event.inputs == null && 'uat') || inputs.environment }} env"
-          message_format: '{emoji} <{run_url}|{workflow}> {status_message} in <{repo_url}|{repo}>'
-          footer: 'Linked to <{workflow_url}| workflow file>'
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
-  delete_github_deployments:
-    runs-on: ubuntu-latest
-    needs: integration_test
-    if: ${{ always() }}
-    steps:
-      - name: Delete Previous deployments
-        uses: actions/github-script@v6
-        env:
-          SHA_HEAD: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.sha) || github.sha}}
-        with:
-          script: |
-            const { SHA_HEAD } = process.env
+      - name: Debug reports
+        shell: bash
+        run: |
+          export RECEIPTS_COSMOS_CONN_STRING='${{ secrets.RECEIPTS_COSMOS_CONN_STRING }}'
 
-            const deployments = await github.rest.repos.listDeployments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              sha: SHA_HEAD
-            });
-            await Promise.all(
-              deployments.data.map(async (deployment) => {
-                await github.rest.repos.createDeploymentStatus({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  deployment_id: deployment.id,
-                  state: 'inactive'
-                });
-                return github.rest.repos.deleteDeployment({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  deployment_id: deployment.id
-                });
-              })
-            );
+          echo "Below 👇 PDF's daily report 🧾"
+
+          echo ${{ env.REPORT_PDF }}
+
+  # notify:
+  #   needs: [ create_runner, report_script ]
+  #   runs-on: [ self-hosted, "${{ needs.create_runner.outputs.runner_name }}" ]
+  #   name: Notify
+  #   if: always()
+  #   steps:
+  #     - name: Report Status
+  #       if: always()
+  #       uses: ravsamhq/notify-slack-action@v2
+  #       with:
+  #         status: ${{ needs.integration_test.result }}
+  #         token: ${{ secrets.GITHUB_TOKEN }}
+  #         notify_when: 'failure,skipped'
+  #         notification_title: "<{run_url}|Scheduled Integration Test> has {status_message} in ${{( github.event.inputs == null && 'uat') || inputs.environment }} env"
+  #         message_format: '{emoji} <{run_url}|{workflow}> {status_message} in <{repo_url}|{repo}>'
+  #         footer: 'Linked to <{workflow_url}| workflow file>'
+  #       env:
+  #         SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
   cleanup_runner:
     name: Cleanup Runner
-    needs: [ create_runner, integration_test ]
+    needs: [ create_runner, report_script ]
     if: ${{ always() }}
     runs-on: ubuntu-22.04
     environment: ${{(github.event.inputs == null && 'uat') || inputs.environment }}
