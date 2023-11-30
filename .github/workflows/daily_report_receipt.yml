@@ -84,21 +84,10 @@ jobs:
             echo EOF
           } >> "$GITHUB_ENV"
 
-
-  debug_script:
-    needs: [ report_script ]
-    name: Debug Report ${{(github.event.inputs == null && 'prod') || inputs.environment }}
-    runs-on: [ self-hosted, "${{ needs.create_runner.outputs.runner_name }}" ]
-    environment: ${{(github.event.inputs == null && 'prod') || inputs.environment }}
-    steps:
-
       - name: Debug reports
         shell: bash
         run: |
-          export RECEIPTS_COSMOS_CONN_STRING='${{ secrets.RECEIPTS_COSMOS_CONN_STRING }}'
-
           echo "Below 👇 PDF's daily report 🧾"
-
           echo ${{ env.REPORT_PDF }}
 
   cleanup_runner:
