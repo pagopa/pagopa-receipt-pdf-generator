@@ -78,8 +78,8 @@ jobs:
         id: save-env-report
         run: |
           {
-            echo '📈 PDF's daily report 🧾 receipt 👀<<EOF'
-            echo "REPORT_PDF=$(cat report.md)"
+            echo 'REPORT_PDF<<EOF'
+            cat report.md
             echo EOF
           } >> "$GITHUB_ENV"
 
