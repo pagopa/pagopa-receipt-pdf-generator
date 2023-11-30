@@ -1,5 +1,4 @@
-name: Integration Tests
-
+name: ReportPdf
 on:
   schedule:
     - cron: '00 05 * * *'
