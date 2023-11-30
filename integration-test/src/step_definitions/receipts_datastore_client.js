@@ -30,9 +30,9 @@ async function deleteDocumentFromReceiptsDatastoreByEventId(eventId){
 }
 
 async function createDocumentInReceiptsDatastore(id) {
-    let event = createReceipt(id);
+    let receipt = createReceipt(id);
     try {
-        return await receiptContainer.items.create(event);
+        return await receiptContainer.items.create(receipt);
     } catch (err) {
         console.log(err);
     }

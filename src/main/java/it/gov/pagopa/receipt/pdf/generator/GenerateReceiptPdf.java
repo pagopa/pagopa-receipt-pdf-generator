@@ -7,8 +7,6 @@ import com.microsoft.azure.functions.annotation.CosmosDBOutput;
 import com.microsoft.azure.functions.annotation.FunctionName;
 import com.microsoft.azure.functions.annotation.QueueOutput;
 import com.microsoft.azure.functions.annotation.QueueTrigger;
-import it.gov.pagopa.receipt.pdf.generator.client.ReceiptCosmosClient;
-import it.gov.pagopa.receipt.pdf.generator.client.impl.ReceiptCosmosClientImpl;
 import it.gov.pagopa.receipt.pdf.generator.entity.event.BizEvent;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.ReasonError;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.Receipt;
@@ -18,7 +16,9 @@ import it.gov.pagopa.receipt.pdf.generator.exception.ReceiptGenerationNotToRetry
 import it.gov.pagopa.receipt.pdf.generator.exception.ReceiptNotFoundException;
 import it.gov.pagopa.receipt.pdf.generator.model.PdfGeneration;
 import it.gov.pagopa.receipt.pdf.generator.service.GenerateReceiptPdfService;
+import it.gov.pagopa.receipt.pdf.generator.service.ReceiptCosmosService;
 import it.gov.pagopa.receipt.pdf.generator.service.impl.GenerateReceiptPdfServiceImpl;
+import it.gov.pagopa.receipt.pdf.generator.service.impl.ReceiptCosmosServiceImpl;
 import it.gov.pagopa.receipt.pdf.generator.utils.ObjectMapperUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
@@ -48,16 +48,16 @@ public class GenerateReceiptPdf {
     private static final String PATTERN_FORMAT = "yyyy.MM.dd.HH.mm.ss";
 
     private final GenerateReceiptPdfService generateReceiptPdfService;
-    private final ReceiptCosmosClient receiptCosmosClient;
+    private final ReceiptCosmosService receiptCosmosService;
 
     public GenerateReceiptPdf() {
         this.generateReceiptPdfService = new GenerateReceiptPdfServiceImpl();
-        this.receiptCosmosClient = ReceiptCosmosClientImpl.getInstance();
+        this.receiptCosmosService = new ReceiptCosmosServiceImpl();
     }
 
-    GenerateReceiptPdf(GenerateReceiptPdfService generateReceiptPdfService, ReceiptCosmosClient receiptCosmosClient) {
+    GenerateReceiptPdf(GenerateReceiptPdfService generateReceiptPdfService, ReceiptCosmosService receiptCosmosService) {
         this.generateReceiptPdfService = generateReceiptPdfService;
-        this.receiptCosmosClient = receiptCosmosClient;
+        this.receiptCosmosService = receiptCosmosService;
     }
 
     /**
@@ -123,7 +123,7 @@ public class GenerateReceiptPdf {
                 context.getFunctionName(), LocalDateTime.now(), bizEvent.getId());
 
         //Retrieve receipt's data from CosmosDB
-        Receipt receipt = getReceipt(context, bizEvent);
+        Receipt receipt = this.receiptCosmosService.getReceipt(bizEvent.getId());
 
         //Verify receipt status
         if (isReceiptInInValidState(receipt)) {
@@ -203,25 +203,6 @@ public class GenerateReceiptPdf {
     private boolean isReceiptInInValidState(Receipt receipt) {
         return receipt.getEventData() == null
                 || (!receipt.getStatus().equals(ReceiptStatusType.INSERTED) && !receipt.getStatus().equals(ReceiptStatusType.RETRY));
-    }
-
-    private Receipt getReceipt(ExecutionContext context, BizEvent bizEvent) throws ReceiptNotFoundException {
-        Receipt receipt;
-        //Retrieve receipt from CosmosDB
-        try {
-            receipt = receiptCosmosClient.getReceiptDocument(bizEvent.getId());
-        } catch (ReceiptNotFoundException e) {
-            String errorMsg = String.format("[%s] Receipt not found with the biz-event id %s",
-                    context.getFunctionName(), bizEvent.getId());
-            throw new ReceiptNotFoundException(errorMsg, e);
-        }
-
-        if (receipt == null) {
-            String errorMsg = "[{}] Receipt retrieved with the biz-event id {} is null";
-            logger.error(errorMsg, context.getFunctionName(), bizEvent.getId());
-            throw new ReceiptNotFoundException(errorMsg);
-        }
-        return receipt;
     }
 
     private BizEvent getBizEventFromMessage(ExecutionContext context, String bizEventMessage) throws BizEventNotValidException {

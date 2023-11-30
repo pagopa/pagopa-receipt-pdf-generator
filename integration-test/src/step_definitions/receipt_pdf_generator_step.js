@@ -69,6 +69,14 @@ Then('the receipt has not the status {string}', function (targetStatus) {
     assert.notStrictEqual(this.responseToCheck.resources[0].status, targetStatus);
 });
 
+Then('the receipt has the status {string}', function (targetStatus) {
+    assert.strictEqual(this.responseToCheck.resources[0].status, targetStatus);
+});
+
+Then('the receipts datastore returns the updated receipt', async function(){
+    this.responseToCheck = await getDocumentByIdFromReceiptsDatastore(this.eventId);
+})
+
 Then('the blob storage has the PDF document', async function () {
     let blobExist = await receiptPDFExist(this.responseToCheck.resources[0].mdAttach.name);
     assert.strictEqual(true, blobExist);
