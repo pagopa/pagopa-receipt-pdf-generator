@@ -73,7 +73,7 @@ Then('the receipt has the status {string}', function (targetStatus) {
     assert.strictEqual(this.responseToCheck.resources[0].status, targetStatus);
 });
 
-Then('the receipts datastore returns the updated receipt', function(){
+Then('the receipts datastore returns the updated receipt', async function(){
     this.responseToCheck = await getDocumentByIdFromReceiptsDatastore(this.eventId);
 })
 
