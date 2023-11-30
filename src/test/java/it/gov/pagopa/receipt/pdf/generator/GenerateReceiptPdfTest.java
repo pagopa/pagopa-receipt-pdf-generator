@@ -11,6 +11,7 @@ import it.gov.pagopa.receipt.pdf.generator.exception.ReceiptGenerationNotToRetry
 import it.gov.pagopa.receipt.pdf.generator.exception.ReceiptNotFoundException;
 import it.gov.pagopa.receipt.pdf.generator.model.PdfGeneration;
 import it.gov.pagopa.receipt.pdf.generator.service.GenerateReceiptPdfService;
+import it.gov.pagopa.receipt.pdf.generator.service.impl.ReceiptCosmosServiceImpl;
 import lombok.SneakyThrows;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
@@ -55,7 +56,7 @@ class GenerateReceiptPdfTest {
         requeueMessageMock = (OutputBinding<String>) spy(OutputBinding.class);
         executionContextMock = mock(ExecutionContext.class);
 
-        sut = spy(new GenerateReceiptPdf(generateReceiptPdfServiceMock, receiptCosmosClientMock));
+        sut = spy(new GenerateReceiptPdf(generateReceiptPdfServiceMock, new ReceiptCosmosServiceImpl(receiptCosmosClientMock)));
     }
 
     @Test
