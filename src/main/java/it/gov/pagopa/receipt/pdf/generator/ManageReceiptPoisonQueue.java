@@ -9,12 +9,18 @@ import com.microsoft.azure.functions.OutputBinding;
 import com.microsoft.azure.functions.annotation.CosmosDBOutput;
 import com.microsoft.azure.functions.annotation.FunctionName;
 import com.microsoft.azure.functions.annotation.QueueTrigger;
+import it.gov.pagopa.receipt.pdf.generator.client.ReceiptQueueClient;
 import it.gov.pagopa.receipt.pdf.generator.client.impl.ReceiptQueueClientImpl;
 import it.gov.pagopa.receipt.pdf.generator.entity.event.BizEvent;
+import it.gov.pagopa.receipt.pdf.generator.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.ReceiptError;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.enumeration.ReceiptErrorStatusType;
+import it.gov.pagopa.receipt.pdf.generator.entity.receipt.enumeration.ReceiptStatusType;
 import it.gov.pagopa.receipt.pdf.generator.exception.Aes256Exception;
+import it.gov.pagopa.receipt.pdf.generator.exception.ReceiptNotFoundException;
 import it.gov.pagopa.receipt.pdf.generator.exception.UnableToQueueException;
+import it.gov.pagopa.receipt.pdf.generator.service.ReceiptCosmosService;
+import it.gov.pagopa.receipt.pdf.generator.service.impl.ReceiptCosmosServiceImpl;
 import it.gov.pagopa.receipt.pdf.generator.utils.Aes256Utils;
 import it.gov.pagopa.receipt.pdf.generator.utils.ObjectMapperUtils;
 import org.slf4j.Logger;
@@ -31,6 +37,19 @@ public class ManageReceiptPoisonQueue {
 
     private final Logger logger = LoggerFactory.getLogger(ManageReceiptPoisonQueue.class);
 
+    private final ReceiptCosmosService receiptCosmosService;
+    private final ReceiptQueueClient queueService;
+
+    public ManageReceiptPoisonQueue() {
+        this.receiptCosmosService = new ReceiptCosmosServiceImpl();
+        this.queueService = ReceiptQueueClientImpl.getInstance();
+    }
+
+    ManageReceiptPoisonQueue(ReceiptCosmosService receiptCosmosService, ReceiptQueueClient receiptQueueClient) {
+        this.receiptCosmosService = receiptCosmosService;
+        this.queueService = receiptQueueClient;
+    }
+
     /**
      * This function will be invoked when a Queue trigger occurs
      *
@@ -39,7 +58,8 @@ public class ManageReceiptPoisonQueue {
      * If invalid or already retried saves on CosmosDB receipt-message-errors collection
      *
      * @param errorMessage payload of the message sent to the poison queue, triggering the function
-     * @param documentdb      Output binding that will insert/update data with the errors not to retry within the function
+     * @param receiptsOutputBinding Output binding that will update the receipt relative to the bizEvent
+     * @param receiptErrorOutputBinding      Output binding that will insert/update data with the errors not to retry within the function
      * @param context         Function context
      */
     @FunctionName("ManageReceiptPoisonQueueProcessor")
@@ -50,11 +70,17 @@ public class ManageReceiptPoisonQueue {
                     connection = "RECEIPTS_STORAGE_CONN_STRING")
             String errorMessage,
             @CosmosDBOutput(
+                    name = "ReceiptDatastore",
+                    databaseName = "db",
+                    collectionName = "receipts",
+                    connectionStringSetting = "COSMOS_RECEIPTS_CONN_STRING")
+            OutputBinding<Receipt> receiptsOutputBinding,
+            @CosmosDBOutput(
                     name = "ReceiptMessageErrorsDatastore",
                     databaseName = "db",
                     collectionName = "receipts-message-errors",
                     connectionStringSetting = "COSMOS_RECEIPTS_CONN_STRING")
-            OutputBinding<ReceiptError> documentdb,
+            OutputBinding<ReceiptError> receiptErrorOutputBinding,
             final ExecutionContext context) {
 
         BizEvent bizEvent = null;
@@ -80,10 +106,9 @@ public class ManageReceiptPoisonQueue {
 
         if (retriableContent) {
             bizEvent.setAttemptedPoisonRetry(true);
-            ReceiptQueueClientImpl queueService = ReceiptQueueClientImpl.getInstance();
             try {
                 Response<SendMessageResult> sendMessageResult =
-                        queueService.sendMessageToQueue(Base64.getMimeEncoder()
+                        this.queueService.sendMessageToQueue(Base64.getMimeEncoder()
                                 .encodeToString(Objects.requireNonNull(ObjectMapperUtils.writeValueAsString(bizEvent))
                                         .getBytes()));
                 if (sendMessageResult.getStatusCode() != HttpStatus.CREATED.value()) {
@@ -94,15 +119,23 @@ public class ManageReceiptPoisonQueue {
                  logger.error("[{}] error for the function called at {} when attempting" +
                                  "to requeue BizEvent wit id {}, saving to cosmos for review",
                          context.getFunctionName(), LocalDateTime.now(), bizEvent.getId(), e);
-                saveToDocument(context, errorMessage, bizEvent.getId(), documentdb);
+                saveReceiptErrorAndUpdateReceipt(errorMessage, receiptsOutputBinding, receiptErrorOutputBinding, context, bizEvent);
             }
         } else {
-            saveToDocument(context, errorMessage, bizEvent != null ? bizEvent.getId() : null, documentdb);
+            saveReceiptErrorAndUpdateReceipt(errorMessage, receiptsOutputBinding, receiptErrorOutputBinding, context, bizEvent);
         }
     }
 
-    private void saveToDocument(ExecutionContext context, String errorMessage, String bizEventId,
-                                OutputBinding<ReceiptError> documentdb) {
+    private void saveReceiptErrorAndUpdateReceipt(String errorMessage, OutputBinding<Receipt> receiptsOutputBinding, OutputBinding<ReceiptError> receiptErrorOutputBinding, ExecutionContext context, BizEvent bizEvent) {
+        String bizEventId = bizEvent != null ? bizEvent.getId() : null;
+        saveToReceiptError(context, errorMessage, bizEventId, receiptErrorOutputBinding);
+        if(bizEventId != null){
+            updateReceiptToReview(context, bizEventId, receiptsOutputBinding);
+        }
+    }
+
+    private void saveToReceiptError(ExecutionContext context, String errorMessage, String bizEventId,
+                                    OutputBinding<ReceiptError> receiptErrorOutputBinding) {
 
          ReceiptError receiptError = ReceiptError.builder()
                  .bizEventId(bizEventId)
@@ -118,6 +151,22 @@ public class ManageReceiptPoisonQueue {
             receiptError.setMessageError(e.getMessage());
         }
 
-        documentdb.setValue(receiptError);
+        receiptErrorOutputBinding.setValue(receiptError);
+    }
+
+    private void updateReceiptToReview(ExecutionContext context, String bizEventId,
+                                    OutputBinding<Receipt> receiptOutputBinding) {
+        try {
+            Receipt receipt = this.receiptCosmosService.getReceipt(bizEventId);
+
+            receipt.setStatus(ReceiptStatusType.TO_REVIEW);
+
+            logger.info("[{}] updating receipt with id {} to status {}",
+                    context.getFunctionName(), receipt.getId(), ReceiptStatusType.TO_REVIEW);
+            receiptOutputBinding.setValue(receipt);
+        } catch (ReceiptNotFoundException e) {
+            logger.error("[{}] error updating status of receipt with eventId {}, receipt not found",
+                    context.getFunctionName(),bizEventId, e);
+        }
     }
 }
