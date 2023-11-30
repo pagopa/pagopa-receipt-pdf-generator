@@ -89,6 +89,34 @@ jobs:
         run: |
           echo ${{ env.REPORT_PDF }}
 
+      - name: Send notification to Slack
+        id: slack
+        if: always()
+        uses: slackapi/slack-github-action@e28cf165c92ffef168d23c5c9000cffc8a25e117 #v1.24.0
+        with:
+          payload: |
+            {
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "[ ${{ github.event.repository.name }} ]"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "${{ env.REPORT_PDF }}"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
   cleanup_runner:
     name: Cleanup Runner
     needs: [ create_runner, report_script ]
