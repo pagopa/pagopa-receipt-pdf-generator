@@ -58,9 +58,10 @@ class BuildTemplateServiceImplTest {
     public static final String PSP_PROVINCE = "province";
     public static final String BRAND_ASSET_URL = "/asset";
     private static final String IUV = "02119891614290410";
+    private static final String NOTICE_NUMBER = "valid notice number";
     private static final String BIZ_EVENT_ID = "biz-event-id";
-    private static final String MODEL_TYPE_NOTICE_CODE = "1";
-    private static final String MODEL_TYPE_IUV_CODE = "2";
+    private static final String MODEL_TYPE_IUV_CODE = "1";
+    private static final String MODEL_TYPE_NOTICE_CODE = "2";
     private static final String MODEL_TYPE_NOTICE_TEXT = "codiceAvviso";
     private static final String MODEL_TYPE_IUV_TEXT = "IUV";
     private static final String DATE_TIME_TIMESTAMP_FORMATTED = "14 novembre 2023, 19:31:55";
@@ -268,7 +269,7 @@ class BuildTemplateServiceImplTest {
         BizEvent event = BizEvent.builder()
                 .id(BIZ_EVENT_ID)
                 .debtorPosition(DebtorPosition.builder()
-                        .iuv(IUV)
+                        .noticeNumber(NOTICE_NUMBER)
                         .modelType(MODEL_TYPE_NOTICE_CODE)
                         .build())
                 .creditor(Creditor.builder()
@@ -350,7 +351,7 @@ class BuildTemplateServiceImplTest {
         assertEquals(COMPANY_NAME, cart.getItems().get(0).getPayee().getName());
         assertEquals(ID_PA, cart.getItems().get(0).getPayee().getTaxCode());
         assertEquals(MODEL_TYPE_NOTICE_TEXT, cart.getItems().get(0).getRefNumber().getType());
-        assertEquals(IUV, cart.getItems().get(0).getRefNumber().getValue());
+        assertEquals(NOTICE_NUMBER, cart.getItems().get(0).getRefNumber().getValue());
     }
 
     @Test
@@ -1116,7 +1117,7 @@ class BuildTemplateServiceImplTest {
     }
 
     @Test
-    void mapTemplateNoCartItemRefNumberValueError() {
+    void mapTemplateNoCartItemRefNumberValueIUVError() {
         BizEvent event = BizEvent.builder()
                 .id(BIZ_EVENT_ID)
                 .paymentInfo(PaymentInfo.builder()
@@ -1134,6 +1135,34 @@ class BuildTemplateServiceImplTest {
                         .build())
                 .debtorPosition(DebtorPosition.builder()
                         .modelType(MODEL_TYPE_IUV_CODE)
+                        .build())
+                .build();
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(event, COMPLETE_TEMPLATE, Receipt.builder().build()));
+
+        assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.CART_ITEM_REF_NUMBER_VALUE), e.getMessage());
+    }
+
+    @Test
+    void mapTemplateWrongModelTypeError() {
+        BizEvent event = BizEvent.builder()
+                .id(BIZ_EVENT_ID)
+                .paymentInfo(PaymentInfo.builder()
+                        .IUR(IUR)
+                        .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS)
+                        .amount(AMOUNT_WITHOUT_CENTS)
+                        .build())
+                .psp(Psp.builder()
+                        .idPsp(ID_PSP)
+                        .psp(PSP_NAME)
+                        .build())
+                .payer(Payer.builder()
+                        .fullName(PAYER_FULL_NAME)
+                        .entityUniqueIdentifierValue(PAYER_VALID_CF)
+                        .build())
+                .debtorPosition(DebtorPosition.builder()
+                        .iuv(IUV)
+                        .modelType(MODEL_TYPE_NOTICE_CODE)
                         .build())
                 .build();
         TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(event, COMPLETE_TEMPLATE, Receipt.builder().build()));
