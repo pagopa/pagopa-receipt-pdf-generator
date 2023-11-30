@@ -58,7 +58,7 @@ const dictionary = {
     "NOT_TO_NOTIFY" : "🟢"
   }
 
-console.log(`> Report receipt of ${yesterday_}`);
+console.log(`> Report 📈 receipt 🧾 of ${yesterday_} 🧐`);
 res.then(function(result) {
     console.log(result.resources.forEach(e => {
         console.log(`> ${dictionary[e.status]} ${e.num.toString().padEnd(8, ' ')}\t ${e.status} `);

@@ -87,7 +87,6 @@ jobs:
       - name: Debug reports
         shell: bash
         run: |
-          echo "Below 👇 PDF's daily report 🧾"
           echo ${{ env.REPORT_PDF }}
 
   cleanup_runner:
