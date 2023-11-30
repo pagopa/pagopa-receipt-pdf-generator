@@ -71,10 +71,7 @@ jobs:
           cd ./report
           chmod +x ./run.sh
           ./run.sh local > report.md && grep ">" report.md > report.cp && mv report.cp report.md
-
           echo "REPORT_PDF=$(cat report.md)" >> $GITHUB_ENV
-          echo "CVE_MEDIUM=$(echo $SCAN_RESULTS | grep -o MEDIUM | wc -l)" >> $GITHUB_ENV
-
 
   debug_script:
     needs: [ report_script ]
@@ -90,26 +87,7 @@ jobs:
 
           echo "Below 👇 PDF's daily report 🧾"
 
-          echo $REPORT_PDF
-
-  # notify:
-  #   needs: [ create_runner, report_script ]
-  #   runs-on: [ self-hosted, "${{ needs.create_runner.outputs.runner_name }}" ]
-  #   name: Notify
-  #   if: always()
-  #   steps:
-  #     - name: Report Status
-  #       if: always()
-  #       uses: ravsamhq/notify-slack-action@v2
-  #       with:
-  #         status: ${{ needs.integration_test.result }}
-  #         token: ${{ secrets.GITHUB_TOKEN }}
-  #         notify_when: 'failure,skipped'
-  #         notification_title: "<{run_url}|Scheduled Integration Test> has {status_message} in ${{( github.event.inputs == null && 'uat') || inputs.environment }} env"
-  #         message_format: '{emoji} <{run_url}|{workflow}> {status_message} in <{repo_url}|{repo}>'
-  #         footer: 'Linked to <{workflow_url}| workflow file>'
-  #       env:
-  #         SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          echo ${{ env.REPORT_PDF }}
 
   cleanup_runner:
     name: Cleanup Runner
