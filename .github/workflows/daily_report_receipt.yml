@@ -71,18 +71,18 @@ jobs:
 
             cd ./report
             chmod +x ./run.sh
-            ./run.sh local > report.md && grep ">" report.md > report.cp && mv report.cp report.md
+            ./run.sh local
 
 
-      - name: Set the value in bash
-        id: save-env-report
-        run: |
-          cd ./report
-          {
-            echo 'REPORT_PDF<<EOF'
-            cat report.md
-            echo EOF
-          } >> "$GITHUB_ENV"
+      # - name: Set the value in bash
+      #   id: save-env-report
+      #   run: |
+      #     cd ./report
+      #     {
+      #       echo 'REPORT_PDF<<EOF'
+      #       cat report.md
+      #       echo EOF
+      #     } >> "$GITHUB_ENV"
 
       # - name: Debug reports
       #   shell: bash
@@ -94,28 +94,7 @@ jobs:
         if: always()
         uses: slackapi/slack-github-action@e28cf165c92ffef168d23c5c9000cffc8a25e117 #v1.24.0
         with:
-          payload: |
-            {
-              "blocks": [
-                {
-                  "type": "header",
-                  "text": {
-                    "type": "plain_text",
-                    "text": "[ ${{ github.event.repository.name }} ]"
-                  }
-                },
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": " `Report 📈 receipt 🧾 of`: `2023-11-29`
-                    `🟢 NOT_TO_NOTIFY`: `1498099`
-                    `🔴 IO_ERROR_TO_NOTIFY`: `574`
-                    }"
-                  }
-                }
-              ]
-            }
+          payload-file-path: "./report/report.json"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
