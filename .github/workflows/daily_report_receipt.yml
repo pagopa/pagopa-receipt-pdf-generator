@@ -84,10 +84,10 @@ jobs:
             echo EOF
           } >> "$GITHUB_ENV"
 
-      - name: Debug reports
-        shell: bash
-        run: |
-          echo ${{ env.REPORT_PDF }}
+      # - name: Debug reports
+      #   shell: bash
+      #   run: |
+      #     echo ${{ env.REPORT_PDF }}
 
       - name: Send notification to Slack
         id: slack
