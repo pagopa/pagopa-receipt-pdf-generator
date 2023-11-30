@@ -74,7 +74,7 @@ let p = res.then(function(result) {
     let index = 0;
     result.resources.forEach(e => {
       // report["detail"].push( {"status": `${dictionary[e.status]} ${e.status}`, "num":`${e.num}` });
-      report.text+=`${dictionary[e.status]} ${e.num.toString().padEnd(8, ' ')}\t ${e.status} \n`
+      report.text+=`${dictionary[e.status]} ${e.num.toString().padEnd(15, ' ')}\t ${e.status} \n`
     })
 
     console.log(JSON.stringify(report));
