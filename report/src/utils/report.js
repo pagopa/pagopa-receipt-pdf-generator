@@ -1,3 +1,5 @@
+const fs = require('fs');
+
 const { getReceiptsStatusCount } = require("./utils");
 
 // const from = "2023-11-23T00:00:00";
@@ -58,9 +60,26 @@ const dictionary = {
     "NOT_TO_NOTIFY" : "🟢"
   }
 
-console.log(`> Report receipt of ${yesterday_}`);
-res.then(function(result) {
-    console.log(result.resources.forEach(e => {
-        console.log(`> ${dictionary[e.status]} ${e.num.toString().padEnd(8, ' ')}\t ${e.status} `);
-    }))
+
+// let report_ = '{"title":"","detail":[]}'
+let report_ = '{"text":""}'
+
+report=JSON.parse(report_);
+
+report.text = `Report 📈 receipt 🧾 of ${yesterday_} 🧐\n`
+let p = res.then(function(result) {
+    // console.log(result.resources.forEach(e => {
+    //     console.log(`> ${dictionary[e.status]} ${e.num.toString().padEnd(8, ' ')}\t ${e.status} `);
+    // }))
+    let index = 0;
+    result.resources.forEach(e => {
+      // report["detail"].push( {"status": `${dictionary[e.status]} ${e.status}`, "num":`${e.num}` });
+      report.text+=`${dictionary[e.status]} ${e.num.toString().padEnd(8, ' ')}\t ${e.status} \n`
+    })
+
+    console.log(JSON.stringify(report));
+    fs.writeFileSync('report.json', JSON.stringify(report));
+
+
  })
+

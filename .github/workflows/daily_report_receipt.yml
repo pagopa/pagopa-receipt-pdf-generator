@@ -66,50 +66,38 @@ jobs:
       - name: Run reports
         shell: bash
         run: |
-          export RECEIPTS_COSMOS_CONN_STRING='${{ secrets.RECEIPTS_COSMOS_CONN_STRING }}'
 
-          cd ./report
-          chmod +x ./run.sh
-          ./run.sh local > report.md && grep ">" report.md > report.cp && mv report.cp report.md
+            export RECEIPTS_COSMOS_CONN_STRING='${{ secrets.RECEIPTS_COSMOS_CONN_STRING }}'
 
-          echo "REPORT_PDF=$(cat report.md)" >> $GITHUB_ENV
-          echo "CVE_MEDIUM=$(echo $SCAN_RESULTS | grep -o MEDIUM | wc -l)" >> $GITHUB_ENV
+            cd ./report
+            chmod +x ./run.sh
+            ./run.sh local
 
 
-  debug_script:
-    needs: [ report_script ]
-    name: Debug Report ${{(github.event.inputs == null && 'prod') || inputs.environment }}
-    runs-on: [ self-hosted, "${{ needs.create_runner.outputs.runner_name }}" ]
-    environment: ${{(github.event.inputs == null && 'prod') || inputs.environment }}
-    steps:
+      # - name: Set the value in bash
+      #   id: save-env-report
+      #   run: |
+      #     cd ./report
+      #     {
+      #       echo 'REPORT_PDF<<EOF'
+      #       cat report.md
+      #       echo EOF
+      #     } >> "$GITHUB_ENV"
 
-      - name: Debug reports
-        shell: bash
-        run: |
-          export RECEIPTS_COSMOS_CONN_STRING='${{ secrets.RECEIPTS_COSMOS_CONN_STRING }}'
+      # - name: Debug reports
+      #   shell: bash
+      #   run: |
+      #     echo ${{ env.REPORT_PDF }}
 
-          echo "Below 👇 PDF's daily report 🧾"
-
-          echo $REPORT_PDF
-
-  # notify:
-  #   needs: [ create_runner, report_script ]
-  #   runs-on: [ self-hosted, "${{ needs.create_runner.outputs.runner_name }}" ]
-  #   name: Notify
-  #   if: always()
-  #   steps:
-  #     - name: Report Status
-  #       if: always()
-  #       uses: ravsamhq/notify-slack-action@v2
-  #       with:
-  #         status: ${{ needs.integration_test.result }}
-  #         token: ${{ secrets.GITHUB_TOKEN }}
-  #         notify_when: 'failure,skipped'
-  #         notification_title: "<{run_url}|Scheduled Integration Test> has {status_message} in ${{( github.event.inputs == null && 'uat') || inputs.environment }} env"
-  #         message_format: '{emoji} <{run_url}|{workflow}> {status_message} in <{repo_url}|{repo}>'
-  #         footer: 'Linked to <{workflow_url}| workflow file>'
-  #       env:
-  #         SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      - name: Send notification to Slack
+        id: slack
+        if: always()
+        uses: slackapi/slack-github-action@e28cf165c92ffef168d23c5c9000cffc8a25e117 #v1.24.0
+        with:
+          payload-file-path: "./report/src/report.json"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
 
   cleanup_runner:
     name: Cleanup Runner
