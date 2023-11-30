@@ -72,17 +72,17 @@ jobs:
             cd ./report
             chmod +x ./run.sh
             ./run.sh local > report.md && grep ">" report.md > report.cp && mv report.cp report.md
-            {
-              echo '📈 PDF's daily report 🧾 receipt 👀<<EOF'
-              echo "REPORT_PDF=$(cat report.md)"
-              echo EOF
-            }  >> $GITHUB_ENV
 
-            {
-              echo 'JSON_RESPONSE<<EOF'
-              curl https://example.com
-              echo EOF
-            } >> "$GITHUB_ENV"
+
+      - name: Set the value in bash
+        id: save-env-report
+        run: |
+          {
+            echo '📈 PDF's daily report 🧾 receipt 👀<<EOF'
+            echo "REPORT_PDF=$(cat report.md)"
+            echo EOF
+          } >> "$GITHUB_ENV"
+
 
   debug_script:
     needs: [ report_script ]
