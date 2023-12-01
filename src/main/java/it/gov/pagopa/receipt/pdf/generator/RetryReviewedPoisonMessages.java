@@ -9,11 +9,20 @@ import com.microsoft.azure.functions.annotation.CosmosDBOutput;
 import com.microsoft.azure.functions.annotation.CosmosDBTrigger;
 import com.microsoft.azure.functions.annotation.ExponentialBackoffRetry;
 import com.microsoft.azure.functions.annotation.FunctionName;
+import it.gov.pagopa.receipt.pdf.generator.client.ReceiptQueueClient;
 import it.gov.pagopa.receipt.pdf.generator.client.impl.ReceiptQueueClientImpl;
+import it.gov.pagopa.receipt.pdf.generator.entity.event.BizEvent;
+import it.gov.pagopa.receipt.pdf.generator.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.ReceiptError;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.enumeration.ReceiptErrorStatusType;
+import it.gov.pagopa.receipt.pdf.generator.entity.receipt.enumeration.ReceiptStatusType;
+import it.gov.pagopa.receipt.pdf.generator.exception.ReceiptNotFoundException;
 import it.gov.pagopa.receipt.pdf.generator.exception.UnableToQueueException;
+import it.gov.pagopa.receipt.pdf.generator.exception.UnableToSaveException;
+import it.gov.pagopa.receipt.pdf.generator.service.ReceiptCosmosService;
+import it.gov.pagopa.receipt.pdf.generator.service.impl.ReceiptCosmosServiceImpl;
 import it.gov.pagopa.receipt.pdf.generator.utils.Aes256Utils;
+import it.gov.pagopa.receipt.pdf.generator.utils.ObjectMapperUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,12 +37,24 @@ public class RetryReviewedPoisonMessages {
 
      private final Logger logger = LoggerFactory.getLogger(RetryReviewedPoisonMessages.class);
 
+    private final ReceiptCosmosService receiptCosmosService;
+    private final ReceiptQueueClient queueService;
+
+    public RetryReviewedPoisonMessages() {
+        this.receiptCosmosService = new ReceiptCosmosServiceImpl();
+        this.queueService = ReceiptQueueClientImpl.getInstance();
+    }
+    RetryReviewedPoisonMessages(ReceiptCosmosService receiptCosmosService, ReceiptQueueClient receiptQueueClient) {
+        this.receiptCosmosService = receiptCosmosService;
+        this.queueService = receiptQueueClient;
+    }
+
     /**
      * This function will be invoked when an CosmosDB trigger occurs
      *
      * When an updated document in the receipt-message-errors CosmosDB has status REVIEWED attempts
      * to send it back to the provided output topic.
-     * If succeeds saves the element with status REQUEUED
+     * If succeeds saves the element with status REQUEUED and updated the relative receipt's status to INSERTED
      * If fails updates the document back in status TO_REVIEW with an updated error description
      *
      * @param items      Reviewed Receipt Errors that triggered the function from the Cosmos database
@@ -65,8 +86,6 @@ public class RetryReviewedPoisonMessages {
          logger.info("[{}] documentCaptorValue stat {} function - num errors reviewed triggered {}",
                  context.getFunctionName(), context.getInvocationId(), items.size());
 
-        ReceiptQueueClientImpl queueService = ReceiptQueueClientImpl.getInstance();
-
         //Retrieve receipt data from biz-event
         for (ReceiptError receiptError : items) {
 
@@ -75,15 +94,20 @@ public class RetryReviewedPoisonMessages {
 
                     try {
                         String decodedEvent = Aes256Utils.decrypt(receiptError.getMessagePayload());
+
+                        //Find and update Receipt with bizEventId
+                        BizEvent bizEvent = ObjectMapperUtils.mapString(decodedEvent, BizEvent.class);
+                        updateReceiptToInserted(context, bizEvent.getId());
+
+                        //Send decoded BizEvent to queue
                         Response<SendMessageResult> sendMessageResult =
-                            queueService.sendMessageToQueue(Base64.getMimeEncoder().encodeToString(decodedEvent.getBytes()));
+                            this.queueService.sendMessageToQueue(Base64.getMimeEncoder().encodeToString(decodedEvent.getBytes()));
                         if (sendMessageResult.getStatusCode() != HttpStatus.CREATED.value()) {
                             throw new UnableToQueueException("Unable to queue due to error: " +
                                     sendMessageResult.getStatusCode());
                         }
 
                         receiptError.setStatus(ReceiptErrorStatusType.REQUEUED);
-
                     } catch (Exception e) {
                         //Error info
                          logger.error("[{}] Error to process receiptError with id {}",
@@ -96,6 +120,15 @@ public class RetryReviewedPoisonMessages {
                }
         }
 
-        documentdb.setValue(itemsDone);
+        if(!itemsDone.isEmpty()){
+            documentdb.setValue(itemsDone);
+        }
+    }
+
+    private void updateReceiptToInserted(ExecutionContext context, String bizEventId) throws ReceiptNotFoundException, UnableToSaveException {
+            Receipt receipt = this.receiptCosmosService.getReceipt(bizEventId);
+            receipt.setStatus(ReceiptStatusType.INSERTED);
+            logger.info("[{}] updating receipt with id {} to status {}", context.getFunctionName(), receipt.getId(), ReceiptStatusType.INSERTED);
+            this.receiptCosmosService.saveReceipt(receipt);
     }
 }
