@@ -10,14 +10,4 @@ public class UnableToSaveException extends Exception {
     public UnableToSaveException(String message) {
         super(message);
     }
-
-    /**
-     * Constructs new exception with provided message and cause
-     *
-     * @param message Detail message
-     * @param cause Exception thrown
-     */
-    public UnableToSaveException(String message, Throwable cause) {
-        super(message, cause);
-    }
 }
