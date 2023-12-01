@@ -18,8 +18,8 @@ this.event = null;
 // After each Scenario
 After(async function () {
     // remove documents
-    if (this.eventId != null && this.receiptId != null) {
-        await deleteDocumentFromReceiptsDatastore(this.receiptId, this.eventId);
+    if (this.receiptId != null) {
+        await deleteDocumentFromReceiptsDatastore(this.receiptId);
     }
     if (this.errorReceiptId != null) {
         await deleteDocumentFromErrorReceiptsDatastore(this.errorReceiptId);
@@ -32,12 +32,12 @@ After(async function () {
 });
 
 
-Given('a receipt with id {string} stored into receipt datastore', async function (id) {
+Given('a receipt with id {string} and status {string} stored into receipt datastore', async function (id, status) {
     this.eventId = id;
     // prior cancellation to avoid dirty cases
-    await deleteDocumentFromReceiptsDatastore(this.eventId, this.eventId);
+    await deleteDocumentFromReceiptsDatastore(this.eventId);
 
-    let receiptsStoreResponse = await createDocumentInReceiptsDatastore(this.eventId);
+    let receiptsStoreResponse = await createDocumentInReceiptsDatastore(this.eventId, status);
     assert.strictEqual(receiptsStoreResponse.statusCode, 201);
     this.receiptId = this.eventId;
 });
