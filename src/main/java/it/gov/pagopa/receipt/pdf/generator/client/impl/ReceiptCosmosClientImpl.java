@@ -4,6 +4,7 @@ import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosClientBuilder;
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosDatabase;
+import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.CosmosQueryRequestOptions;
 import com.azure.cosmos.util.CosmosPagedIterable;
 import it.gov.pagopa.receipt.pdf.generator.client.ReceiptCosmosClient;
@@ -45,12 +46,9 @@ public class ReceiptCosmosClientImpl implements ReceiptCosmosClient {
     }
 
     /**
-     * Retrieve receipt document from CosmosDB database
-     *
-     * @param eventId Biz-event id
-     * @return receipt document
-     * @throws ReceiptNotFoundException in case no receipt has been found with the given idEvent
+     * {@inheritDoc}
      */
+    @Override
     public Receipt getReceiptDocument(String eventId) throws ReceiptNotFoundException {
         CosmosDatabase cosmosDatabase = this.cosmosClient.getDatabase(databaseId);
 
@@ -69,5 +67,17 @@ public class ReceiptCosmosClientImpl implements ReceiptCosmosClient {
             throw new ReceiptNotFoundException("Document not found in the defined container");
         }
 
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public CosmosItemResponse<Receipt> saveReceipt(Receipt receipt) {
+        CosmosDatabase cosmosDatabase = this.cosmosClient.getDatabase(databaseId);
+
+        CosmosContainer cosmosContainer = cosmosDatabase.getContainer(containerId);
+
+        return cosmosContainer.createItem(receipt);
     }
 }
