@@ -21,7 +21,8 @@ Feature: All about payment events consumed by Azure functions receipt-pdf-genera
     And the blob storage has the PDF document
 
   Scenario: a biz event enqueued on receipts poison queue is stored on receipt-message-error datastore and the receipt status is updated to TO_REVIEW
-    Given a random biz event with id "receipt-generator-int-test-id-3" enqueued on receipts poison queue with poison retry "true"
+    Given a receipt with id "receipt-generator-int-test-id-3" stored into receipt datastore
+    And a random biz event with id "receipt-generator-int-test-id-3" enqueued on receipts poison queue with poison retry "true"
     When the biz event has been properly stored on receipt-message-error datastore after 20000 ms
     Then the receipt-message-error datastore returns the error receipt
     And the error receipt has the status "TO_REVIEW"
