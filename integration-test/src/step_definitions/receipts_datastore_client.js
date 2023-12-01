@@ -25,12 +25,12 @@ async function deleteDocumentFromReceiptsDatastoreByEventId(eventId){
     let documents = await getDocumentByIdFromReceiptsDatastore(eventId);
 
     documents?.resources?.forEach(el => {
-        deleteDocumentFromReceiptsDatastore(el.id, eventId);
+        deleteDocumentFromReceiptsDatastore(el.id);
     })
 }
 
-async function createDocumentInReceiptsDatastore(id) {
-    let receipt = createReceipt(id);
+async function createDocumentInReceiptsDatastore(id, status) {
+    let receipt = createReceipt(id, status);
     try {
         return await receiptContainer.items.create(receipt);
     } catch (err) {
@@ -38,9 +38,9 @@ async function createDocumentInReceiptsDatastore(id) {
     }
 }
 
-async function deleteDocumentFromReceiptsDatastore(id, partitionKey) {
+async function deleteDocumentFromReceiptsDatastore(id) {
     try {
-        return await receiptContainer.item(id, partitionKey).delete();
+        return await receiptContainer.item(id, id).delete();
     } catch (error) {
         if (error.code !== 404) {
             console.log(error)
