@@ -51,7 +51,7 @@ public class ReceiptCosmosServiceImpl implements ReceiptCosmosService {
         int statusCode;
 
         try{
-            CosmosItemResponse<Receipt> response = receiptCosmosClient.saveReceipts(receipt);
+            CosmosItemResponse<Receipt> response = receiptCosmosClient.saveReceipt(receipt);
             statusCode = response.getStatusCode();
         }  catch (Exception e) {
             statusCode = HttpStatus.SC_INTERNAL_SERVER_ERROR;
