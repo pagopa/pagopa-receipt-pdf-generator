@@ -231,11 +231,11 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
     }
 
     private String getUserTaxCode(BizEvent event) throws TemplateDataMappingException {
-        if(
+        if (
                 event.getTransactionDetails() != null &&
                         event.getTransactionDetails().getUser() != null &&
                         event.getTransactionDetails().getUser().getFiscalCode() != null
-        ){
+        ) {
             return event.getTransactionDetails().getUser().getFiscalCode();
         }
         if (event.getPayer() != null && event.getPayer().getEntityUniqueIdentifierValue() != null) {
@@ -351,7 +351,17 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
     }
 
     private boolean getProcessedByPagoPA(BizEvent event) {
-        return event.getTransactionDetails() != null;
+        if (event.getTransactionDetails() != null) {
+            if (event.getTransactionDetails().getTransaction() != null &&
+                            event.getTransactionDetails().getTransaction().getOrigin() != null) {
+                return true;
+            }
+            if (event.getTransactionDetails().getInfo() != null &&
+                            event.getTransactionDetails().getInfo().getClientId() != null) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean getRequestByDebtor(boolean isGeneratingDebtor, BizEvent event) {
