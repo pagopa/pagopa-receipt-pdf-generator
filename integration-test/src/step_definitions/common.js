@@ -126,7 +126,7 @@ function createEventForPoisonQueue(id, attemptedPoisonRetry) {
 	return json_event
 }
 
-function createReceipt(id) {
+function createReceipt(id, status) {
 	let receipt =
 	{
 		"eventId": id,
@@ -141,7 +141,7 @@ function createReceipt(id) {
 				}
 			]
 		},
-		"status": "INSERTED",
+		"status": status,
 		"numRetry": 0,
 		"id": id,
 		"_rid": "Z9AJAMdamqNjAAAAAAAAAA==",

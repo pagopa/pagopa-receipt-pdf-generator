@@ -7,26 +7,28 @@ import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.OutputBinding;
 import it.gov.pagopa.receipt.pdf.generator.client.impl.ReceiptQueueClientImpl;
 import it.gov.pagopa.receipt.pdf.generator.entity.event.BizEvent;
+import it.gov.pagopa.receipt.pdf.generator.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.ReceiptError;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.enumeration.ReceiptErrorStatusType;
+import it.gov.pagopa.receipt.pdf.generator.entity.receipt.enumeration.ReceiptStatusType;
 import it.gov.pagopa.receipt.pdf.generator.exception.Aes256Exception;
+import it.gov.pagopa.receipt.pdf.generator.exception.ReceiptNotFoundException;
+import it.gov.pagopa.receipt.pdf.generator.exception.UnableToSaveException;
+import it.gov.pagopa.receipt.pdf.generator.service.impl.ReceiptCosmosServiceImpl;
 import it.gov.pagopa.receipt.pdf.generator.utils.Aes256Utils;
 import it.gov.pagopa.receipt.pdf.generator.utils.ObjectMapperUtils;
 import org.apache.http.HttpStatus;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 
-import java.lang.reflect.Field;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
@@ -39,22 +41,29 @@ import static org.mockito.Mockito.*;
 class RetryReviewedPoisonMessagesTest {
 
     public static final String BIZ_EVENT_ID = "bizEventId";
+    public static final String RECEIPT_ERROR_ID = "receiptErrorID";
+    public static final String COSMOS_ERROR = "Cosmos Error";
     private final String AES_SALT = "salt";
     private final String AES_KEY = "key";
 
     private String ENCRYPTED_VALID_CONTENT_TO_RETRY;
-
-    @Spy
     private RetryReviewedPoisonMessages function;
-
     @Mock
     private ExecutionContext context;
-
+    @Mock
+    ReceiptQueueClientImpl queueMock;
+    @Mock
+    ReceiptCosmosServiceImpl cosmosMock;
+    @Mock
+    Response<SendMessageResult> queueResponse = mock(Response.class);
     @Captor
     private ArgumentCaptor<String> messageCaptor;
-
     @Captor
-    private ArgumentCaptor<List<ReceiptError>> documentCaptor;
+    private ArgumentCaptor<List<ReceiptError>> receiptErrorCaptor;
+    @Captor
+    private ArgumentCaptor<Receipt> receiptCaptor;
+    @SuppressWarnings("unchecked")
+    OutputBinding<List<ReceiptError>> errorToCosmos = (OutputBinding<List<ReceiptError>>)mock(OutputBinding.class);
     @SystemStub
     private EnvironmentVariables environment = new EnvironmentVariables("AES_SALT", AES_SALT, "AES_SECRET_KEY", AES_KEY);
 
@@ -63,105 +72,156 @@ class RetryReviewedPoisonMessagesTest {
         ENCRYPTED_VALID_CONTENT_TO_RETRY = Aes256Utils.encrypt(String.format("{\"id\":\"%s\"}", BIZ_EVENT_ID));
     }
 
-    @AfterEach
-    public void teardown() throws Exception {
-        // reset singleton
-        Field instance = ReceiptQueueClientImpl.class.getDeclaredField("instance");
-        instance.setAccessible(true);
-        instance.set(null, null);
-    }
-
     @Test
-    void successfulRun() throws JsonProcessingException {
-        ReceiptError receiptError = new ReceiptError();
-        receiptError.setMessagePayload(ENCRYPTED_VALID_CONTENT_TO_RETRY);
-        receiptError.setStatus(ReceiptErrorStatusType.REVIEWED);
-        receiptError.setBizEventId(BIZ_EVENT_ID);
-        receiptError.setId("1");
+    void successfulRun() throws JsonProcessingException, ReceiptNotFoundException, UnableToSaveException {
+        ReceiptError receiptError = ReceiptError.builder()
+                .messagePayload(ENCRYPTED_VALID_CONTENT_TO_RETRY)
+                .status(ReceiptErrorStatusType.REVIEWED)
+                .bizEventId(BIZ_EVENT_ID)
+                .id(RECEIPT_ERROR_ID)
+                .build();
 
-        ReceiptQueueClientImpl serviceMock = mock(ReceiptQueueClientImpl.class);
-        Response<SendMessageResult> response = mock(Response.class);
-        when(response.getStatusCode()).thenReturn(HttpStatus.SC_CREATED);
-        when(serviceMock.sendMessageToQueue(any())).thenReturn(response);
+        Receipt receipt = Receipt.builder().status(ReceiptStatusType.TO_REVIEW).eventId(BIZ_EVENT_ID).build();
+        when(cosmosMock.getReceipt(BIZ_EVENT_ID)).thenReturn(receipt);
 
-        setMock(serviceMock);
-        OutputBinding<List<ReceiptError>> errorToCosmos = (OutputBinding<List<ReceiptError>>)mock(OutputBinding.class);
+        when(queueResponse.getStatusCode()).thenReturn(HttpStatus.SC_CREATED);
+        when(queueMock.sendMessageToQueue(any())).thenReturn(queueResponse);
+
+        function = spy(new RetryReviewedPoisonMessages(cosmosMock, queueMock));
 
         assertDoesNotThrow(() -> function.processRetryReviewedPoisonMessages(
                 Collections.singletonList(receiptError), errorToCosmos, context));
 
-        verify(serviceMock).sendMessageToQueue(messageCaptor.capture());
+        verify(cosmosMock).saveReceipt(receiptCaptor.capture());
+        Receipt receiptCaptorValue = receiptCaptor.getValue();
+        assertEquals(BIZ_EVENT_ID, receiptCaptorValue.getEventId());
+        assertEquals(ReceiptStatusType.INSERTED, receiptCaptorValue.getStatus());
+
+        verify(queueMock).sendMessageToQueue(messageCaptor.capture());
         BizEvent captured = ObjectMapperUtils.mapString(new String(Base64.getMimeDecoder()
                 .decode(messageCaptor.getValue())), BizEvent.class);
         assertEquals(BIZ_EVENT_ID, captured.getId());
 
-        verify(errorToCosmos).setValue(documentCaptor.capture());
-        ReceiptError documentCaptorValue = documentCaptor.getValue().get(0);
-        assertEquals(ENCRYPTED_VALID_CONTENT_TO_RETRY, documentCaptorValue.getMessagePayload());
-        assertEquals(ReceiptErrorStatusType.REQUEUED, documentCaptorValue.getStatus());
-        assertEquals(BIZ_EVENT_ID, documentCaptorValue.getBizEventId());
-
+        verify(errorToCosmos).setValue(receiptErrorCaptor.capture());
+        ReceiptError receiptErrorCaptorValue = receiptErrorCaptor.getValue().get(0);
+        assertEquals(ENCRYPTED_VALID_CONTENT_TO_RETRY, receiptErrorCaptorValue.getMessagePayload());
+        assertEquals(ReceiptErrorStatusType.REQUEUED, receiptErrorCaptorValue.getStatus());
+        assertEquals(BIZ_EVENT_ID, receiptErrorCaptorValue.getBizEventId());
     }
 
     @Test
     void successfulRunWithoutElementToRequeue() {
-        ReceiptError receiptError = new ReceiptError();
-        receiptError.setMessagePayload(ENCRYPTED_VALID_CONTENT_TO_RETRY);
-        receiptError.setStatus(ReceiptErrorStatusType.TO_REVIEW);
-        receiptError.setId("1");
+        ReceiptError receiptError = ReceiptError.builder()
+                .messagePayload(ENCRYPTED_VALID_CONTENT_TO_RETRY)
+                .status(ReceiptErrorStatusType.TO_REVIEW)
+                .id(RECEIPT_ERROR_ID)
+                .build();
 
-        ReceiptQueueClientImpl serviceMock = mock(ReceiptQueueClientImpl.class);
-        setMock(serviceMock);
-        OutputBinding<List<ReceiptError>> errorToCosmos = (OutputBinding<List<ReceiptError>>)mock(OutputBinding.class);
+        function = spy(new RetryReviewedPoisonMessages(cosmosMock, queueMock));
 
         assertDoesNotThrow(() -> function.processRetryReviewedPoisonMessages(
                 Collections.singletonList(receiptError), errorToCosmos, context));
 
-        verifyNoInteractions(serviceMock);
-
+        verifyNoInteractions(queueMock);
+        verifyNoInteractions(cosmosMock);
+        verifyNoInteractions(errorToCosmos);
     }
 
     @Test
-    void resendToCosmosIfQueueFailed() throws JsonProcessingException {
-        ReceiptError receiptError = new ReceiptError();
-        receiptError.setMessagePayload(ENCRYPTED_VALID_CONTENT_TO_RETRY);
-        receiptError.setStatus(ReceiptErrorStatusType.REVIEWED);
-        receiptError.setBizEventId(BIZ_EVENT_ID);
-        receiptError.setId("1");
+    void resendToCosmosErrorIfReceiptNotFound() throws ReceiptNotFoundException {
+        ReceiptError receiptError = ReceiptError.builder()
+                .messagePayload(ENCRYPTED_VALID_CONTENT_TO_RETRY)
+                .status(ReceiptErrorStatusType.REVIEWED)
+                .bizEventId(BIZ_EVENT_ID)
+                .id(RECEIPT_ERROR_ID)
+                .build();
 
-        ReceiptQueueClientImpl serviceMock = mock(ReceiptQueueClientImpl.class);
-        Response<SendMessageResult> response = mock(Response.class);
-        when(response.getStatusCode()).thenReturn(HttpStatus.SC_BAD_REQUEST);
-        when(serviceMock.sendMessageToQueue(any())).thenReturn(response);
+        doThrow(new ReceiptNotFoundException(COSMOS_ERROR)).when(cosmosMock).getReceipt(BIZ_EVENT_ID);
 
-        setMock(serviceMock);
-        OutputBinding<List<ReceiptError>> errorToCosmos = (OutputBinding<List<ReceiptError>>)mock(OutputBinding.class);
+        function = spy(new RetryReviewedPoisonMessages(cosmosMock, queueMock));
 
         assertDoesNotThrow(() -> function.processRetryReviewedPoisonMessages(
                 Collections.singletonList(receiptError), errorToCosmos, context));
 
-        verify(serviceMock).sendMessageToQueue(messageCaptor.capture());
-        BizEvent captured = ObjectMapperUtils.mapString(new String(Base64.getMimeDecoder().decode(
-                messageCaptor.getValue())), BizEvent.class);
-        assertEquals(BIZ_EVENT_ID, captured.getId());
+        verifyNoInteractions(queueMock);
 
-        verify(errorToCosmos).setValue(documentCaptor.capture());
-        ReceiptError documentCaptorValue = documentCaptor.getValue().get(0);
+        verify(errorToCosmos).setValue(receiptErrorCaptor.capture());
+        ReceiptError documentCaptorValue = receiptErrorCaptor.getValue().get(0);
         assertEquals(ENCRYPTED_VALID_CONTENT_TO_RETRY, documentCaptorValue.getMessagePayload());
         assertEquals(ReceiptErrorStatusType.TO_REVIEW, documentCaptorValue.getStatus());
         assertEquals(BIZ_EVENT_ID, documentCaptorValue.getBizEventId());
         assertNotNull(documentCaptorValue.getMessageError());
-
     }
 
-    static void setMock(ReceiptQueueClientImpl mock) {
-        try {
-            Field instance = ReceiptQueueClientImpl.class.getDeclaredField("instance");
-            instance.setAccessible(true);
-            instance.set(instance, mock);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+    @Test
+    void resendToCosmosErrorIfSaveReceiptFailed() throws ReceiptNotFoundException, UnableToSaveException {
+        ReceiptError receiptError = ReceiptError.builder()
+                .messagePayload(ENCRYPTED_VALID_CONTENT_TO_RETRY)
+                .status(ReceiptErrorStatusType.REVIEWED)
+                .bizEventId(BIZ_EVENT_ID)
+                .id(RECEIPT_ERROR_ID)
+                .build();
+
+        Receipt receipt = Receipt.builder().status(ReceiptStatusType.TO_REVIEW).eventId(BIZ_EVENT_ID).build();
+        when(cosmosMock.getReceipt(BIZ_EVENT_ID)).thenReturn(receipt);
+        doThrow(new UnableToSaveException(COSMOS_ERROR)).when(cosmosMock).saveReceipt(any(Receipt.class));
+
+        function = spy(new RetryReviewedPoisonMessages(cosmosMock, queueMock));
+
+        assertDoesNotThrow(() -> function.processRetryReviewedPoisonMessages(
+                Collections.singletonList(receiptError), errorToCosmos, context));
+
+        verify(cosmosMock).saveReceipt(receiptCaptor.capture());
+        Receipt receiptCaptorValue = receiptCaptor.getValue();
+        assertEquals(BIZ_EVENT_ID, receiptCaptorValue.getEventId());
+        assertEquals(ReceiptStatusType.INSERTED, receiptCaptorValue.getStatus());
+
+        verifyNoInteractions(queueMock);
+
+        verify(errorToCosmos).setValue(receiptErrorCaptor.capture());
+        ReceiptError documentCaptorValue = receiptErrorCaptor.getValue().get(0);
+        assertEquals(ENCRYPTED_VALID_CONTENT_TO_RETRY, documentCaptorValue.getMessagePayload());
+        assertEquals(ReceiptErrorStatusType.TO_REVIEW, documentCaptorValue.getStatus());
+        assertEquals(BIZ_EVENT_ID, documentCaptorValue.getBizEventId());
+        assertNotNull(documentCaptorValue.getMessageError());
+    }
+
+    @Test
+    void resendToCosmosErrorIfQueueFailed() throws JsonProcessingException, ReceiptNotFoundException, UnableToSaveException {
+        ReceiptError receiptError = ReceiptError.builder()
+                .messagePayload(ENCRYPTED_VALID_CONTENT_TO_RETRY)
+                .status(ReceiptErrorStatusType.REVIEWED)
+                .bizEventId(BIZ_EVENT_ID)
+                .id(RECEIPT_ERROR_ID)
+                .build();
+
+        Receipt receipt = Receipt.builder().status(ReceiptStatusType.TO_REVIEW).eventId(BIZ_EVENT_ID).build();
+        when(cosmosMock.getReceipt(BIZ_EVENT_ID)).thenReturn(receipt);
+
+        when(queueResponse.getStatusCode()).thenReturn(HttpStatus.SC_BAD_REQUEST);
+        when(queueMock.sendMessageToQueue(any())).thenReturn(queueResponse);
+
+        function = spy(new RetryReviewedPoisonMessages(cosmosMock, queueMock));
+
+        assertDoesNotThrow(() -> function.processRetryReviewedPoisonMessages(
+                Collections.singletonList(receiptError), errorToCosmos, context));
+
+        verify(cosmosMock).saveReceipt(receiptCaptor.capture());
+        Receipt receiptCaptorValue = receiptCaptor.getValue();
+        assertEquals(BIZ_EVENT_ID, receiptCaptorValue.getEventId());
+        assertEquals(ReceiptStatusType.INSERTED, receiptCaptorValue.getStatus());
+
+        verify(queueMock).sendMessageToQueue(messageCaptor.capture());
+        BizEvent captured = ObjectMapperUtils.mapString(new String(Base64.getMimeDecoder().decode(
+                messageCaptor.getValue())), BizEvent.class);
+        assertEquals(BIZ_EVENT_ID, captured.getId());
+
+        verify(errorToCosmos).setValue(receiptErrorCaptor.capture());
+        ReceiptError documentCaptorValue = receiptErrorCaptor.getValue().get(0);
+        assertEquals(ENCRYPTED_VALID_CONTENT_TO_RETRY, documentCaptorValue.getMessagePayload());
+        assertEquals(ReceiptErrorStatusType.TO_REVIEW, documentCaptorValue.getStatus());
+        assertEquals(BIZ_EVENT_ID, documentCaptorValue.getBizEventId());
+        assertNotNull(documentCaptorValue.getMessageError());
     }
 
 }
