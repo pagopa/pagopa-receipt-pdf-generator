@@ -6,18 +6,7 @@ import it.gov.pagopa.receipt.pdf.generator.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.enumeration.ReasonErrorCode;
 import it.gov.pagopa.receipt.pdf.generator.exception.PdfJsonMappingException;
 import it.gov.pagopa.receipt.pdf.generator.exception.TemplateDataMappingException;
-import it.gov.pagopa.receipt.pdf.generator.model.template.Cart;
-import it.gov.pagopa.receipt.pdf.generator.model.template.Debtor;
-import it.gov.pagopa.receipt.pdf.generator.model.template.Item;
-import it.gov.pagopa.receipt.pdf.generator.model.template.PSP;
-import it.gov.pagopa.receipt.pdf.generator.model.template.PSPFee;
-import it.gov.pagopa.receipt.pdf.generator.model.template.Payee;
-import it.gov.pagopa.receipt.pdf.generator.model.template.PaymentMethod;
-import it.gov.pagopa.receipt.pdf.generator.model.template.ReceiptPDFTemplate;
-import it.gov.pagopa.receipt.pdf.generator.model.template.RefNumber;
-import it.gov.pagopa.receipt.pdf.generator.model.template.Transaction;
-import it.gov.pagopa.receipt.pdf.generator.model.template.User;
-import it.gov.pagopa.receipt.pdf.generator.model.template.UserData;
+import it.gov.pagopa.receipt.pdf.generator.model.template.*;
 import it.gov.pagopa.receipt.pdf.generator.service.BuildTemplateService;
 import it.gov.pagopa.receipt.pdf.generator.utils.ObjectMapperUtils;
 import it.gov.pagopa.receipt.pdf.generator.utils.TemplateDataField;
@@ -31,12 +20,7 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.Collections;
-import java.util.Date;
-import java.util.TimeZone;
-import java.util.LinkedHashMap;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -87,7 +71,9 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
      * {@inheritDoc}
      */
     @Override
-    public ReceiptPDFTemplate buildTemplate(BizEvent bizEvent, boolean partialTemplate, Receipt receipt) throws TemplateDataMappingException {
+    public ReceiptPDFTemplate buildTemplate(BizEvent bizEvent, boolean isGeneratingDebtor, Receipt receipt) throws TemplateDataMappingException {
+        boolean requestedByDebtor = getRequestByDebtor(isGeneratingDebtor, bizEvent);
+
         return ReceiptPDFTemplate.builder()
                 .serviceCustomerId(getServiceCustomerId(bizEvent))
                 .transaction(Transaction.builder()
@@ -101,10 +87,10 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
                                 .accountHolder(getPaymentMethodAccountHolder(bizEvent))
                                 .build())
                         .authCode(getAuthCode(bizEvent))
-                        .requestedByDebtor(partialTemplate)
+                        .requestedByDebtor(requestedByDebtor)
                         .processedByPagoPA(getProcessedByPagoPA(bizEvent))
                         .build())
-                .user(partialTemplate ?
+                .user(requestedByDebtor ?
                         null :
                         User.builder()
                                 .data(UserData.builder()
@@ -228,6 +214,16 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
     }
 
     private String getUserFullName(BizEvent event) throws TemplateDataMappingException {
+        if (
+                event.getTransactionDetails() != null &&
+                        event.getTransactionDetails().getUser() != null &&
+                        event.getTransactionDetails().getUser().getName() != null &&
+                        event.getTransactionDetails().getUser().getSurname() != null
+        ) {
+            return String.format("%s %s",
+                    event.getTransactionDetails().getUser().getName(),
+                    event.getTransactionDetails().getUser().getSurname());
+        }
         if (event.getPayer() != null && event.getPayer().getFullName() != null) {
             return event.getPayer().getFullName();
         }
@@ -235,6 +231,13 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
     }
 
     private String getUserTaxCode(BizEvent event) throws TemplateDataMappingException {
+        if(
+                event.getTransactionDetails() != null &&
+                        event.getTransactionDetails().getUser() != null &&
+                        event.getTransactionDetails().getUser().getFiscalCode() != null
+        ){
+            return event.getTransactionDetails().getUser().getFiscalCode();
+        }
         if (event.getPayer() != null && event.getPayer().getEntityUniqueIdentifierValue() != null) {
             return event.getPayer().getEntityUniqueIdentifierValue();
         }
@@ -347,8 +350,31 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
         return value;
     }
 
-    public boolean getProcessedByPagoPA(BizEvent event) {
-        return event.getIdPaymentManager() != null && !event.getIdPaymentManager().isBlank();
+    private boolean getProcessedByPagoPA(BizEvent event) {
+        return event.getTransactionDetails() != null;
+    }
+
+    private boolean getRequestByDebtor(boolean isGeneratingDebtor, BizEvent event) {
+        if (isGeneratingDebtor) {
+            String debtorFiscalCode = event.getDebtor().getEntityUniqueIdentifierValue();
+
+            String fiscalCodeFromPayer = event.getPayer() != null ? event.getPayer().getEntityUniqueIdentifierValue() : null;
+            String fiscalCodeFromUser = event.getTransactionDetails() != null && event.getTransactionDetails().getUser() != null ?
+                    event.getTransactionDetails().getUser().getFiscalCode() : null;
+            //Check if payer's and user's fiscal codes exist
+            if (fiscalCodeFromPayer == null && fiscalCodeFromUser == null) {
+                return true;
+            }
+            //Check if payer's fiscal code exists and is different from debtor's
+            if (fiscalCodeFromPayer != null && !fiscalCodeFromPayer.equals(debtorFiscalCode)) {
+                return true;
+            }
+            //Check if user's fiscal code exists and is different from debtor's
+            if (fiscalCodeFromUser != null && !fiscalCodeFromUser.equals(debtorFiscalCode)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private String currencyFormat(String value) {
@@ -372,6 +398,7 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
         SimpleDateFormat dateFormat = new SimpleDateFormat(RECEIPT_DATE_FORMAT, Locale.ITALY);
         return dateFormat.format(parsed);
     }
+
     private String dateFormat(String date) {
         DateTimeFormatter simpleDateFormat = DateTimeFormatter.ofPattern(RECEIPT_DATE_FORMAT).withLocale(Locale.ITALY);
         return LocalDateTime.parse(date).format(simpleDateFormat);
@@ -392,6 +419,6 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
             return null;
         }
 
-       return fullName.replaceAll("[,;:/]+", " ");
+        return fullName.replaceAll("[,;:/]+", " ");
     }
 }
