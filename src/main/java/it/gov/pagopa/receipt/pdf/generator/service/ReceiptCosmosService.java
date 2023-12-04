@@ -2,6 +2,8 @@ package it.gov.pagopa.receipt.pdf.generator.service;
 
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.generator.exception.ReceiptNotFoundException;
+import it.gov.pagopa.receipt.pdf.generator.client.ReceiptCosmosClient;
+import it.gov.pagopa.receipt.pdf.generator.exception.UnableToSaveException;
 
 public interface ReceiptCosmosService {
 
@@ -12,4 +14,11 @@ public interface ReceiptCosmosService {
      * @throws ReceiptNotFoundException when no receipt has been found
      */
     Receipt getReceipt(String bizEventId) throws ReceiptNotFoundException;
+
+    /**
+     * Saves receipts on CosmosDB using {@link ReceiptCosmosClient}
+     *
+     * @param receipt Receipt to save
+     */
+    void saveReceipt(Receipt receipt) throws UnableToSaveException;
 }
