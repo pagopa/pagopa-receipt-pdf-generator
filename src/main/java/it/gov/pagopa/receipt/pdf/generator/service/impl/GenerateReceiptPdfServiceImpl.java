@@ -79,7 +79,7 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
                     pdfGeneration.setDebtorMetadata(PdfMetadata.builder().statusCode(ALREADY_CREATED).build());
                     return pdfGeneration;
                 }
-                PdfMetadata generationResult = generateAndSavePDFReceipt(bizEvent, receipt, PAYER_TEMPLATE_SUFFIX, false, workingDirPath);
+                PdfMetadata generationResult = generateAndSavePDFReceipt(bizEvent, receipt, PAYER_TEMPLATE_SUFFIX, true, workingDirPath);
                 pdfGeneration.setDebtorMetadata(generationResult);
                 return pdfGeneration;
             }
@@ -166,9 +166,9 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
         return result;
     }
 
-    private PdfMetadata generateAndSavePDFReceipt(BizEvent bizEvent, Receipt receipt, String templateSuffix, boolean partialTemplate, Path workingDirPath) {
+    private PdfMetadata generateAndSavePDFReceipt(BizEvent bizEvent, Receipt receipt, String templateSuffix, boolean isGeneratingDebtor, Path workingDirPath) {
         try {
-            ReceiptPDFTemplate template = buildTemplateService.buildTemplate(bizEvent, partialTemplate, receipt);
+            ReceiptPDFTemplate template = buildTemplateService.buildTemplate(bizEvent, isGeneratingDebtor, receipt);
             String dateFormatted = LocalDate.now().format(DateTimeFormatter.ofPattern("yyMMdd"));
             String blobName = String.format("%s-%s-%s-%s", TEMPLATE_PREFIX, dateFormatted, bizEvent.getId(), templateSuffix);
             PdfEngineResponse pdfEngineResponse = generatePDFReceipt(template, workingDirPath);
