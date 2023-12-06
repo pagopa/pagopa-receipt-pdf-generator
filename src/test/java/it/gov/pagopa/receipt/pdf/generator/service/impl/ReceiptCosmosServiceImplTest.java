@@ -55,25 +55,25 @@ class ReceiptCosmosServiceImplTest {
     @Test
     void saveReceiptSuccess(){
         Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).build();
-        when(saveReceiptResponse.getStatusCode()).thenReturn(HttpStatus.CREATED.value());
-        when(receiptCosmosClient.saveReceipt(receipt)).thenReturn(saveReceiptResponse);
+        when(saveReceiptResponse.getStatusCode()).thenReturn(HttpStatus.OK.value());
+        when(receiptCosmosClient.updateReceipt(receipt)).thenReturn(saveReceiptResponse);
         function = spy(new ReceiptCosmosServiceImpl(receiptCosmosClient));
-        assertDoesNotThrow(() -> function.saveReceipt(receipt));
+        assertDoesNotThrow(() -> function.updateReceipt(receipt));
     }
     @Test
     void saveReceiptFailedNotCreated(){
         Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).build();
         when(saveReceiptResponse.getStatusCode()).thenReturn(HttpStatus.I_AM_A_TEAPOT.value());
-        when(receiptCosmosClient.saveReceipt(receipt)).thenReturn(saveReceiptResponse);
+        when(receiptCosmosClient.updateReceipt(receipt)).thenReturn(saveReceiptResponse);
         function = spy(new ReceiptCosmosServiceImpl(receiptCosmosClient));
-        assertThrows(UnableToSaveException.class,() -> function.saveReceipt(receipt));
+        assertThrows(UnableToSaveException.class,() -> function.updateReceipt(receipt));
     }
     @Test
     void saveReceiptFailedWithReceiptClientException(){
         Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).build();
-        when(receiptCosmosClient.saveReceipt(receipt)).thenThrow(CosmosException.class);
+        when(receiptCosmosClient.updateReceipt(receipt)).thenThrow(CosmosException.class);
         function = spy(new ReceiptCosmosServiceImpl(receiptCosmosClient));
-        assertThrows(UnableToSaveException.class,() -> function.saveReceipt(receipt));
+        assertThrows(UnableToSaveException.class,() -> function.updateReceipt(receipt));
     }
 
 }

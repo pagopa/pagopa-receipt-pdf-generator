@@ -38,8 +38,8 @@ Given('a receipt with id {string} and status {string} stored into receipt datast
     await deleteDocumentFromReceiptsDatastore(this.eventId);
 
     let receiptsStoreResponse = await createDocumentInReceiptsDatastore(this.eventId, status);
-    assert.strictEqual(receiptsStoreResponse.statusCode, 201);
     this.receiptId = this.eventId;
+    assert.strictEqual(receiptsStoreResponse.statusCode, 201);
 });
 
 Given('a random biz event with id {string} enqueued on receipts queue', async function (id) {
@@ -107,8 +107,16 @@ Then('the error receipt has the status {string}', function (targetStatus) {
 });
 
 Given('a error receipt with id {string} stored into receipt-message-error datastore with status REVIEWED', async function (id) {
+    await deleteDocumentFromErrorReceiptsDatastore(id);
+
     assert.strictEqual(this.eventId, id);
     let response = await createDocumentInErrorReceiptsDatastore(id);
-    assert.strictEqual(response.statusCode, 201);
     this.errorReceiptId = id;
+    assert.strictEqual(response.statusCode, 201);
+});
+
+When('the error receipt has been properly stored on receipt-message-error datastore after {int} ms', async function (time) {
+    // boundary time spent by azure function to process event
+    await sleep(time);
+    this.responseToCheck = await getDocumentByBizEventIdFromErrorReceiptsDatastore(this.errorReceiptId);
 });

@@ -129,6 +129,6 @@ public class RetryReviewedPoisonMessages {
             Receipt receipt = this.receiptCosmosService.getReceipt(bizEventId);
             receipt.setStatus(ReceiptStatusType.INSERTED);
             logger.info("[{}] updating receipt with id {} to status {}", context.getFunctionName(), receipt.getId(), ReceiptStatusType.INSERTED);
-            this.receiptCosmosService.saveReceipt(receipt);
+            this.receiptCosmosService.updateReceipt(receipt);
     }
 }

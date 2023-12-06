@@ -21,5 +21,5 @@ public interface ReceiptCosmosClient {
      * @param receipt Receipts to save
      * @return receipt documents
      */
-    CosmosItemResponse<Receipt> saveReceipt(Receipt receipt);
+    CosmosItemResponse<Receipt> updateReceipt(Receipt receipt);
 }
