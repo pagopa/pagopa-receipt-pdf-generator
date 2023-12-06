@@ -114,3 +114,9 @@ Given('a error receipt with id {string} stored into receipt-message-error datast
     this.errorReceiptId = id;
     assert.strictEqual(response.statusCode, 201);
 });
+
+When('the error receipt has been properly stored on receipt-message-error datastore after {int} ms', async function (time) {
+    // boundary time spent by azure function to process event
+    await sleep(time);
+    this.responseToCheck = await getDocumentByBizEventIdFromErrorReceiptsDatastore(this.errorReceiptId);
+});
