@@ -47,18 +47,18 @@ public class ReceiptCosmosServiceImpl implements ReceiptCosmosService {
      * {@inheritDoc}
      */
     @Override
-    public void saveReceipt(Receipt receipt) throws UnableToSaveException {
+    public void updateReceipt(Receipt receipt) throws UnableToSaveException {
         int statusCode;
 
         try{
-            CosmosItemResponse<Receipt> response = receiptCosmosClient.saveReceipt(receipt);
+            CosmosItemResponse<Receipt> response = receiptCosmosClient.updateReceipt(receipt);
             statusCode = response.getStatusCode();
         }  catch (Exception e) {
             statusCode = HttpStatus.SC_INTERNAL_SERVER_ERROR;
             logger.error(String.format("Save receipt with eventId %s on cosmos failed", receipt.getEventId()), e);
         }
 
-        if(statusCode != com.microsoft.azure.functions.HttpStatus.CREATED.value()){
+        if(statusCode != com.microsoft.azure.functions.HttpStatus.OK.value()){
             String errorMsg = String.format("Save receipt with eventId %s on cosmos failed with status %s", receipt.getEventId(), statusCode);
             throw new UnableToSaveException(errorMsg);
         }

@@ -73,11 +73,11 @@ public class ReceiptCosmosClientImpl implements ReceiptCosmosClient {
      * {@inheritDoc}
      */
     @Override
-    public CosmosItemResponse<Receipt> saveReceipt(Receipt receipt) {
+    public CosmosItemResponse<Receipt> updateReceipt(Receipt receipt) {
         CosmosDatabase cosmosDatabase = this.cosmosClient.getDatabase(databaseId);
 
         CosmosContainer cosmosContainer = cosmosDatabase.getContainer(containerId);
 
-        return cosmosContainer.createItem(receipt);
+        return cosmosContainer.upsertItem(receipt);
     }
 }

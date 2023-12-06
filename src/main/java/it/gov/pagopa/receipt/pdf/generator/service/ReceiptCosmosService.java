@@ -20,5 +20,5 @@ public interface ReceiptCosmosService {
      *
      * @param receipt Receipt to save
      */
-    void saveReceipt(Receipt receipt) throws UnableToSaveException;
+    void updateReceipt(Receipt receipt) throws UnableToSaveException;
 }
