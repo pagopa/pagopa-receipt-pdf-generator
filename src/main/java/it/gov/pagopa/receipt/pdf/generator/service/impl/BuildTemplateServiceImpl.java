@@ -6,7 +6,18 @@ import it.gov.pagopa.receipt.pdf.generator.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.enumeration.ReasonErrorCode;
 import it.gov.pagopa.receipt.pdf.generator.exception.PdfJsonMappingException;
 import it.gov.pagopa.receipt.pdf.generator.exception.TemplateDataMappingException;
-import it.gov.pagopa.receipt.pdf.generator.model.template.*;
+import it.gov.pagopa.receipt.pdf.generator.model.template.Cart;
+import it.gov.pagopa.receipt.pdf.generator.model.template.Debtor;
+import it.gov.pagopa.receipt.pdf.generator.model.template.Item;
+import it.gov.pagopa.receipt.pdf.generator.model.template.PSP;
+import it.gov.pagopa.receipt.pdf.generator.model.template.PSPFee;
+import it.gov.pagopa.receipt.pdf.generator.model.template.Payee;
+import it.gov.pagopa.receipt.pdf.generator.model.template.PaymentMethod;
+import it.gov.pagopa.receipt.pdf.generator.model.template.ReceiptPDFTemplate;
+import it.gov.pagopa.receipt.pdf.generator.model.template.RefNumber;
+import it.gov.pagopa.receipt.pdf.generator.model.template.Transaction;
+import it.gov.pagopa.receipt.pdf.generator.model.template.User;
+import it.gov.pagopa.receipt.pdf.generator.model.template.UserData;
 import it.gov.pagopa.receipt.pdf.generator.service.BuildTemplateService;
 import it.gov.pagopa.receipt.pdf.generator.utils.ObjectMapperUtils;
 import it.gov.pagopa.receipt.pdf.generator.utils.TemplateDataField;
@@ -15,12 +26,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.time.DateTimeException;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.time.format.DateTimeFormatterBuilder;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -36,7 +51,6 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
     private static final String PAGO_PA_CHANNEL_IO = "IO";
     private static final String PAGO_PA_CHANNEL_IO_PAY = "IO-PAY";
     private static final String RECEIPT_DATE_FORMAT = "dd MMMM yyyy, HH:mm:ss";
-    private static final String ZONED_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss'Z'";
 
     /**
      * Hide from public usage.
@@ -396,22 +410,26 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
     }
 
     private String dateFormatZoned(String date) throws TemplateDataMappingException {
-        SimpleDateFormat stringDateFormat = new SimpleDateFormat(ZONED_DATE_FORMAT, Locale.ITALY);
-        stringDateFormat.setTimeZone(TimeZone.getTimeZone(ZoneOffset.UTC));
-        Date parsed;
+        DateTimeFormatter formatter = new DateTimeFormatterBuilder()
+                .append(DateTimeFormatter.ofPattern(RECEIPT_DATE_FORMAT))
+                .toFormatter(Locale.ITALY)
+                .withZone(TimeZone.getTimeZone("Europe/Rome").toZoneId());
         try {
-            parsed = stringDateFormat.parse(date);
-        } catch (ParseException e) {
+            return OffsetDateTime.parse(date).format(formatter);
+        } catch (DateTimeException e) {
             String errMsg = String.format("Error mapping bizEvent data to template, parse failed for property %s", TemplateDataField.TRANSACTION_TIMESTAMP);
             throw new TemplateDataMappingException(errMsg, ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e);
         }
-        SimpleDateFormat dateFormat = new SimpleDateFormat(RECEIPT_DATE_FORMAT, Locale.ITALY);
-        return dateFormat.format(parsed);
     }
 
-    private String dateFormat(String date) {
+    private String dateFormat(String date) throws TemplateDataMappingException {
         DateTimeFormatter simpleDateFormat = DateTimeFormatter.ofPattern(RECEIPT_DATE_FORMAT).withLocale(Locale.ITALY);
-        return LocalDateTime.parse(date).format(simpleDateFormat);
+        try {
+            return LocalDateTime.parse(date).format(simpleDateFormat);
+        } catch (DateTimeException e) {
+            String errMsg = String.format("Error mapping bizEvent data to template, parse failed for property %s", TemplateDataField.TRANSACTION_TIMESTAMP);
+            throw new TemplateDataMappingException(errMsg, ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e);
+        }
     }
 
     private String formatErrorMessage(String missingProperty) {
