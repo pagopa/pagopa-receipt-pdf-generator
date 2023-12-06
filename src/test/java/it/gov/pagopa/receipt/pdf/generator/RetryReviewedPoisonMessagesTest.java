@@ -92,7 +92,7 @@ class RetryReviewedPoisonMessagesTest {
         assertDoesNotThrow(() -> function.processRetryReviewedPoisonMessages(
                 Collections.singletonList(receiptError), errorToCosmos, context));
 
-        verify(cosmosMock).saveReceipt(receiptCaptor.capture());
+        verify(cosmosMock).updateReceipt(receiptCaptor.capture());
         Receipt receiptCaptorValue = receiptCaptor.getValue();
         assertEquals(BIZ_EVENT_ID, receiptCaptorValue.getEventId());
         assertEquals(ReceiptStatusType.INSERTED, receiptCaptorValue.getStatus());
@@ -164,14 +164,14 @@ class RetryReviewedPoisonMessagesTest {
 
         Receipt receipt = Receipt.builder().status(ReceiptStatusType.TO_REVIEW).eventId(BIZ_EVENT_ID).build();
         when(cosmosMock.getReceipt(BIZ_EVENT_ID)).thenReturn(receipt);
-        doThrow(new UnableToSaveException(COSMOS_ERROR)).when(cosmosMock).saveReceipt(any(Receipt.class));
+        doThrow(new UnableToSaveException(COSMOS_ERROR)).when(cosmosMock).updateReceipt(any(Receipt.class));
 
         function = spy(new RetryReviewedPoisonMessages(cosmosMock, queueMock));
 
         assertDoesNotThrow(() -> function.processRetryReviewedPoisonMessages(
                 Collections.singletonList(receiptError), errorToCosmos, context));
 
-        verify(cosmosMock).saveReceipt(receiptCaptor.capture());
+        verify(cosmosMock).updateReceipt(receiptCaptor.capture());
         Receipt receiptCaptorValue = receiptCaptor.getValue();
         assertEquals(BIZ_EVENT_ID, receiptCaptorValue.getEventId());
         assertEquals(ReceiptStatusType.INSERTED, receiptCaptorValue.getStatus());
@@ -206,7 +206,7 @@ class RetryReviewedPoisonMessagesTest {
         assertDoesNotThrow(() -> function.processRetryReviewedPoisonMessages(
                 Collections.singletonList(receiptError), errorToCosmos, context));
 
-        verify(cosmosMock).saveReceipt(receiptCaptor.capture());
+        verify(cosmosMock).updateReceipt(receiptCaptor.capture());
         Receipt receiptCaptorValue = receiptCaptor.getValue();
         assertEquals(BIZ_EVENT_ID, receiptCaptorValue.getEventId());
         assertEquals(ReceiptStatusType.INSERTED, receiptCaptorValue.getStatus());
