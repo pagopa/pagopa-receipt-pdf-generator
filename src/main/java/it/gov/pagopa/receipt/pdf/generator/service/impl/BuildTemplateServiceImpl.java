@@ -33,8 +33,6 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
 
     private static final String BRAND_LOGO_MAP_ENV_KEY = "BRAND_LOGO_MAP";
     private static final String PSP_CONFIG_FILE_JSON_FILE_NAME = "psp_config_file.json";
-    private static final String PAGO_PA_CHANNEL_IO = "IO";
-    private static final String PAGO_PA_CHANNEL_IO_PAY = "IO-PAY";
     private static final String RECEIPT_DATE_FORMAT = "dd MMMM yyyy, HH:mm:ss";
 
     /**
@@ -75,7 +73,7 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
         boolean requestedByDebtor = getRequestByDebtor(isGeneratingDebtor, bizEvent);
 
         return ReceiptPDFTemplate.builder()
-                .serviceCustomerId(getServiceCustomerId(bizEvent))
+                .serviceCustomerId(getServiceCustomerId(receipt))
                 .transaction(Transaction.builder()
                         .timestamp(getTimestamp(bizEvent))
                         .amount(getAmount(bizEvent))
@@ -108,7 +106,8 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
 
     private List<Item> getCartItems(List<BizEvent> listOfBizEvents, Receipt receipt) throws TemplateDataMappingException {
         List<Item> cartItems = new ArrayList<>();
-        for (BizEvent bizEvent : listOfBizEvents) {
+        for (int i = 0; i < listOfBizEvents.size(); i++) {
+            BizEvent bizEvent = listOfBizEvents.get(i);
             cartItems.add(
                     Item.builder()
                             .refNumber(RefNumber.builder()
@@ -123,7 +122,7 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
                                     .name(getPayeeName(bizEvent))
                                     .taxCode(getPayeeTaxCode(bizEvent))
                                     .build())
-                            .subject(getItemSubject(receipt))
+                            .subject(getItemSubject(receipt, i))
                             .amount(getItemAmount(bizEvent))
                             .build()
             );
@@ -131,9 +130,9 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
         return cartItems;
     }
 
-    private String getServiceCustomerId(BizEvent event) throws TemplateDataMappingException {
-        if (event.getId() != null) {
-            return event.getId();
+    private String getServiceCustomerId(Receipt receipt) throws TemplateDataMappingException {
+        if (receipt.getEventId() != null) {
+            return receipt.getEventId();
         }
         throw new TemplateDataMappingException(formatErrorMessage(TemplateDataField.SERVICE_CUSTOMER_ID), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
     }
@@ -298,12 +297,12 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
         throw new TemplateDataMappingException(formatErrorMessage(TemplateDataField.CART_ITEM_PAYEE_TAX_CODE), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
     }
 
-    private String getItemSubject(Receipt receipt) {
+    private String getItemSubject(Receipt receipt, int index) {
         if (receipt.getEventData() != null &&
                 !receipt.getEventData().getCart().isEmpty() &&
-                receipt.getEventData().getCart().get(0) != null
+                receipt.getEventData().getCart().get(index) != null
         ) {
-            return receipt.getEventData().getCart().get(0).getSubject();
+            return receipt.getEventData().getCart().get(index).getSubject();
         }
 
         return null;
