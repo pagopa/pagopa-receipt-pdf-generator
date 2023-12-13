@@ -39,6 +39,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
+import java.util.List;
 
 import static it.gov.pagopa.receipt.pdf.generator.service.impl.GenerateReceiptPdfServiceImpl.ALREADY_CREATED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -112,7 +114,7 @@ class GenerateReceiptPdfServiceImplTest {
     @Test
     void generateReceiptsPayerNullWithSuccess() throws Exception {
         Receipt receiptOnly = getReceiptWithOnlyDebtor(false);
-        BizEvent bizEventOnly = getBizEventWithOnlyDebtor();
+        List<BizEvent> bizEventOnly = Collections.singletonList(getBizEventWithOnlyDebtor());
 
         doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdfDebtor.getPath()))
                 .when(pdfEngineClientMock).generatePDF(any(), any());
@@ -140,7 +142,7 @@ class GenerateReceiptPdfServiceImplTest {
     @Test
     void generateReceiptsSameDebtorPayerWithSuccess() throws Exception {
         Receipt receiptOnly = getReceiptWithDebtorPayer(VALID_CF_DEBTOR, false, false);
-        BizEvent bizEventOnly = getBizEventWithDebtorPayer(VALID_CF_DEBTOR);
+        List<BizEvent> bizEventOnly = Collections.singletonList(getBizEventWithDebtorPayer(VALID_CF_DEBTOR));
 
         doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdfDebtor.getPath()))
                 .when(pdfEngineClientMock).generatePDF(any(), any());
@@ -168,7 +170,7 @@ class GenerateReceiptPdfServiceImplTest {
     @Test
     void generateReceiptsDifferentDebtorPayerWithSuccess() throws Exception {
         Receipt receiptOnly = getReceiptWithDebtorPayer(VALID_CF_PAYER, false, false);
-        BizEvent bizEventOnly = getBizEventWithDebtorPayer(VALID_CF_PAYER);
+        List<BizEvent> bizEventOnly = Collections.singletonList(getBizEventWithDebtorPayer(VALID_CF_PAYER));
 
         doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdfDebtor.getPath()),
                 getPdfEngineResponse(HttpStatus.SC_OK, outputPdfPayer.getPath()))
@@ -202,7 +204,7 @@ class GenerateReceiptPdfServiceImplTest {
     @Test
     void generateReceiptsPayerNullReceiptAlreadyCreatedWithSuccess() throws TemplateDataMappingException {
         Receipt receiptOnly = getReceiptWithOnlyDebtor(true);
-        BizEvent bizEventOnly = getBizEventWithOnlyDebtor();
+        List<BizEvent> bizEventOnly = Collections.singletonList(getBizEventWithOnlyDebtor());
 
         PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly, Path.of("/tmp"));
 
@@ -223,7 +225,7 @@ class GenerateReceiptPdfServiceImplTest {
     @Test
     void generateReceiptsSameDebtorPayerAndDebtorReceiptAlreadyCreatedWithSuccess() throws TemplateDataMappingException {
         Receipt receiptOnly = getReceiptWithDebtorPayer(VALID_CF_DEBTOR, true, false);
-        BizEvent bizEventOnly = getBizEventWithDebtorPayer(VALID_CF_DEBTOR);
+        List<BizEvent> bizEventOnly = Collections.singletonList(getBizEventWithDebtorPayer(VALID_CF_DEBTOR));
 
         PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly, Path.of("/tmp"));
 
@@ -244,7 +246,7 @@ class GenerateReceiptPdfServiceImplTest {
     @Test
     void generateReceiptsDifferentDebtorPayerAndPayerReceiptAlreadyCreatedWithSuccess() throws Exception {
         Receipt receiptOnly = getReceiptWithDebtorPayer(VALID_CF_PAYER, false, true);
-        BizEvent bizEventOnly = getBizEventWithDebtorPayer(VALID_CF_PAYER);
+        List<BizEvent> bizEventOnly = Collections.singletonList(getBizEventWithDebtorPayer(VALID_CF_PAYER));
 
         doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdfDebtor.getPath()))
                 .when(pdfEngineClientMock).generatePDF(any(), any());
@@ -276,7 +278,7 @@ class GenerateReceiptPdfServiceImplTest {
     @Test
     void generateReceiptsPayerNullFailPDFEngineCallReturn500() throws Exception {
         Receipt receiptOnly = getReceiptWithOnlyDebtor(false);
-        BizEvent bizEventOnly = getBizEventWithOnlyDebtor();
+        List<BizEvent> bizEventOnly = Collections.singletonList(getBizEventWithOnlyDebtor());
 
         doReturn(getPdfEngineResponse(HttpStatus.SC_INTERNAL_SERVER_ERROR, ""))
                 .when(pdfEngineClientMock).generatePDF(any(), any());
@@ -302,7 +304,7 @@ class GenerateReceiptPdfServiceImplTest {
     @Test
     void generateReceiptsPayerNullFailBuildTemplateData() throws Exception {
         Receipt receiptOnly = getReceiptWithOnlyDebtor(false);
-        BizEvent bizEventOnly = getBizEventWithOnlyDebtor();
+        List<BizEvent> bizEventOnly = Collections.singletonList(getBizEventWithOnlyDebtor());
 
         doThrow(new TemplateDataMappingException("error message", ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode()))
                 .when(buildTemplateServiceMock).buildTemplate(any(), anyBoolean(), any(Receipt.class));
@@ -326,7 +328,7 @@ class GenerateReceiptPdfServiceImplTest {
     @Test
     void generateReceiptsPayerNullFailSaveToBlobStorageThrowsException() throws Exception {
         Receipt receiptOnly = getReceiptWithOnlyDebtor(false);
-        BizEvent bizEventOnly = getBizEventWithOnlyDebtor();
+        List<BizEvent> bizEventOnly = Collections.singletonList(getBizEventWithOnlyDebtor());
 
         doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdfDebtor.getPath()))
                 .when(pdfEngineClientMock).generatePDF(any(), any());
@@ -353,7 +355,7 @@ class GenerateReceiptPdfServiceImplTest {
     @Test
     void generateReceiptsPayerNullFailSaveToBlobStorageReturn500() throws Exception {
         Receipt receiptOnly = getReceiptWithOnlyDebtor(false);
-        BizEvent bizEventOnly = getBizEventWithOnlyDebtor();
+        List<BizEvent> bizEventOnly = Collections.singletonList(getBizEventWithOnlyDebtor());
 
         doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdfDebtor.getPath()))
                 .when(pdfEngineClientMock).generatePDF(any(), any());
