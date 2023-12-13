@@ -6,18 +6,7 @@ import it.gov.pagopa.receipt.pdf.generator.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.enumeration.ReasonErrorCode;
 import it.gov.pagopa.receipt.pdf.generator.exception.PdfJsonMappingException;
 import it.gov.pagopa.receipt.pdf.generator.exception.TemplateDataMappingException;
-import it.gov.pagopa.receipt.pdf.generator.model.template.Cart;
-import it.gov.pagopa.receipt.pdf.generator.model.template.Debtor;
-import it.gov.pagopa.receipt.pdf.generator.model.template.Item;
-import it.gov.pagopa.receipt.pdf.generator.model.template.PSP;
-import it.gov.pagopa.receipt.pdf.generator.model.template.PSPFee;
-import it.gov.pagopa.receipt.pdf.generator.model.template.Payee;
-import it.gov.pagopa.receipt.pdf.generator.model.template.PaymentMethod;
-import it.gov.pagopa.receipt.pdf.generator.model.template.ReceiptPDFTemplate;
-import it.gov.pagopa.receipt.pdf.generator.model.template.RefNumber;
-import it.gov.pagopa.receipt.pdf.generator.model.template.Transaction;
-import it.gov.pagopa.receipt.pdf.generator.model.template.User;
-import it.gov.pagopa.receipt.pdf.generator.model.template.UserData;
+import it.gov.pagopa.receipt.pdf.generator.model.template.*;
 import it.gov.pagopa.receipt.pdf.generator.service.BuildTemplateService;
 import it.gov.pagopa.receipt.pdf.generator.utils.ObjectMapperUtils;
 import it.gov.pagopa.receipt.pdf.generator.utils.TemplateDataField;
@@ -31,11 +20,7 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.TimeZone;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -85,7 +70,8 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
      * {@inheritDoc}
      */
     @Override
-    public ReceiptPDFTemplate buildTemplate(BizEvent bizEvent, boolean isGeneratingDebtor, Receipt receipt) throws TemplateDataMappingException {
+    public ReceiptPDFTemplate buildTemplate(List<BizEvent> listOfBizEvents, boolean isGeneratingDebtor, Receipt receipt) throws TemplateDataMappingException {
+        BizEvent bizEvent = listOfBizEvents.get(0);
         boolean requestedByDebtor = getRequestByDebtor(isGeneratingDebtor, bizEvent);
 
         return ReceiptPDFTemplate.builder()
@@ -113,28 +99,36 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
                                         .build())
                                 .build())
                 .cart(Cart.builder()
-                        .items(Collections.singletonList(
-                                Item.builder()
-                                        .refNumber(RefNumber.builder()
-                                                .type(getRefNumberType(bizEvent))
-                                                .value(getRefNumberValue(bizEvent))
-                                                .build())
-                                        .debtor(Debtor.builder()
-                                                .fullName(getDebtorFullName(bizEvent))
-                                                .taxCode(getDebtorTaxCode(bizEvent))
-                                                .build())
-                                        .payee(Payee.builder()
-                                                .name(getPayeeName(bizEvent))
-                                                .taxCode(getPayeeTaxCode(bizEvent))
-                                                .build())
-                                        .subject(getItemSubject(receipt))
-                                        .amount(getItemAmount(bizEvent))
-                                        .build()
-                        ))
+                        .items(getCartItems(listOfBizEvents, receipt))
                         //Cart items total amount w/o fee, TODO change it with multiple cart items implementation
                         .amountPartial(getItemAmount(bizEvent))
                         .build())
                 .build();
+    }
+
+    private List<Item> getCartItems(List<BizEvent> listOfBizEvents, Receipt receipt) throws TemplateDataMappingException {
+        List<Item> cartItems = new ArrayList<>();
+        for (BizEvent bizEvent : listOfBizEvents) {
+            cartItems.add(
+                    Item.builder()
+                            .refNumber(RefNumber.builder()
+                                    .type(getRefNumberType(bizEvent))
+                                    .value(getRefNumberValue(bizEvent))
+                                    .build())
+                            .debtor(Debtor.builder()
+                                    .fullName(getDebtorFullName(bizEvent))
+                                    .taxCode(getDebtorTaxCode(bizEvent))
+                                    .build())
+                            .payee(Payee.builder()
+                                    .name(getPayeeName(bizEvent))
+                                    .taxCode(getPayeeTaxCode(bizEvent))
+                                    .build())
+                            .subject(getItemSubject(receipt))
+                            .amount(getItemAmount(bizEvent))
+                            .build()
+            );
+        }
+        return cartItems;
     }
 
     private String getServiceCustomerId(BizEvent event) throws TemplateDataMappingException {
@@ -367,11 +361,11 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
     private boolean getProcessedByPagoPA(BizEvent event) {
         if (event.getTransactionDetails() != null) {
             if (event.getTransactionDetails().getTransaction() != null &&
-                            event.getTransactionDetails().getTransaction().getOrigin() != null) {
+                    event.getTransactionDetails().getTransaction().getOrigin() != null) {
                 return true;
             }
             if (event.getTransactionDetails().getInfo() != null &&
-                            event.getTransactionDetails().getInfo().getClientId() != null) {
+                    event.getTransactionDetails().getInfo().getClientId() != null) {
                 return true;
             }
         }
