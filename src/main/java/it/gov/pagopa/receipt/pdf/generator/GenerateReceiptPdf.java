@@ -21,6 +21,7 @@ import it.gov.pagopa.receipt.pdf.generator.service.ReceiptCosmosService;
 import it.gov.pagopa.receipt.pdf.generator.service.impl.GenerateReceiptPdfServiceImpl;
 import it.gov.pagopa.receipt.pdf.generator.service.impl.ReceiptCosmosServiceImpl;
 import it.gov.pagopa.receipt.pdf.generator.utils.ObjectMapperUtils;
+import it.gov.pagopa.receipt.pdf.generator.utils.ReceiptUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
@@ -122,7 +123,7 @@ public class GenerateReceiptPdf {
         List<BizEvent> listOfBizEvent = getBizEventListFromMessage(context, bizEventMessage);
 
         if(!listOfBizEvent.isEmpty()){
-            String receiptEventReference = getReceiptEventReference(listOfBizEvent);
+            String receiptEventReference = ReceiptUtils.getReceiptEventReference(listOfBizEvent.get(0), listOfBizEvent.size() > 1);
 
             logger.info("[{}] function called at {} for receipt with bizEvent reference {}",
                     context.getFunctionName(), LocalDateTime.now(), receiptEventReference);
@@ -204,22 +205,6 @@ public class GenerateReceiptPdf {
             }
             documentdb.setValue(receipt);
         }
-    }
-
-    private static String getReceiptEventReference(List<BizEvent> listOfBizEvent) {
-        String receiptEventReference = null;
-
-        BizEvent firstBizEvent = listOfBizEvent.get(0);
-        if(listOfBizEvent.size() > 1){
-            if(firstBizEvent != null &&
-                    firstBizEvent.getTransactionDetails() != null &&
-            firstBizEvent.getTransactionDetails().getTransaction() != null){
-                receiptEventReference = String.valueOf(listOfBizEvent.get(0).getTransactionDetails().getTransaction().getIdTransaction());
-            }
-        } else {
-            receiptEventReference = firstBizEvent.getId();
-        }
-        return receiptEventReference;
     }
 
     private boolean isReceiptInInValidState(Receipt receipt) {

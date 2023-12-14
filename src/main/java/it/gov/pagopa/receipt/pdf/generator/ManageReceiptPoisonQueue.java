@@ -24,6 +24,7 @@ import it.gov.pagopa.receipt.pdf.generator.service.ReceiptCosmosService;
 import it.gov.pagopa.receipt.pdf.generator.service.impl.ReceiptCosmosServiceImpl;
 import it.gov.pagopa.receipt.pdf.generator.utils.Aes256Utils;
 import it.gov.pagopa.receipt.pdf.generator.utils.ObjectMapperUtils;
+import it.gov.pagopa.receipt.pdf.generator.utils.ReceiptUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -132,7 +133,7 @@ public class ManageReceiptPoisonQueue {
     }
 
     private void saveReceiptErrorAndUpdateReceipt(String errorMessage, OutputBinding<Receipt> receiptsOutputBinding, OutputBinding<ReceiptError> receiptErrorOutputBinding, ExecutionContext context, BizEvent bizEvent, boolean isMultiItem) {
-        String bizEventReference = getReceiptEventReference(bizEvent, isMultiItem);
+        String bizEventReference = ReceiptUtils.getReceiptEventReference(bizEvent, isMultiItem);
         saveToReceiptError(context, errorMessage, bizEventReference, receiptErrorOutputBinding);
         if (bizEventReference != null) {
             updateReceiptToReview(context, bizEventReference, receiptsOutputBinding);
@@ -173,18 +174,5 @@ public class ManageReceiptPoisonQueue {
             logger.error("[{}] error updating status of receipt with eventId {}, receipt not found",
                     context.getFunctionName(), eventId, e);
         }
-    }
-
-    private static String getReceiptEventReference(BizEvent bizEvent, boolean isMultiItem) {
-        String receiptEventReference = null;
-
-        if (bizEvent != null) {
-            if (isMultiItem && bizEvent.getTransactionDetails() != null && bizEvent.getTransactionDetails().getTransaction() != null) {
-                receiptEventReference = String.valueOf(bizEvent.getTransactionDetails().getTransaction().getIdTransaction());
-            } else {
-                receiptEventReference = bizEvent.getId();
-            }
-        }
-        return receiptEventReference;
     }
 }

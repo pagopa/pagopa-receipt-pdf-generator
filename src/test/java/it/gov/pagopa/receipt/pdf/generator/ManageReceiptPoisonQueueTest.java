@@ -43,7 +43,7 @@ import static org.mockito.Mockito.*;
 class ManageReceiptPoisonQueueTest {
 
     public static final String BIZ_EVENT_ID = "bizEventId";
-    private static final long ID_TRANSACTION = 0L;
+    private static final long ID_TRANSACTION = 100L;
     private final String AES_SALT = "salt";
     private final String AES_KEY = "key";
     private final String VALID_CONTENT_TO_RETRY = buildQueueBizEventList(1, false);
