@@ -2,6 +2,7 @@ package it.gov.pagopa.receipt.pdf.generator;
 
 import com.azure.core.http.rest.Response;
 import com.azure.storage.queue.models.SendMessageResult;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.HttpStatus;
 import com.microsoft.azure.functions.OutputBinding;
@@ -23,6 +24,7 @@ import it.gov.pagopa.receipt.pdf.generator.service.ReceiptCosmosService;
 import it.gov.pagopa.receipt.pdf.generator.service.impl.ReceiptCosmosServiceImpl;
 import it.gov.pagopa.receipt.pdf.generator.utils.Aes256Utils;
 import it.gov.pagopa.receipt.pdf.generator.utils.ObjectMapperUtils;
+import it.gov.pagopa.receipt.pdf.generator.utils.ReceiptUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -93,15 +95,16 @@ public class RetryReviewedPoisonMessages {
                 if (receiptError != null && receiptError.getStatus().equals(ReceiptErrorStatusType.REVIEWED)) {
 
                     try {
-                        String decodedEvent = Aes256Utils.decrypt(receiptError.getMessagePayload());
+                        String decodedEventList = Aes256Utils.decrypt(receiptError.getMessagePayload());
 
                         //Find and update Receipt with bizEventId
-                        BizEvent bizEvent = ObjectMapperUtils.mapString(decodedEvent, BizEvent.class);
-                        updateReceiptToInserted(context, bizEvent.getId());
+                        List<BizEvent> listOfBizEvents = ObjectMapperUtils.mapBizEventListString(decodedEventList, new TypeReference<>() {});
+                        String receiptEventReference = ReceiptUtils.getReceiptEventReference(listOfBizEvents.get(0), listOfBizEvents.size() > 1);
+                        updateReceiptToInserted(context, receiptEventReference);
 
                         //Send decoded BizEvent to queue
                         Response<SendMessageResult> sendMessageResult =
-                            this.queueService.sendMessageToQueue(Base64.getMimeEncoder().encodeToString(decodedEvent.getBytes()));
+                            this.queueService.sendMessageToQueue(Base64.getMimeEncoder().encodeToString(decodedEventList.getBytes()));
                         if (sendMessageResult.getStatusCode() != HttpStatus.CREATED.value()) {
                             throw new UnableToQueueException("Unable to queue due to error: " +
                                     sendMessageResult.getStatusCode());
