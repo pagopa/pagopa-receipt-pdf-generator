@@ -6,18 +6,7 @@ import it.gov.pagopa.receipt.pdf.generator.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.enumeration.ReasonErrorCode;
 import it.gov.pagopa.receipt.pdf.generator.exception.PdfJsonMappingException;
 import it.gov.pagopa.receipt.pdf.generator.exception.TemplateDataMappingException;
-import it.gov.pagopa.receipt.pdf.generator.model.template.Cart;
-import it.gov.pagopa.receipt.pdf.generator.model.template.Debtor;
-import it.gov.pagopa.receipt.pdf.generator.model.template.Item;
-import it.gov.pagopa.receipt.pdf.generator.model.template.PSP;
-import it.gov.pagopa.receipt.pdf.generator.model.template.PSPFee;
-import it.gov.pagopa.receipt.pdf.generator.model.template.Payee;
-import it.gov.pagopa.receipt.pdf.generator.model.template.PaymentMethod;
-import it.gov.pagopa.receipt.pdf.generator.model.template.ReceiptPDFTemplate;
-import it.gov.pagopa.receipt.pdf.generator.model.template.RefNumber;
-import it.gov.pagopa.receipt.pdf.generator.model.template.Transaction;
-import it.gov.pagopa.receipt.pdf.generator.model.template.User;
-import it.gov.pagopa.receipt.pdf.generator.model.template.UserData;
+import it.gov.pagopa.receipt.pdf.generator.model.template.*;
 import it.gov.pagopa.receipt.pdf.generator.service.BuildTemplateService;
 import it.gov.pagopa.receipt.pdf.generator.utils.ObjectMapperUtils;
 import it.gov.pagopa.receipt.pdf.generator.utils.TemplateDataField;
@@ -31,11 +20,7 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.TimeZone;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -304,15 +289,15 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
         throw new TemplateDataMappingException(formatErrorMessage(TemplateDataField.CART_ITEM_PAYEE_TAX_CODE), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
     }
 
-    private String getItemSubject(Receipt receipt) {
+    private String getItemSubject(Receipt receipt) throws TemplateDataMappingException {
         if (receipt.getEventData() != null &&
                 !receipt.getEventData().getCart().isEmpty() &&
-                receipt.getEventData().getCart().get(0) != null
+                receipt.getEventData().getCart().get(0) != null &&
+                receipt.getEventData().getCart().get(0).getSubject() != null
         ) {
             return receipt.getEventData().getCart().get(0).getSubject();
         }
-
-        return null;
+        throw new TemplateDataMappingException(formatErrorMessage(TemplateDataField.CART_ITEM_SUBJECT), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
     }
 
     private String getItemAmount(BizEvent event) throws TemplateDataMappingException {
@@ -367,11 +352,11 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
     private boolean getProcessedByPagoPA(BizEvent event) {
         if (event.getTransactionDetails() != null) {
             if (event.getTransactionDetails().getTransaction() != null &&
-                            event.getTransactionDetails().getTransaction().getOrigin() != null) {
+                    event.getTransactionDetails().getTransaction().getOrigin() != null) {
                 return true;
             }
             if (event.getTransactionDetails().getInfo() != null &&
-                            event.getTransactionDetails().getInfo().getClientId() != null) {
+                    event.getTransactionDetails().getInfo().getClientId() != null) {
                 return true;
             }
         }
@@ -450,3 +435,4 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
         return fullName.replaceAll("[,;:/]+", " ");
     }
 }
+
