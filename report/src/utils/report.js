@@ -81,9 +81,9 @@ let p = res.then(function(result) {
     // console.log(dic_sum);
     report.text+=`Pagamenti effettuati sul nodo: \`${sum.toLocaleString('it-IT')}\` \n`;
     // :large_green_circle: Ricevute inviate su IO: YY% · numeroAssolutoB
-    report.text+=`🟢 Ricevute inviate su IO: *${(100*dic_sum["IO_NOTIFIED"]/sum).toFixed(2)}%* - \`${dic_sum["IO_NOTIFIED"].toLocaleString('it-IT')}\` \n`;
+    report.text+=`🟢 Ricevute inviate su IO: *${(100*dic_sum["IO_NOTIFIED"]/sum).toFixed(2)}%* - \`${dic_sum["IO_NOTIFIED"]?.toLocaleString('it-IT')}\` \n`;
     // :white_circle: Ricevute di debitori non presenti su IO: ZZ% · numeroAssolutoC
-    report.text+=`⚪️ Ricevute di debitori/pagatori non presenti su IO: *${(100*dic_sum["NOT_TO_NOTIFY"]/sum).toFixed(2)}%* - \`${dic_sum["NOT_TO_NOTIFY"].toLocaleString('it-IT')}\` \n`;
+    report.text+=`⚪️ Ricevute di debitori/pagatori non presenti su IO: *${(100*dic_sum["NOT_TO_NOTIFY"]/sum).toFixed(2)}%* - \`${dic_sum["NOT_TO_NOTIFY"]?.toLocaleString('it-IT')}\` \n`;
     // :large_yellow_circle: Ricevute in attesa di essere inviate: QQ% · numeroAssolutoD
     let GENERATED_INSERTED = dic_sum["GENERATED"] + dic_sum["INSERTED"];
     report.text+=`🟡 Ricevute in attesa di essere inviate: *${(100*GENERATED_INSERTED/sum).toFixed(2)}%* - \`${GENERATED_INSERTED.toLocaleString('it-IT')}\` \n`;
@@ -101,7 +101,7 @@ let p = res.then(function(result) {
     // })
 
     console.log(report);
-    console.log(JSON.stringify(report));
+    // console.log(JSON.stringify(report));
     fs.writeFileSync('report.json', JSON.stringify(report));
 
 
