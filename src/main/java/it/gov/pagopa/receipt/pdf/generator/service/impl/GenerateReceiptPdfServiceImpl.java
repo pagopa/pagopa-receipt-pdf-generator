@@ -99,7 +99,7 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
         //Generate debtor's partial PDF
         if (receiptAlreadyCreated(receipt.getMdAttach())) {
             pdfGeneration.setDebtorMetadata(PdfMetadata.builder().statusCode(ALREADY_CREATED).build());
-        } else {
+        } else if (!"ANONIMO".equals(debtorCF)) {
             PdfMetadata generationResult = generateAndSavePDFReceipt(bizEvent, receipt, DEBTOR_TEMPLATE_SUFFIX, true, workingDirPath);
             pdfGeneration.setDebtorMetadata(generationResult);
         }
@@ -119,16 +119,18 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
             return false;
         }
 
-        if (debtorMetadata.getStatusCode() == HttpStatus.SC_OK) {
-            ReceiptMetadata receiptMetadata = new ReceiptMetadata();
-            receiptMetadata.setName(debtorMetadata.getDocumentName());
-            receiptMetadata.setUrl(debtorMetadata.getDocumentUrl());
+        if (receipt.getEventData() != null && !"ANONIMO".equals(receipt.getEventData().getDebtorFiscalCode())) {
+            if (debtorMetadata.getStatusCode() == HttpStatus.SC_OK) {
+                ReceiptMetadata receiptMetadata = new ReceiptMetadata();
+                receiptMetadata.setName(debtorMetadata.getDocumentName());
+                receiptMetadata.setUrl(debtorMetadata.getDocumentUrl());
 
-            receipt.setMdAttach(receiptMetadata);
-        } else if (debtorMetadata.getStatusCode() != ALREADY_CREATED) {
-            ReasonError reasonError = new ReasonError(debtorMetadata.getStatusCode(), debtorMetadata.getErrorMessage());
-            receipt.setReasonErr(reasonError);
-            result = false;
+                receipt.setMdAttach(receiptMetadata);
+            } else if (debtorMetadata.getStatusCode() != ALREADY_CREATED) {
+                ReasonError reasonError = new ReasonError(debtorMetadata.getStatusCode(), debtorMetadata.getErrorMessage());
+                receipt.setReasonErr(reasonError);
+                result = false;
+            }
         }
 
         if (pdfGeneration.isGenerateOnlyDebtor()) {
