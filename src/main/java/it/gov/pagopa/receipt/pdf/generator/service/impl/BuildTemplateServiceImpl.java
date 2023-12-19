@@ -89,7 +89,7 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
                         .requestedByDebtor(requestedByDebtor)
                         .processedByPagoPA(getProcessedByPagoPA(bizEvent))
                         .build())
-                .user(requestedByDebtor ?
+                .user(requestedByDebtor || "ANONIMO".equals(receipt.getEventData().getDebtorFiscalCode()) ?
                         null :
                         User.builder()
                                 .data(UserData.builder()
