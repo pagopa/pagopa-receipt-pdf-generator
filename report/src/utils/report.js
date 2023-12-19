@@ -67,20 +67,44 @@ let report_ = '{"text":""}'
 
 report=JSON.parse(report_);
 
-report.text = `Report 📈 receipt 🧾 of ${yesterday_} 🧐\n`
+report.text = `📈 _Riepilogo del_ *${yesterday_}*\n`
 let p = res.then(function(result) {
     // console.log(result.resources.forEach(e => {
     //     console.log(`> ${dictionary[e.status]} ${e.num.toString().padEnd(8, ' ')}\t ${e.status} `);
     // }))
-    let index = 0;
-    result.resources.forEach(e => {
-      // report["detail"].push( {"status": `${dictionary[e.status]} ${e.status}`, "num":`${e.num}` });
-      report.text+=`${dictionary[e.status]} ${e.num.toString().padEnd(15, ' ')}\t ${e.status} \n`
-    })
+    let sum = 0;
+    let dic_sum = {}
+    result.resources.forEach(element => {
+      sum += element.num;
+      dic_sum[element.status] = element.num;
+    });
+    // console.log(dic_sum);
+    report.text+=`Pagamenti effettuati sul nodo: \`${sum.toLocaleString('it-IT')}\` \n`;
+    // :large_green_circle: Ricevute inviate su IO: YY% · numeroAssolutoB
+    report.text+=`🟢 Ricevute inviate su IO: *${(100*dic_sum["IO_NOTIFIED"]/sum).toFixed(2)}%* - \`${dic_sum["IO_NOTIFIED"]?.toLocaleString('it-IT')}\` \n`;
+    // :white_circle: Ricevute di debitori non presenti su IO: ZZ% · numeroAssolutoC
+    report.text+=`⚪️ Ricevute di debitori/pagatori non presenti su IO: *${(100*dic_sum["NOT_TO_NOTIFY"]/sum).toFixed(2)}%* - \`${dic_sum["NOT_TO_NOTIFY"]?.toLocaleString('it-IT')}\` \n`;
+    // :large_yellow_circle: Ricevute in attesa di essere inviate: QQ% · numeroAssolutoD
+    let GENERATED_INSERTED = dic_sum["GENERATED"] + dic_sum["INSERTED"];
+    report.text+=`🟡 Ricevute in attesa di essere inviate: *${(100*GENERATED_INSERTED/sum).toFixed(2)}%* - \`${GENERATED_INSERTED.toLocaleString('it-IT')}\` \n`;
+    // :red_circle: Ricevute non inviate a causa di un errore: NN% · numeroAssolutoE (edited)
+    let errori = (dic_sum["NOT_QUEUE_SENT"] != undefined ? dic_sum["NOT_QUEUE_SENT"] : 0) +
+    (dic_sum["FAILED"] != undefined ? dic_sum["FAILED"] : 0) +
+    (dic_sum["IO_ERROR_TO_NOTIFY"] != undefined ? dic_sum["IO_ERROR_TO_NOTIFY"] : 0) +
+    (dic_sum["UNABLE_TO_SEND"] != undefined ? dic_sum["UNABLE_TO_SEND"] : 0) +
+    (dic_sum["TO_REVIEW"] !=undefined ? dic_sum["TO_REVIEW"] : 0);
+    report.text+=`🔴 Ricevute non inviate a causa di un errore: *${(100*errori/sum).toFixed(2)}%* - \`${errori.toLocaleString('it-IT')}\` \n`;
 
-    console.log(JSON.stringify(report));
+    // result.resources.forEach(e => {
+    //   // report["detail"].push( {"status": `${dictionary[e.status]} ${e.status}`, "num":`${e.num}` });
+    //   report.text+=`${dictionary[e.status]} ${e.num.toString().padEnd(15, ' ')}\t ${e.status} \n`
+    // })
+
+    console.log(report);
+    // console.log(JSON.stringify(report));
     fs.writeFileSync('report.json', JSON.stringify(report));
 
 
  })
+
 
