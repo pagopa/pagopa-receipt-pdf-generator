@@ -89,7 +89,7 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
                         .requestedByDebtor(requestedByDebtor)
                         .processedByPagoPA(getProcessedByPagoPA(bizEvent))
                         .build())
-                .user(requestedByDebtor || "ANONIMO".equals(receipt.getEventData().getDebtorFiscalCode()) ?
+                .user(requestedByDebtor ?
                         null :
                         User.builder()
                                 .data(UserData.builder()
@@ -104,10 +104,12 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
                                                 .type(getRefNumberType(bizEvent))
                                                 .value(getRefNumberValue(bizEvent))
                                                 .build())
-                                        .debtor(Debtor.builder()
-                                                .fullName(getDebtorFullName(bizEvent))
-                                                .taxCode(getDebtorTaxCode(bizEvent))
-                                                .build())
+                                        .debtor("ANONIMO".equals(receipt.getEventData().getDebtorFiscalCode()) ?
+                                                null :
+                                                Debtor.builder()
+                                                        .fullName(getDebtorFullName(bizEvent))
+                                                        .taxCode(getDebtorTaxCode(bizEvent))
+                                                    .build())
                                         .payee(Payee.builder()
                                                 .name(getPayeeName(bizEvent))
                                                 .taxCode(getPayeeTaxCode(bizEvent))
