@@ -68,6 +68,7 @@ jobs:
         run: |
 
             export RECEIPTS_COSMOS_CONN_STRING='${{ secrets.RECEIPTS_COSMOS_CONN_STRING }}'
+
             export BIZ_COSMOS_CONN_STRING='${{ secrets.BIZ_COSMOS_CONN_STRING }}'
 
             cd ./report
