@@ -7,7 +7,7 @@ const { getReceiptsStatusCount, getBizCount } = require("./utils");
 
 let currentDate = new Date()
 let yesterday = new Date(currentDate)
-yesterday.setDate(yesterday.getDate())
+yesterday.setDate(yesterday.getDate() - 1)
 // console.log(yesterday);
 
 function padTo2Digits(num) {
