@@ -7,7 +7,7 @@ const { getReceiptsStatusCount, getBizCount } = require("./utils");
 
 let currentDate = new Date()
 let yesterday = new Date(currentDate)
-yesterday.setDate(yesterday.getDate() - 1)
+yesterday.setDate(yesterday.getDate())
 // console.log(yesterday);
 
 function padTo2Digits(num) {
@@ -86,12 +86,14 @@ const start = async function (a, b) {
       dic_sum[element.status] = element.num;
     });
     // console.log(dic_sum);
-    report.text += `Pagamenti effettuati sul nodo 🪢 : \`${totBiz.toLocaleString('it-IT')}\` \n`;
-    report.text += `Pagamenti con CF debitore/pagatore noto: \`${sum.toLocaleString('it-IT')}\` \n`;
+
+    report.text += `-\n`;
+    report.text += `Pagamenti registrati sul nodo 🪢 \`${totBiz.toLocaleString('it-IT')}\` (di cui \`${sum.toLocaleString('it-IT')}\` con CF debitore e/o pagatore noto)\n`;
+    report.text += `-\n`;
     // :large_green_circle: Ricevute inviate su IO: YY% · numeroAssolutoB
     report.text += `🟢 Ricevute inviate su IO: *${(100 * dic_sum["IO_NOTIFIED"] / sum).toFixed(2)}%* - \`${dic_sum["IO_NOTIFIED"]?.toLocaleString('it-IT')}\` \n`;
     // :white_circle: Ricevute di debitori non presenti su IO: ZZ% · numeroAssolutoC
-    report.text += `⚪️ Ricevute di debitori/pagatori non presenti su IO: *${(100 * dic_sum["NOT_TO_NOTIFY"] / sum).toFixed(2)}%* - \`${dic_sum["NOT_TO_NOTIFY"]?.toLocaleString('it-IT')}\` \n`;
+    report.text += `⚪️ Ricevute di debitori/pagatori non presenti su IO : *${(100 * dic_sum["NOT_TO_NOTIFY"] / sum).toFixed(2)}%* - \`${dic_sum["NOT_TO_NOTIFY"]?.toLocaleString('it-IT')}\` \n`;
     // :large_yellow_circle: Ricevute in attesa di essere inviate: QQ% · numeroAssolutoD
     let GENERATED_INSERTED = dic_sum["GENERATED"] + dic_sum["INSERTED"];
     report.text += `🟡 Ricevute in attesa di essere inviate: *${(100 * GENERATED_INSERTED / sum).toFixed(2)}%* - \`${GENERATED_INSERTED.toLocaleString('it-IT')}\` \n`;
