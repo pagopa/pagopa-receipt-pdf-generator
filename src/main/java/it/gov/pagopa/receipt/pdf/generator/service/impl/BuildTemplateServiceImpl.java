@@ -104,10 +104,12 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
                                                 .type(getRefNumberType(bizEvent))
                                                 .value(getRefNumberValue(bizEvent))
                                                 .build())
-                                        .debtor(Debtor.builder()
-                                                .fullName(getDebtorFullName(bizEvent))
-                                                .taxCode(getDebtorTaxCode(bizEvent))
-                                                .build())
+                                        .debtor("ANONIMO".equals(receipt.getEventData().getDebtorFiscalCode()) ?
+                                                null :
+                                                Debtor.builder()
+                                                        .fullName(getDebtorFullName(bizEvent))
+                                                        .taxCode(getDebtorTaxCode(bizEvent))
+                                                    .build())
                                         .payee(Payee.builder()
                                                 .name(getPayeeName(bizEvent))
                                                 .taxCode(getPayeeTaxCode(bizEvent))
