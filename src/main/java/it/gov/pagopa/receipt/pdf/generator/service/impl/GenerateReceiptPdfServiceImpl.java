@@ -161,7 +161,7 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
             result = false;
         }
 
-        if (debtorMetadata.getStatusCode() == ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode()
+        if ((debtorMetadata != null && debtorMetadata.getStatusCode() == ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode())
                 || payerMetadata.getStatusCode() == ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode()) {
             String errMsg = String.format("Receipt generation fail for debtor (status: %s) and/or payer (status: %s)",
                     debtorMetadata.getStatusCode(), payerMetadata.getStatusCode());

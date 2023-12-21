@@ -12,6 +12,8 @@ import it.gov.pagopa.receipt.pdf.generator.utils.TemplateDataField;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -2008,7 +2010,8 @@ class BuildTemplateServiceImplTest {
                         .iuv(IUV)
                         .build())
                 .build();
-        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(event, GENERATED_BY_PAYER, Receipt.builder().build()));
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(event, GENERATED_BY_PAYER,
+                Receipt.builder().eventData(EventData.builder().debtorFiscalCode("DEBTOR_FC").build()).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
         assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.CART_ITEM_DEBTOR_TAX_CODE), e.getMessage());
@@ -2039,7 +2042,8 @@ class BuildTemplateServiceImplTest {
                         .entityUniqueIdentifierValue(DEBTOR_VALID_CF)
                         .build())
                 .build();
-        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(event, GENERATED_BY_PAYER, Receipt.builder().build()));
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(event, GENERATED_BY_PAYER, Receipt.builder().eventData(
+                EventData.builder().debtorFiscalCode("DEBTOR_FC").build()).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
         assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.CART_ITEM_PAYEE_TAX_CODE), e.getMessage());
@@ -2122,7 +2126,10 @@ class BuildTemplateServiceImplTest {
                         .build()
                 )
                 .build();
-        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(event, GENERATED_BY_PAYER, Receipt.builder().build()));
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () ->
+                buildTemplateService.buildTemplate(event, GENERATED_BY_PAYER, Receipt.builder().eventData(
+                EventData.builder().cart(Collections.singletonList(CartItem.builder().build()))
+                        .debtorFiscalCode("DEBTOR_FC").build()).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
         assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.CART_ITEM_SUBJECT), e.getMessage());
