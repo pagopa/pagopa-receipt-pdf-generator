@@ -114,12 +114,14 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
     public boolean verifyAndUpdateReceipt(Receipt receipt, PdfGeneration pdfGeneration) throws ReceiptGenerationNotToRetryException {
         PdfMetadata debtorMetadata = pdfGeneration.getDebtorMetadata();
         boolean result = true;
-        if (debtorMetadata == null) {
-            logger.error("Unexpected result for debtor pdf receipt generation. Receipt id {}", receipt.getId());
-            return false;
-        }
 
         if (receipt.getEventData() != null && !"ANONIMO".equals(receipt.getEventData().getDebtorFiscalCode())) {
+
+            if (debtorMetadata == null) {
+                logger.error("Unexpected result for debtor pdf receipt generation. Receipt id {}", receipt.getId());
+                return false;
+            }
+
             if (debtorMetadata.getStatusCode() == HttpStatus.SC_OK) {
                 ReceiptMetadata receiptMetadata = new ReceiptMetadata();
                 receiptMetadata.setName(debtorMetadata.getDocumentName());
