@@ -885,7 +885,7 @@ class GenerateReceiptPdfServiceImplTest {
                 .transactionDetails(TransactionDetails.builder()
                         .wallet(WalletItem.builder().info(Info.builder().brand("MASTER").build()).pagoPa(false).favourite(false).build())
                         .transaction(Transaction.builder()
-                                .idTransaction(1L)
+                                .idTransaction("1")
                                 .grandTotal(0L)
                                 .amount(7000L)
                                 .fee(200L)
