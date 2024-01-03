@@ -77,7 +77,7 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
                 .serviceCustomerId(getServiceCustomerId(receipt))
                 .transaction(Transaction.builder()
                         .timestamp(getTimestamp(bizEvent))
-                        .amount(getAmount(bizEvent))
+                        .amount(getAmount(receipt))
                         .psp(getPsp(bizEvent))
                         .rrn(getRnn(bizEvent))
                         .paymentMethod(PaymentMethod.builder()
@@ -143,7 +143,7 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
         if (receipt.getEventId() != null) {
             return receipt.getEventId();
         }
-        throw new TemplateDataMappingException(formatErrorMessage(TemplateDataField.SERVICE_CUSTOMER_ID, "undefined"), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
+        throw new TemplateDataMappingException(formatErrorMessage(TemplateDataField.SERVICE_CUSTOMER_ID, receipt.getId(), false), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
     }
 
     private String getTimestamp(BizEvent event) throws TemplateDataMappingException {
@@ -157,22 +157,15 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
         if (event.getPaymentInfo() != null && event.getPaymentInfo().getPaymentDateTime() != null) {
             return dateFormat(event.getPaymentInfo().getPaymentDateTime());
         }
-        throw new TemplateDataMappingException(formatErrorMessage(TemplateDataField.TRANSACTION_TIMESTAMP, event.getId()), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
+        throw new TemplateDataMappingException(formatErrorMessage(TemplateDataField.TRANSACTION_TIMESTAMP, event.getId(), true), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
     }
 
-    private String getAmount(BizEvent event) throws TemplateDataMappingException {
-        if (
-                event.getTransactionDetails() != null &&
-                        event.getTransactionDetails().getTransaction() != null &&
-                        event.getTransactionDetails().getTransaction().getGrandTotal() != 0L
-        ) {
-            // Amount in transactionDetails is defined in cents (es. 25500 not 255.00)
-            return currencyFormat(String.valueOf(event.getTransactionDetails().getTransaction().getGrandTotal() / 100.00));
+    private String getAmount(Receipt receipt) throws TemplateDataMappingException {
+        if(receipt.getEventData() != null &&
+         receipt.getEventData().getAmount() != null){
+            return receipt.getEventData().getAmount();
         }
-        if (event.getPaymentInfo() != null && event.getPaymentInfo().getAmount() != null) {
-            return currencyFormat(event.getPaymentInfo().getAmount());
-        }
-        throw new TemplateDataMappingException(formatErrorMessage(TemplateDataField.TRANSACTION_AMOUNT, event.getId()), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
+        throw new TemplateDataMappingException(formatErrorMessage(TemplateDataField.TRANSACTION_AMOUNT, receipt.getId(), false), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
     }
 
     private String getRnn(BizEvent event) throws TemplateDataMappingException {
@@ -191,7 +184,7 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
                 return event.getPaymentInfo().getIUR();
             }
         }
-        throw new TemplateDataMappingException(formatErrorMessage(TemplateDataField.TRANSACTION_RRN, event.getId()), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
+        throw new TemplateDataMappingException(formatErrorMessage(TemplateDataField.TRANSACTION_RRN, event.getId(), true), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
     }
 
     private String getAuthCode(BizEvent event) {
@@ -243,7 +236,7 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
         if (event.getPayer() != null && event.getPayer().getFullName() != null) {
             return event.getPayer().getFullName();
         }
-        throw new TemplateDataMappingException(formatErrorMessage(TemplateDataField.USER_DATA_FULL_NAME, event.getId()), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
+        throw new TemplateDataMappingException(formatErrorMessage(TemplateDataField.USER_DATA_FULL_NAME, event.getId(), true), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
     }
 
     private String getUserTaxCode(BizEvent event) throws TemplateDataMappingException {
@@ -257,7 +250,7 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
         if (event.getPayer() != null && event.getPayer().getEntityUniqueIdentifierValue() != null) {
             return event.getPayer().getEntityUniqueIdentifierValue();
         }
-        throw new TemplateDataMappingException(formatErrorMessage(TemplateDataField.USER_DATA_TAX_CODE, event.getId()), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
+        throw new TemplateDataMappingException(formatErrorMessage(TemplateDataField.USER_DATA_TAX_CODE, event.getId(), true), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
     }
 
     private String getRefNumberType(BizEvent event) throws TemplateDataMappingException {
@@ -269,7 +262,7 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
                 return REF_TYPE_NOTICE;
             }
         }
-        throw new TemplateDataMappingException(formatErrorMessage(TemplateDataField.CART_ITEM_REF_NUMBER_TYPE, event.getId()), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
+        throw new TemplateDataMappingException(formatErrorMessage(TemplateDataField.CART_ITEM_REF_NUMBER_TYPE, event.getId(), true), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
     }
 
     private String getRefNumberValue(BizEvent event) throws TemplateDataMappingException {
@@ -281,7 +274,7 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
                 return event.getDebtorPosition().getNoticeNumber();
             }
         }
-        throw new TemplateDataMappingException(formatErrorMessage(TemplateDataField.CART_ITEM_REF_NUMBER_VALUE, event.getId()), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
+        throw new TemplateDataMappingException(formatErrorMessage(TemplateDataField.CART_ITEM_REF_NUMBER_VALUE, event.getId(), true), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
     }
 
     private String getDebtorFullName(BizEvent event) {
@@ -292,7 +285,7 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
         if (event.getDebtor() != null && event.getDebtor().getEntityUniqueIdentifierValue() != null) {
             return event.getDebtor().getEntityUniqueIdentifierValue();
         }
-        throw new TemplateDataMappingException(formatErrorMessage(TemplateDataField.CART_ITEM_DEBTOR_TAX_CODE, event.getId()), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
+        throw new TemplateDataMappingException(formatErrorMessage(TemplateDataField.CART_ITEM_DEBTOR_TAX_CODE, event.getId(), true), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
     }
 
     private String getPayeeName(BizEvent event) {
@@ -303,7 +296,7 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
         if (event.getCreditor() != null && event.getCreditor().getIdPA() != null) {
             return event.getCreditor().getIdPA();
         }
-        throw new TemplateDataMappingException(formatErrorMessage(TemplateDataField.CART_ITEM_PAYEE_TAX_CODE, event.getId()), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
+        throw new TemplateDataMappingException(formatErrorMessage(TemplateDataField.CART_ITEM_PAYEE_TAX_CODE, event.getId(), true), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
     }
 
     private String getItemSubject(Receipt receipt, int index) throws TemplateDataMappingException {
@@ -314,14 +307,14 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
         ) {
             return receipt.getEventData().getCart().get(index).getSubject();
         }
-        throw new TemplateDataMappingException(formatErrorMessage(TemplateDataField.CART_ITEM_SUBJECT, receipt.getEventId()), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
+        throw new TemplateDataMappingException(formatErrorMessage(TemplateDataField.CART_ITEM_SUBJECT, receipt.getId(), false), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
     }
 
     private String getItemAmount(BizEvent event, boolean currencyFormatted) throws TemplateDataMappingException {
         if (event.getPaymentInfo() != null && event.getPaymentInfo().getAmount() != null) {
             return currencyFormatted ? currencyFormat(event.getPaymentInfo().getAmount()) : event.getPaymentInfo().getAmount();
         }
-        throw new TemplateDataMappingException(formatErrorMessage(TemplateDataField.CART_ITEM_AMOUNT, event.getId()), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
+        throw new TemplateDataMappingException(formatErrorMessage(TemplateDataField.CART_ITEM_AMOUNT, event.getId(), true), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
     }
 
     private String getPspFee(BizEvent event) {
@@ -355,13 +348,13 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
                     .logo(pspFee != null ? getOrThrow(info, "logo", TemplateDataField.TRANSACTION_PSP_LOGO, event.getId()) : info.get("logo"))
                     .build();
         }
-        throw new TemplateDataMappingException(formatErrorMessage(TemplateDataField.TRANSACTION_PSP, event.getId()), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
+        throw new TemplateDataMappingException(formatErrorMessage(TemplateDataField.TRANSACTION_PSP, event.getId(), true), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
     }
 
     private String getOrThrow(LinkedHashMap<String, String> map, String key, String errorKey, String eventId) throws TemplateDataMappingException {
         String value = map.get(key);
         if (value == null) {
-            throw new TemplateDataMappingException(formatErrorMessage(errorKey, eventId), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
+            throw new TemplateDataMappingException(formatErrorMessage(errorKey, eventId, true), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
         }
         return value;
     }
@@ -434,8 +427,9 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
         }
     }
 
-    private String formatErrorMessage(String missingProperty, String bizEventId) {
-        return String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, missingProperty, bizEventId);
+    private String formatErrorMessage(String missingProperty, String id, Boolean isEvent) {
+        String object = Boolean.TRUE.equals(isEvent) ? "bizEvent" : "receipt";
+        return String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, object, missingProperty, object, id);
     }
 
     private String formatFullName(String fullName, String fiscalCode) {
