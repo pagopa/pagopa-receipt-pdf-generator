@@ -47,7 +47,7 @@ class RetryReviewedPoisonMessagesTest {
     public static final String BIZ_EVENT_ID = "bizEventId";
     public static final String RECEIPT_ERROR_ID = "receiptErrorID";
     public static final String COSMOS_ERROR = "Cosmos Error";
-    private static final long ID_TRANSACTION = 100L;
+    private static final String ID_TRANSACTION = "100";
     private final String AES_SALT = "salt";
     private final String AES_KEY = "key";
 
@@ -235,12 +235,12 @@ class RetryReviewedPoisonMessagesTest {
         ReceiptError receiptError = ReceiptError.builder()
                 .messagePayload(encryptedMultiItemString)
                 .status(ReceiptErrorStatusType.REVIEWED)
-                .bizEventId(String.valueOf(ID_TRANSACTION))
+                .bizEventId(ID_TRANSACTION)
                 .id(RECEIPT_ERROR_ID)
                 .build();
 
-        Receipt receipt = Receipt.builder().status(ReceiptStatusType.TO_REVIEW).eventId(String.valueOf(ID_TRANSACTION)).build();
-        when(cosmosMock.getReceipt(String.valueOf(ID_TRANSACTION))).thenReturn(receipt);
+        Receipt receipt = Receipt.builder().status(ReceiptStatusType.TO_REVIEW).eventId(ID_TRANSACTION).build();
+        when(cosmosMock.getReceipt(ID_TRANSACTION)).thenReturn(receipt);
 
         when(queueResponse.getStatusCode()).thenReturn(HttpStatus.SC_CREATED);
         when(queueMock.sendMessageToQueue(any())).thenReturn(queueResponse);
@@ -252,7 +252,7 @@ class RetryReviewedPoisonMessagesTest {
 
         verify(cosmosMock).updateReceipt(receiptCaptor.capture());
         Receipt receiptCaptorValue = receiptCaptor.getValue();
-        assertEquals(String.valueOf(ID_TRANSACTION), receiptCaptorValue.getEventId());
+        assertEquals(ID_TRANSACTION, receiptCaptorValue.getEventId());
         assertEquals(ReceiptStatusType.INSERTED, receiptCaptorValue.getStatus());
 
         verify(queueMock).sendMessageToQueue(messageCaptor.capture());
@@ -276,6 +276,7 @@ class RetryReviewedPoisonMessagesTest {
                             .transactionDetails(TransactionDetails.builder()
                                     .transaction(Transaction.builder()
                                             .idTransaction(ID_TRANSACTION)
+                                            .transactionId(ID_TRANSACTION)
                                             .build())
                                     .build())
                             .build()
