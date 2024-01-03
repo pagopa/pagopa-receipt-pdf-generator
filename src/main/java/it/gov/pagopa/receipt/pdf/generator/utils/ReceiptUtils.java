@@ -11,7 +11,7 @@ public class ReceiptUtils {
 
         if (bizEvent != null) {
             if (isMultiItem && bizEvent.getTransactionDetails() != null && bizEvent.getTransactionDetails().getTransaction() != null) {
-                receiptEventReference = String.valueOf(bizEvent.getTransactionDetails().getTransaction().getIdTransaction());
+                receiptEventReference = String.valueOf(bizEvent.getTransactionDetails().getTransaction().getTransactionId());
             } else {
                 receiptEventReference = bizEvent.getId();
             }
