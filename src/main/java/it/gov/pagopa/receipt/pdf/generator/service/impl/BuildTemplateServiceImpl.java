@@ -43,6 +43,7 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
     private static final Map<String, Object> pspMap;
     public static final String MODEL_TYPE_IUV = "1";
     public static final String MODEL_TYPE_NOTICE = "2";
+    public static final String DEBTOR_ANONIMO_CF = "ANONIMO";
 
     static {
         try {
@@ -113,7 +114,7 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
                                     .type(getRefNumberType(bizEvent))
                                     .value(getRefNumberValue(bizEvent))
                                     .build())
-                            .debtor("ANONIMO".equals(receipt.getEventData().getDebtorFiscalCode()) ?
+                            .debtor(DEBTOR_ANONIMO_CF.equals(receipt.getEventData().getDebtorFiscalCode()) ?
                                                 null :Debtor.builder()
                                     .fullName(getDebtorFullName(bizEvent))
                                     .taxCode(getDebtorTaxCode(bizEvent))
