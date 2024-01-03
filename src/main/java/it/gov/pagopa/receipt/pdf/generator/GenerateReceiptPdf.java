@@ -214,7 +214,7 @@ public class GenerateReceiptPdf {
             if(firstBizEvent != null &&
                     firstBizEvent.getTransactionDetails() != null &&
             firstBizEvent.getTransactionDetails().getTransaction() != null){
-                receiptEventReference = String.valueOf(listOfBizEvent.get(0).getTransactionDetails().getTransaction().getIdTransaction());
+                receiptEventReference = listOfBizEvent.get(0).getTransactionDetails().getTransaction().getTransactionId();
             }
         } else {
             receiptEventReference = firstBizEvent.getId();

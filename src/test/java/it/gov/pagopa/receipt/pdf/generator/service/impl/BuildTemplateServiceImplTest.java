@@ -46,7 +46,7 @@ class BuildTemplateServiceImplTest {
     public static final String REMITTANCE_INFORMATION = "TARI 2021";
     public static final String IUR = "IUR";
     public static final String BRAND = "MASTER";
-    public static final long ID_TRANSACTION = 1L;
+    public static final String ID_TRANSACTION = "1";
     public static final String RRN = "rrn";
     public static final String AUTH_CODE = "authCode";
     public static final String DATE_TIME_TIMESTAMP_MILLISECONDS_DST_WINTER = "2023-11-14T19:31:55.484065";
