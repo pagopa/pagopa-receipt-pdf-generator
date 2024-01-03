@@ -84,6 +84,9 @@ class BuildTemplateServiceImplTest {
     private static final String USER_FORMATTED_FULL_NAME = "user_name user_surname";
     private static final String USER_TAX_CODE = "user tax code";
     public static final String PAGOPA_PA_CHANNEL_ID = "pagopa channel";
+    public static final String RECEIPT_ID = "receipt-id";
+    public static final String BIZ_EVENT = "bizEvent";
+    public static final String RECEIPT = "receipt";
     private BuildTemplateServiceImpl buildTemplateService;
 
     @BeforeEach
@@ -147,7 +150,7 @@ class BuildTemplateServiceImplTest {
                 .eventStatus(BizEventStatusType.DONE)
                 .build()
         );
-        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
+        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
 
         AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
         assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_DEBTOR, receipt)));
@@ -242,7 +245,7 @@ class BuildTemplateServiceImplTest {
                         .build())
                 .eventStatus(BizEventStatusType.DONE)
                 .build());
-        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
+        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
 
         AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
         assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_DEBTOR, receipt)));
@@ -337,7 +340,7 @@ class BuildTemplateServiceImplTest {
                         .build())
                 .eventStatus(BizEventStatusType.DONE)
                 .build());
-        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
+        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
 
         AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
         assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_DEBTOR, receipt)));
@@ -432,7 +435,7 @@ class BuildTemplateServiceImplTest {
                         .build())
                 .eventStatus(BizEventStatusType.DONE)
                 .build());
-        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
+        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
 
         AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
         assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_DEBTOR, receipt)));
@@ -527,7 +530,7 @@ class BuildTemplateServiceImplTest {
                         .build())
                 .eventStatus(BizEventStatusType.DONE)
                 .build());
-        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
+        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
 
         AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
         assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_DEBTOR, receipt)));
@@ -622,7 +625,7 @@ class BuildTemplateServiceImplTest {
                         .build())
                 .eventStatus(BizEventStatusType.DONE)
                 .build());
-        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
+        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
 
         AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
         assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_DEBTOR, receipt)));
@@ -717,7 +720,7 @@ class BuildTemplateServiceImplTest {
                         .build())
                 .eventStatus(BizEventStatusType.DONE)
                 .build());
-        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
+        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).amount(FORMATTED_GRAND_TOTAL).build()).build();
 
         AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
         assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_DEBTOR, receipt)));
@@ -792,7 +795,7 @@ class BuildTemplateServiceImplTest {
                         .build())
                 .eventStatus(BizEventStatusType.DONE)
                 .build());
-        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
+        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_AMOUNT).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
 
         AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
         assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_DEBTOR, receipt)));
@@ -868,7 +871,7 @@ class BuildTemplateServiceImplTest {
                         .build())
                 .eventStatus(BizEventStatusType.DONE)
                 .build());
-        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
+        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_AMOUNT).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
 
         AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
         assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_DEBTOR, receipt)));
@@ -942,7 +945,7 @@ class BuildTemplateServiceImplTest {
                         .build())
                 .eventStatus(BizEventStatusType.DONE)
                 .build());
-        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
+        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_AMOUNT).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
 
         AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
         assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_DEBTOR, receipt)));
@@ -1036,7 +1039,7 @@ class BuildTemplateServiceImplTest {
                         .build())
                 .eventStatus(BizEventStatusType.DONE)
                 .build());
-        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
+        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
 
         AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
         assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_DEBTOR, receipt)));
@@ -1131,7 +1134,7 @@ class BuildTemplateServiceImplTest {
                         .build())
                 .eventStatus(BizEventStatusType.DONE)
                 .build());
-        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
+        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
 
         AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
         assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_DEBTOR, receipt)));
@@ -1226,7 +1229,7 @@ class BuildTemplateServiceImplTest {
                         .build())
                 .eventStatus(BizEventStatusType.DONE)
                 .build());
-        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
+        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
 
         AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
         assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_DEBTOR, receipt)));
@@ -1299,7 +1302,7 @@ class BuildTemplateServiceImplTest {
                         .idPA(ID_PA)
                         .build())
                 .build());
-        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
+        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
         assertDoesNotThrow(() -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, receipt));
     }
 
@@ -1328,7 +1331,7 @@ class BuildTemplateServiceImplTest {
                         .idPA(ID_PA)
                         .build())
                 .build());
-        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
+        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
         assertDoesNotThrow(() -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_DEBTOR, receipt));
     }
 
@@ -1364,7 +1367,7 @@ class BuildTemplateServiceImplTest {
                 )
                 .build());
         AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
-        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
+        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
         assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_DEBTOR, receipt)));
 
         ReceiptPDFTemplate receiptPDFTemplate = atomicReference.get();
@@ -1406,7 +1409,7 @@ class BuildTemplateServiceImplTest {
                 )
                 .build());
         AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
-        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
+        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
         assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_DEBTOR, receipt)));
 
         ReceiptPDFTemplate receiptPDFTemplate = atomicReference.get();
@@ -1446,7 +1449,7 @@ class BuildTemplateServiceImplTest {
                 )
                 .build());
         AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
-        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
+        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
         assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_DEBTOR, receipt)));
 
         ReceiptPDFTemplate receiptPDFTemplate = atomicReference.get();
@@ -1490,7 +1493,7 @@ class BuildTemplateServiceImplTest {
                 )
                 .build());
         AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
-        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
+        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
         assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_DEBTOR, receipt)));
 
         ReceiptPDFTemplate receiptPDFTemplate = atomicReference.get();
@@ -1533,7 +1536,7 @@ class BuildTemplateServiceImplTest {
                 )
                 .build());
         AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
-        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
+        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
         assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, receipt)));
 
         ReceiptPDFTemplate receiptPDFTemplate = atomicReference.get();
@@ -1579,7 +1582,7 @@ class BuildTemplateServiceImplTest {
                 )
                 .build());
         AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
-        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
+        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
         assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, receipt)));
 
         ReceiptPDFTemplate receiptPDFTemplate = atomicReference.get();
@@ -1626,7 +1629,7 @@ class BuildTemplateServiceImplTest {
                 )
                 .build());
         AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
-        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
+        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).amount(FORMATTED_GRAND_TOTAL).build()).build();
         assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, receipt)));
 
         ReceiptPDFTemplate receiptPDFTemplate = atomicReference.get();
@@ -1639,7 +1642,7 @@ class BuildTemplateServiceImplTest {
         TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.SERVICE_CUSTOMER_ID, "undefined"), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, RECEIPT, TemplateDataField.SERVICE_CUSTOMER_ID, RECEIPT, null), e.getMessage());
     }
 
     @Test
@@ -1648,7 +1651,7 @@ class BuildTemplateServiceImplTest {
         TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_TIMESTAMP, BIZ_EVENT_ID), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, BIZ_EVENT, TemplateDataField.TRANSACTION_TIMESTAMP, BIZ_EVENT, BIZ_EVENT_ID), e.getMessage());
     }
 
     @Test
@@ -1660,10 +1663,10 @@ class BuildTemplateServiceImplTest {
                         .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS_DST_WINTER)
                         .build())
                 .build());
-        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).build()));
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().id(RECEIPT_ID).eventId(BIZ_EVENT_ID).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_AMOUNT, BIZ_EVENT_ID), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, RECEIPT,TemplateDataField.TRANSACTION_AMOUNT, RECEIPT,RECEIPT_ID), e.getMessage());
     }
 
     @Test
@@ -1676,10 +1679,10 @@ class BuildTemplateServiceImplTest {
                         .amount(AMOUNT_WITHOUT_CENTS)
                         .build())
                 .build());
-        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).build()));
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).build()).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_PSP, BIZ_EVENT_ID), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, BIZ_EVENT,TemplateDataField.TRANSACTION_PSP, BIZ_EVENT,BIZ_EVENT_ID), e.getMessage());
     }
 
     @Test
@@ -1695,10 +1698,10 @@ class BuildTemplateServiceImplTest {
                         .idPsp("noName")
                         .build())
                 .build());
-        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).build()));
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).build()).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_PSP_NAME, BIZ_EVENT_ID), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, BIZ_EVENT,TemplateDataField.TRANSACTION_PSP_NAME, BIZ_EVENT, BIZ_EVENT_ID), e.getMessage());
     }
 
     @Test
@@ -1715,10 +1718,10 @@ class BuildTemplateServiceImplTest {
                         .psp(PSP_NAME)
                         .build())
                 .build());
-        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).build()));
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().id(RECEIPT_ID).eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).build()).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_PSP_COMPANY_NAME, BIZ_EVENT_ID), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, BIZ_EVENT,TemplateDataField.TRANSACTION_PSP_COMPANY_NAME, BIZ_EVENT,BIZ_EVENT_ID), e.getMessage());
     }
 
     @Test
@@ -1735,10 +1738,12 @@ class BuildTemplateServiceImplTest {
                         .psp(PSP_NAME)
                         .build())
                 .build());
-        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).build()));
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().id(RECEIPT_ID).eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).build()).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_PSP_ADDRESS, BIZ_EVENT_ID), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE,
+
+                BIZ_EVENT,TemplateDataField.TRANSACTION_PSP_ADDRESS, BIZ_EVENT, BIZ_EVENT_ID), e.getMessage());
     }
 
     @Test
@@ -1755,10 +1760,10 @@ class BuildTemplateServiceImplTest {
                         .psp(PSP_NAME)
                         .build())
                 .build());
-        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).build()));
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().id(RECEIPT_ID).eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).build()).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_PSP_CITY, BIZ_EVENT_ID), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, BIZ_EVENT,TemplateDataField.TRANSACTION_PSP_CITY, BIZ_EVENT, BIZ_EVENT_ID ), e.getMessage());
     }
 
     @Test
@@ -1775,10 +1780,10 @@ class BuildTemplateServiceImplTest {
                         .psp(PSP_NAME)
                         .build())
                 .build());
-        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).build()));
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).build()).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_PSP_PROVINCE, BIZ_EVENT_ID), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, BIZ_EVENT,TemplateDataField.TRANSACTION_PSP_PROVINCE, BIZ_EVENT,BIZ_EVENT_ID), e.getMessage());
     }
 
     @Test
@@ -1795,10 +1800,10 @@ class BuildTemplateServiceImplTest {
                         .psp(PSP_NAME)
                         .build())
                 .build());
-        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).build()));
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().id(RECEIPT_ID).eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).build()).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_PSP_BUILDING_NUMBER, BIZ_EVENT_ID), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, BIZ_EVENT,TemplateDataField.TRANSACTION_PSP_BUILDING_NUMBER, BIZ_EVENT, BIZ_EVENT_ID), e.getMessage());
     }
 
     @Test
@@ -1815,10 +1820,10 @@ class BuildTemplateServiceImplTest {
                         .psp(PSP_NAME)
                         .build())
                 .build());
-        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).build()));
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).build()).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_PSP_POSTAL_CODE, BIZ_EVENT_ID), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, BIZ_EVENT,TemplateDataField.TRANSACTION_PSP_POSTAL_CODE, BIZ_EVENT,BIZ_EVENT_ID), e.getMessage());
     }
 
     @Test
@@ -1840,10 +1845,10 @@ class BuildTemplateServiceImplTest {
                                 .build())
                         .build())
                 .build());
-        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).build()));
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().id(RECEIPT_ID).eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).build()).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_PSP_LOGO, BIZ_EVENT_ID), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, BIZ_EVENT, TemplateDataField.TRANSACTION_PSP_LOGO, BIZ_EVENT,BIZ_EVENT_ID), e.getMessage());
     }
 
     @Test
@@ -1864,10 +1869,10 @@ class BuildTemplateServiceImplTest {
                                 .build())
                         .build())
                 .build());
-        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).build()));
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).build()).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_RRN, BIZ_EVENT_ID), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, BIZ_EVENT,TemplateDataField.TRANSACTION_RRN, BIZ_EVENT,BIZ_EVENT_ID), e.getMessage());
     }
 
     @Test
@@ -1884,10 +1889,10 @@ class BuildTemplateServiceImplTest {
                         .psp(PSP_NAME)
                         .build())
                 .build());
-        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).build()));
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).build()).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.USER_DATA_FULL_NAME, BIZ_EVENT_ID), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, BIZ_EVENT,TemplateDataField.USER_DATA_FULL_NAME, BIZ_EVENT,BIZ_EVENT_ID), e.getMessage());
     }
 
     @Test
@@ -1907,10 +1912,10 @@ class BuildTemplateServiceImplTest {
                         .fullName(PAYER_FULL_NAME)
                         .build())
                 .build());
-        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).build()));
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).build()).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.USER_DATA_TAX_CODE, BIZ_EVENT_ID), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, BIZ_EVENT,TemplateDataField.USER_DATA_TAX_CODE, BIZ_EVENT,BIZ_EVENT_ID), e.getMessage());
     }
 
     @Test
@@ -1931,10 +1936,10 @@ class BuildTemplateServiceImplTest {
                         .entityUniqueIdentifierValue(PAYER_VALID_CF)
                         .build())
                 .build());
-        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).build()));
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).build()).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.CART_ITEM_REF_NUMBER_TYPE, BIZ_EVENT_ID), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, BIZ_EVENT,TemplateDataField.CART_ITEM_REF_NUMBER_TYPE, BIZ_EVENT, BIZ_EVENT_ID), e.getMessage());
     }
 
     @Test
@@ -1958,10 +1963,10 @@ class BuildTemplateServiceImplTest {
                         .modelType(MODEL_TYPE_IUV_CODE)
                         .build())
                 .build());
-        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).build()));
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().id(RECEIPT_ID).eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).build()).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.CART_ITEM_REF_NUMBER_VALUE, BIZ_EVENT_ID), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, BIZ_EVENT,TemplateDataField.CART_ITEM_REF_NUMBER_VALUE, BIZ_EVENT, BIZ_EVENT_ID), e.getMessage());
     }
 
     @Test
@@ -1986,10 +1991,10 @@ class BuildTemplateServiceImplTest {
                         .modelType(MODEL_TYPE_NOTICE_CODE)
                         .build())
                 .build());
-        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).build()));
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).build()).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.CART_ITEM_REF_NUMBER_VALUE, BIZ_EVENT_ID), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, BIZ_EVENT,TemplateDataField.CART_ITEM_REF_NUMBER_VALUE, BIZ_EVENT,BIZ_EVENT_ID), e.getMessage());
     }
 
     @Test
@@ -2015,10 +2020,10 @@ class BuildTemplateServiceImplTest {
                         .build())
                 .build());
         TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER,
-                Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().debtorFiscalCode(DEBTOR_VALID_CF).build()).build()));
+                Receipt.builder().id(RECEIPT_ID).eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).debtorFiscalCode(DEBTOR_VALID_CF).build()).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.CART_ITEM_DEBTOR_TAX_CODE, BIZ_EVENT_ID), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, BIZ_EVENT,TemplateDataField.CART_ITEM_DEBTOR_TAX_CODE, BIZ_EVENT, BIZ_EVENT_ID), e.getMessage());
     }
 
     @Test
@@ -2046,11 +2051,11 @@ class BuildTemplateServiceImplTest {
                         .entityUniqueIdentifierValue(DEBTOR_VALID_CF)
                         .build())
                 .build());
-        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).eventData(
-                EventData.builder().debtorFiscalCode(DEBTOR_VALID_CF).build()).build()));
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().id(RECEIPT_ID).eventId(BIZ_EVENT_ID).eventData(
+                EventData.builder().amount(FORMATTED_GRAND_TOTAL).debtorFiscalCode(DEBTOR_VALID_CF).build()).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.CART_ITEM_PAYEE_TAX_CODE, BIZ_EVENT_ID), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, BIZ_EVENT,TemplateDataField.CART_ITEM_PAYEE_TAX_CODE, BIZ_EVENT,BIZ_EVENT_ID), e.getMessage());
     }
 
     @Test
@@ -2088,11 +2093,11 @@ class BuildTemplateServiceImplTest {
                         .build()
                 )
                 .build());
-        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
+        Receipt receipt = Receipt.builder().id(RECEIPT_ID).eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
         TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, receipt));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.CART_ITEM_AMOUNT, BIZ_EVENT_ID), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, BIZ_EVENT,TemplateDataField.CART_ITEM_AMOUNT, BIZ_EVENT, BIZ_EVENT_ID), e.getMessage());
     }
 
     @Test
@@ -2131,12 +2136,12 @@ class BuildTemplateServiceImplTest {
                 )
                 .build());
         TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () ->
-                buildTemplateService.buildTemplate(listOfBizEvents, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).eventData(
-                EventData.builder().cart(Collections.singletonList(CartItem.builder().build()))
+                buildTemplateService.buildTemplate(listOfBizEvents, GENERATED_BY_PAYER, Receipt.builder().id(RECEIPT_ID).eventId(BIZ_EVENT_ID).eventData(
+                EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(Collections.singletonList(CartItem.builder().build()))
                         .debtorFiscalCode(DEBTOR_VALID_CF).build()).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.CART_ITEM_SUBJECT, BIZ_EVENT_ID), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, RECEIPT, TemplateDataField.CART_ITEM_SUBJECT, RECEIPT,RECEIPT_ID), e.getMessage());
     }
 
     @Test
@@ -2200,7 +2205,7 @@ class BuildTemplateServiceImplTest {
                     CartItem.builder().subject(REMITTANCE_INFORMATION + i).build()
             );
         }
-        Receipt receipt = Receipt.builder().eventId(String.valueOf(ID_TRANSACTION)).eventData(EventData.builder().cart(cartItemList).build()).build();
+        Receipt receipt = Receipt.builder().eventId(String.valueOf(ID_TRANSACTION)).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(cartItemList).build()).build();
 
         AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
         assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_DEBTOR, receipt)));
