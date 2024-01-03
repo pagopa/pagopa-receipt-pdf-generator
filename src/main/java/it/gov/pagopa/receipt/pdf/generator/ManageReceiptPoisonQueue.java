@@ -3,6 +3,7 @@ package it.gov.pagopa.receipt.pdf.generator;
 import com.azure.core.http.rest.Response;
 import com.azure.storage.queue.models.SendMessageResult;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.HttpStatus;
 import com.microsoft.azure.functions.OutputBinding;
@@ -27,7 +28,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -57,10 +60,10 @@ public class ManageReceiptPoisonQueue {
      * If it is valid and not retried updates the field and sends it back to the original queue
      * If invalid or already retried saves on CosmosDB receipt-message-errors collection
      *
-     * @param errorMessage payload of the message sent to the poison queue, triggering the function
-     * @param receiptsOutputBinding Output binding that will update the receipt relative to the bizEvent
-     * @param receiptErrorOutputBinding      Output binding that will insert/update data with the errors not to retry within the function
-     * @param context         Function context
+     * @param errorMessage              payload of the message sent to the poison queue, triggering the function
+     * @param receiptsOutputBinding     Output binding that will update the receipt relative to the bizEvent
+     * @param receiptErrorOutputBinding Output binding that will insert/update data with the errors not to retry within the function
+     * @param context                   Function context
      */
     @FunctionName("ManageReceiptPoisonQueueProcessor")
     public void processManageReceiptPoisonQueue(
@@ -83,6 +86,7 @@ public class ManageReceiptPoisonQueue {
             OutputBinding<ReceiptError> receiptErrorOutputBinding,
             final ExecutionContext context) {
 
+        List<BizEvent> listOfBizEvents = new ArrayList<>();
         BizEvent bizEvent = null;
 
         logger.info("[{}] function called at {}", context.getFunctionName(), LocalDateTime.now());
@@ -90,18 +94,19 @@ public class ManageReceiptPoisonQueue {
 
         try {
             //attempt to Map queue bizEventMessage to BizEvent
-            bizEvent = ObjectMapperUtils.mapString(errorMessage, BizEvent.class);
-             logger.info("[{}] function called at {} recognized as valid BizEvent with id {}",
-                     context.getFunctionName(), LocalDateTime.now(), bizEvent.getId());
+            listOfBizEvents = ObjectMapperUtils.mapBizEventListString(errorMessage, new TypeReference<>() {});
+            bizEvent = listOfBizEvents.get(0);
+            logger.info("[{}] function called at {} recognized as valid BizEvent with id {}",
+                    context.getFunctionName(), LocalDateTime.now(), bizEvent.getId());
             if (Boolean.TRUE.equals(bizEvent.getAttemptedPoisonRetry())) {
-                 logger.info("[{}] function called at {} for event with id {} has ingestion already retried, sending to review",
-                         context.getFunctionName(), LocalDateTime.now(), bizEvent.getId());
+                logger.info("[{}] function called at {} for event with id {} has ingestion already retried, sending to review",
+                        context.getFunctionName(), LocalDateTime.now(), bizEvent.getId());
             } else {
                 retriableContent = true;
             }
         } catch (JsonProcessingException e) {
-             logger.error("[{}] received parsing error in the function called at {}",
-                     context.getFunctionName(), LocalDateTime.now(), e);
+            logger.error("[{}] received parsing error in the function called at {}",
+                    context.getFunctionName(), LocalDateTime.now(), e);
         }
 
         if (retriableContent) {
@@ -109,37 +114,37 @@ public class ManageReceiptPoisonQueue {
             try {
                 Response<SendMessageResult> sendMessageResult =
                         this.queueService.sendMessageToQueue(Base64.getMimeEncoder()
-                                .encodeToString(Objects.requireNonNull(ObjectMapperUtils.writeValueAsString(bizEvent))
+                                .encodeToString(Objects.requireNonNull(ObjectMapperUtils.writeValueAsString(listOfBizEvents))
                                         .getBytes()));
                 if (sendMessageResult.getStatusCode() != HttpStatus.CREATED.value()) {
                     throw new UnableToQueueException("Unable to queue due to error: " +
                             sendMessageResult.getStatusCode());
                 }
             } catch (Exception e) {
-                 logger.error("[{}] error for the function called at {} when attempting" +
-                                 "to requeue BizEvent wit id {}, saving to cosmos for review",
-                         context.getFunctionName(), LocalDateTime.now(), bizEvent.getId(), e);
-                saveReceiptErrorAndUpdateReceipt(errorMessage, receiptsOutputBinding, receiptErrorOutputBinding, context, bizEvent);
+                logger.error("[{}] error for the function called at {} when attempting" +
+                                "to requeue BizEvent with id {}, saving to cosmos for review",
+                        context.getFunctionName(), LocalDateTime.now(), bizEvent.getId(), e);
+                saveReceiptErrorAndUpdateReceipt(errorMessage, receiptsOutputBinding, receiptErrorOutputBinding, context, bizEvent, listOfBizEvents.size() > 1);
             }
         } else {
-            saveReceiptErrorAndUpdateReceipt(errorMessage, receiptsOutputBinding, receiptErrorOutputBinding, context, bizEvent);
+            saveReceiptErrorAndUpdateReceipt(errorMessage, receiptsOutputBinding, receiptErrorOutputBinding, context, bizEvent, listOfBizEvents.size() > 1);
         }
     }
 
-    private void saveReceiptErrorAndUpdateReceipt(String errorMessage, OutputBinding<Receipt> receiptsOutputBinding, OutputBinding<ReceiptError> receiptErrorOutputBinding, ExecutionContext context, BizEvent bizEvent) {
-        String bizEventId = bizEvent != null ? bizEvent.getId() : null;
-        saveToReceiptError(context, errorMessage, bizEventId, receiptErrorOutputBinding);
-        if(bizEventId != null){
-            updateReceiptToReview(context, bizEventId, receiptsOutputBinding);
+    private void saveReceiptErrorAndUpdateReceipt(String errorMessage, OutputBinding<Receipt> receiptsOutputBinding, OutputBinding<ReceiptError> receiptErrorOutputBinding, ExecutionContext context, BizEvent bizEvent, boolean isMultiItem) {
+        String bizEventReference = getReceiptEventReference(bizEvent, isMultiItem);
+        saveToReceiptError(context, errorMessage, bizEventReference, receiptErrorOutputBinding);
+        if (bizEventReference != null) {
+            updateReceiptToReview(context, bizEventReference, receiptsOutputBinding);
         }
     }
 
     private void saveToReceiptError(ExecutionContext context, String errorMessage, String bizEventId,
                                     OutputBinding<ReceiptError> receiptErrorOutputBinding) {
 
-         ReceiptError receiptError = ReceiptError.builder()
-                 .bizEventId(bizEventId)
-                 .status(ReceiptErrorStatusType.TO_REVIEW).build();
+        ReceiptError receiptError = ReceiptError.builder()
+                .bizEventId(bizEventId)
+                .status(ReceiptErrorStatusType.TO_REVIEW).build();
 
         try {
             String encodedEvent = Aes256Utils.encrypt(errorMessage);
@@ -154,10 +159,10 @@ public class ManageReceiptPoisonQueue {
         receiptErrorOutputBinding.setValue(receiptError);
     }
 
-    private void updateReceiptToReview(ExecutionContext context, String bizEventId,
-                                    OutputBinding<Receipt> receiptOutputBinding) {
+    private void updateReceiptToReview(ExecutionContext context, String eventId,
+                                       OutputBinding<Receipt> receiptOutputBinding) {
         try {
-            Receipt receipt = this.receiptCosmosService.getReceipt(bizEventId);
+            Receipt receipt = this.receiptCosmosService.getReceipt(eventId);
 
             receipt.setStatus(ReceiptStatusType.TO_REVIEW);
 
@@ -166,7 +171,20 @@ public class ManageReceiptPoisonQueue {
             receiptOutputBinding.setValue(receipt);
         } catch (ReceiptNotFoundException e) {
             logger.error("[{}] error updating status of receipt with eventId {}, receipt not found",
-                    context.getFunctionName(),bizEventId, e);
+                    context.getFunctionName(), eventId, e);
         }
+    }
+
+    private static String getReceiptEventReference(BizEvent bizEvent, boolean isMultiItem) {
+        String receiptEventReference = null;
+
+        if (bizEvent != null) {
+            if (isMultiItem && bizEvent.getTransactionDetails() != null && bizEvent.getTransactionDetails().getTransaction() != null) {
+                receiptEventReference = String.valueOf(bizEvent.getTransactionDetails().getTransaction().getIdTransaction());
+            } else {
+                receiptEventReference = bizEvent.getId();
+            }
+        }
+        return receiptEventReference;
     }
 }
