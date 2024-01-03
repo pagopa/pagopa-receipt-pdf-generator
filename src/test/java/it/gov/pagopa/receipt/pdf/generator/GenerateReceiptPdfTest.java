@@ -48,7 +48,7 @@ class GenerateReceiptPdfTest {
     private static final String MULTIPLE_BIZ_EVENTS_VALID_MESSAGE = buildQueueBizEventList(5);
     private static final String BIZ_EVENT_INVALID_MESSAGE = "invalid message";
     private static final long ORIGINAL_GENERATED_AT = 0L;
-    public static final long ID_TRANSACTION = 100L;
+    public static final String ID_TRANSACTION = "100";
     public static final String BIZ_EVENT_ID_FIRST = "biz-event-id-1";
     public static final String CF_DEBTOR = "cd debtor";
     public static final String CF_PAYER = "cf payer";
