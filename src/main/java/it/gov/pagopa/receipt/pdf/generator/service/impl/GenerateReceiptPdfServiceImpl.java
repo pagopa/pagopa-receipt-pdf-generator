@@ -33,6 +33,7 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService {
 
@@ -64,7 +65,7 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
      * {@inheritDoc}
      */
     @Override
-    public PdfGeneration generateReceipts(Receipt receipt, BizEvent bizEvent, Path workingDirPath) {
+    public PdfGeneration generateReceipts(Receipt receipt, List<BizEvent> listOfBizEvents, Path workingDirPath) {
         PdfGeneration pdfGeneration = new PdfGeneration();
 
         String debtorCF = receipt.getEventData().getDebtorFiscalCode();
@@ -79,7 +80,7 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
                     pdfGeneration.setDebtorMetadata(PdfMetadata.builder().statusCode(ALREADY_CREATED).build());
                     return pdfGeneration;
                 }
-                PdfMetadata generationResult = generateAndSavePDFReceipt(bizEvent, receipt, PAYER_TEMPLATE_SUFFIX, true, workingDirPath);
+                PdfMetadata generationResult = generateAndSavePDFReceipt(listOfBizEvents, receipt, PAYER_TEMPLATE_SUFFIX, true, workingDirPath);
                 pdfGeneration.setDebtorMetadata(generationResult);
                 return pdfGeneration;
             }
@@ -89,7 +90,7 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
                 pdfGeneration.setPayerMetadata(PdfMetadata.builder().statusCode(ALREADY_CREATED).build());
             } else {
 
-                PdfMetadata generationResult = generateAndSavePDFReceipt(bizEvent, receipt, PAYER_TEMPLATE_SUFFIX, false, workingDirPath);
+                PdfMetadata generationResult = generateAndSavePDFReceipt(listOfBizEvents, receipt, PAYER_TEMPLATE_SUFFIX, false, workingDirPath);
                 pdfGeneration.setPayerMetadata(generationResult);
             }
         } else {
@@ -100,7 +101,7 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
         if (receiptAlreadyCreated(receipt.getMdAttach())) {
             pdfGeneration.setDebtorMetadata(PdfMetadata.builder().statusCode(ALREADY_CREATED).build());
         } else if (!"ANONIMO".equals(debtorCF)) {
-            PdfMetadata generationResult = generateAndSavePDFReceipt(bizEvent, receipt, DEBTOR_TEMPLATE_SUFFIX, true, workingDirPath);
+            PdfMetadata generationResult = generateAndSavePDFReceipt(listOfBizEvents, receipt, DEBTOR_TEMPLATE_SUFFIX, true, workingDirPath);
             pdfGeneration.setDebtorMetadata(generationResult);
         }
 
@@ -170,15 +171,15 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
         return result;
     }
 
-    private PdfMetadata generateAndSavePDFReceipt(BizEvent bizEvent, Receipt receipt, String templateSuffix, boolean isGeneratingDebtor, Path workingDirPath) {
+    private PdfMetadata generateAndSavePDFReceipt(List<BizEvent> listOfBizEvents, Receipt receipt, String templateSuffix, boolean isGeneratingDebtor, Path workingDirPath) {
         try {
-            ReceiptPDFTemplate template = buildTemplateService.buildTemplate(bizEvent, isGeneratingDebtor, receipt);
+            ReceiptPDFTemplate template = buildTemplateService.buildTemplate(listOfBizEvents, isGeneratingDebtor, receipt);
             String dateFormatted = LocalDate.now().format(DateTimeFormatter.ofPattern("yyMMdd"));
-            String blobName = String.format("%s-%s-%s-%s", TEMPLATE_PREFIX, dateFormatted, bizEvent.getId(), templateSuffix);
+            String blobName = String.format("%s-%s-%s-%s", TEMPLATE_PREFIX, dateFormatted, receipt.getEventId(), templateSuffix);
             PdfEngineResponse pdfEngineResponse = generatePDFReceipt(template, workingDirPath);
             return saveToBlobStorage(pdfEngineResponse, blobName);
         } catch (PDFReceiptGenerationException e) {
-            logger.error("An error occurred when generating or saving the PDF receipt for biz-event {}. Error: {}", bizEvent.getId(), e.getMessage(), e);
+            logger.error("An error occurred when generating or saving the PDF receipt with eventId {}. Error: {}", receipt.getEventId(), e.getMessage(), e);
             return PdfMetadata.builder().statusCode(e.getStatusCode()).errorMessage(e.getMessage()).build();
         }
     }

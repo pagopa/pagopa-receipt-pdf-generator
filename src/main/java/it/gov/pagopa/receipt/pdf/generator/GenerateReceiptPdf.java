@@ -1,6 +1,7 @@
 package it.gov.pagopa.receipt.pdf.generator;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.OutputBinding;
 import com.microsoft.azure.functions.annotation.CosmosDBOutput;
@@ -34,6 +35,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 /**
  * Azure Functions with Azure Queue trigger.
@@ -117,87 +119,107 @@ public class GenerateReceiptPdf {
             final ExecutionContext context) throws BizEventNotValidException, ReceiptNotFoundException, IOException {
 
         //Map queue bizEventMessage to BizEvent
-        BizEvent bizEvent = getBizEventFromMessage(context, bizEventMessage);
+        List<BizEvent> listOfBizEvent = getBizEventListFromMessage(context, bizEventMessage);
 
-        logger.info("[{}] function called at {} for bizEvent with id {}",
-                context.getFunctionName(), LocalDateTime.now(), bizEvent.getId());
+        if(!listOfBizEvent.isEmpty()){
+            String receiptEventReference = getReceiptEventReference(listOfBizEvent);
 
-        //Retrieve receipt's data from CosmosDB
-        Receipt receipt = this.receiptCosmosService.getReceipt(bizEvent.getId());
+            logger.info("[{}] function called at {} for receipt with bizEvent reference {}",
+                    context.getFunctionName(), LocalDateTime.now(), receiptEventReference);
 
-        //Verify receipt status
-        if (isReceiptInInValidState(receipt)) {
-            logger.info("[{}] Receipt with id {} is discarded from generation because it is not in INSERTED or RETRY (status: {}) or have null event data (eventData is null: {})",
-                    context.getFunctionName(),
-                    receipt.getEventId(),
-                    receipt.getStatus(),
-                    receipt.getEventData() == null);
-            return;
-        }
+            //Retrieve receipt's data from CosmosDB
+            Receipt receipt = this.receiptCosmosService.getReceipt(receiptEventReference);
 
-        String debtorCF = receipt.getEventData().getDebtorFiscalCode();
-        if (debtorCF == null && receipt.getEventData().getPayerFiscalCode() == null) {
-            String errorMessage = String.format(
-                    "Error processing receipt with id %s : debtor's fiscal code is null",
-                    receipt.getEventId()
-            );
-            receipt.setStatus(ReceiptStatusType.FAILED);
-            //Update the receipt's status and error message
-            ReasonError reasonError = new ReasonError(HttpStatus.SC_INTERNAL_SERVER_ERROR, errorMessage);
-            receipt.setReasonErr(reasonError);
-            logger.error("[{}] Error generating PDF: {}", context.getFunctionName(), errorMessage);
-            documentdb.setValue(receipt);
-            return;
-        }
-
-        logger.info("[{}] Generating pdf for Receipt with id {} and bizEvent with id {}",
-                context.getFunctionName(),
-                receipt.getId(),
-                bizEvent.getId());
-        //Generate and save PDF
-        PdfGeneration pdfGeneration;
-        Path workingDirPath = createWorkingDirectory();
-        try {
-            pdfGeneration = generateReceiptPdfService.generateReceipts(receipt, bizEvent, workingDirPath);
-        } finally {
-            deleteTempFolder(workingDirPath);
-        }
-
-        //Verify PDF generation success
-        boolean success;
-        try {
-            success = generateReceiptPdfService.verifyAndUpdateReceipt(receipt, pdfGeneration);
-            if (success) {
-                receipt.setStatus(ReceiptStatusType.GENERATED);
-                receipt.setGenerated_at(System.currentTimeMillis());
-                logger.info("[{}] Receipt with id {} being saved with status {}",
+            //Verify receipt status
+            if (isReceiptInInValidState(receipt)) {
+                logger.info("[{}] Receipt with id {} is discarded from generation because it is not in INSERTED or RETRY (status: {}) or have null event data (eventData is null: {})",
                         context.getFunctionName(),
                         receipt.getEventId(),
-                        receipt.getStatus());
-            } else {
-                ReceiptStatusType receiptStatusType;
-                //Verify if the max number of retry have been passed
-                if (receipt.getNumRetry() > MAX_NUMBER_RETRY) {
-                    receiptStatusType = ReceiptStatusType.FAILED;
-                } else {
-                    receiptStatusType = ReceiptStatusType.RETRY;
-                    receipt.setNumRetry(receipt.getNumRetry() + 1);
-                    requeueMessage.setValue(bizEventMessage);
-                }
-                receipt.setStatus(receiptStatusType);
-                logger.error("[{}] Error generating receipt for Receipt {} will be saved with status {}",
-                        context.getFunctionName(),
-                        receipt.getId(),
-                        receiptStatusType);
+                        receipt.getStatus(),
+                        receipt.getEventData() == null);
+                return;
             }
-        } catch (ReceiptGenerationNotToRetryException e) {
-            receipt.setStatus(ReceiptStatusType.FAILED);
-            logger.error("[{}] PDF Receipt generation for Receipt {} failed. This error will not be retried, the receipt will be saved with status {}",
+
+            String debtorCF = receipt.getEventData().getDebtorFiscalCode();
+            if (debtorCF == null && receipt.getEventData().getPayerFiscalCode() == null) {
+                String errorMessage = String.format(
+                        "Error processing receipt with id %s : debtor's fiscal code is null",
+                        receipt.getEventId()
+                );
+                receipt.setStatus(ReceiptStatusType.FAILED);
+                //Update the receipt's status and error message
+                ReasonError reasonError = new ReasonError(HttpStatus.SC_INTERNAL_SERVER_ERROR, errorMessage);
+                receipt.setReasonErr(reasonError);
+                logger.error("[{}] Error generating PDF: {}", context.getFunctionName(), errorMessage);
+                documentdb.setValue(receipt);
+                return;
+            }
+
+            logger.info("[{}] Generating pdf for Receipt with id {} and eventId {}",
                     context.getFunctionName(),
                     receipt.getId(),
-                    ReceiptStatusType.FAILED, e);
+                    receiptEventReference);
+            //Generate and save PDF
+            PdfGeneration pdfGeneration;
+            Path workingDirPath = createWorkingDirectory();
+            try {
+                pdfGeneration = generateReceiptPdfService.generateReceipts(receipt, listOfBizEvent, workingDirPath);
+            } finally {
+                deleteTempFolder(workingDirPath);
+            }
+
+            //Verify PDF generation success
+            boolean success;
+            try {
+                success = generateReceiptPdfService.verifyAndUpdateReceipt(receipt, pdfGeneration);
+                if (success) {
+                    receipt.setStatus(ReceiptStatusType.GENERATED);
+                    receipt.setGenerated_at(System.currentTimeMillis());
+                    logger.info("[{}] Receipt with id {} being saved with status {}",
+                            context.getFunctionName(),
+                            receipt.getEventId(),
+                            receipt.getStatus());
+                } else {
+                    ReceiptStatusType receiptStatusType;
+                    //Verify if the max number of retry have been passed
+                    if (receipt.getNumRetry() > MAX_NUMBER_RETRY) {
+                        receiptStatusType = ReceiptStatusType.FAILED;
+                    } else {
+                        receiptStatusType = ReceiptStatusType.RETRY;
+                        receipt.setNumRetry(receipt.getNumRetry() + 1);
+                        requeueMessage.setValue(bizEventMessage);
+                    }
+                    receipt.setStatus(receiptStatusType);
+                    logger.error("[{}] Error generating receipt for Receipt {} will be saved with status {}",
+                            context.getFunctionName(),
+                            receipt.getId(),
+                            receiptStatusType);
+                }
+            } catch (ReceiptGenerationNotToRetryException e) {
+                receipt.setStatus(ReceiptStatusType.FAILED);
+                logger.error("[{}] PDF Receipt generation for Receipt {} failed. This error will not be retried, the receipt will be saved with status {}",
+                        context.getFunctionName(),
+                        receipt.getId(),
+                        ReceiptStatusType.FAILED, e);
+            }
+            documentdb.setValue(receipt);
         }
-        documentdb.setValue(receipt);
+    }
+
+    private static String getReceiptEventReference(List<BizEvent> listOfBizEvent) {
+        String receiptEventReference = null;
+
+        BizEvent firstBizEvent = listOfBizEvent.get(0);
+        if(listOfBizEvent.size() > 1){
+            if(firstBizEvent != null &&
+                    firstBizEvent.getTransactionDetails() != null &&
+            firstBizEvent.getTransactionDetails().getTransaction() != null){
+                receiptEventReference = listOfBizEvent.get(0).getTransactionDetails().getTransaction().getTransactionId();
+            }
+        } else {
+            receiptEventReference = firstBizEvent.getId();
+        }
+        return receiptEventReference;
     }
 
     private boolean isReceiptInInValidState(Receipt receipt) {
@@ -205,9 +227,9 @@ public class GenerateReceiptPdf {
                 || (!receipt.getStatus().equals(ReceiptStatusType.INSERTED) && !receipt.getStatus().equals(ReceiptStatusType.RETRY));
     }
 
-    private BizEvent getBizEventFromMessage(ExecutionContext context, String bizEventMessage) throws BizEventNotValidException {
+    private List<BizEvent> getBizEventListFromMessage(ExecutionContext context, String bizEventMessage) throws BizEventNotValidException {
         try {
-            return ObjectMapperUtils.mapString(bizEventMessage, BizEvent.class);
+            return ObjectMapperUtils.mapBizEventListString(bizEventMessage, new TypeReference<>() {});
         } catch (JsonProcessingException e) {
             String errorMsg = String.format("[%s] Error parsing the message coming from the queue",
                     context.getFunctionName());
