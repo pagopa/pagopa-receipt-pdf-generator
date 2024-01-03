@@ -202,6 +202,37 @@ class GenerateReceiptPdfServiceImplTest {
     }
 
     @Test
+    void generateReceiptsDifferentDebtorPayerWithSuccessOnDebtAnonym() throws Exception {
+        Receipt receiptOnly = getReceiptWithDebtorPayer(VALID_CF_PAYER, false, false);
+        List<BizEvent> listOfBizEvents = Collections.singletonList(getBizEventWithDebtorPayer(VALID_CF_PAYER));
+
+        receiptOnly.getEventData().setDebtorFiscalCode("ANONIMO");
+
+        doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdfDebtor.getPath()),
+                getPdfEngineResponse(HttpStatus.SC_OK, outputPdfPayer.getPath()))
+                .when(pdfEngineClientMock).generatePDF(any(), any());
+        doReturn(getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.CREATED.value()),
+                getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.CREATED.value()))
+                .when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
+        doReturn(new ReceiptPDFTemplate())
+                .when(buildTemplateServiceMock).buildTemplate(any(), anyBoolean(), any(Receipt.class));
+
+        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, listOfBizEvents,Path.of("/tmp"));
+
+        assertNotNull(pdfGeneration);
+        assertFalse(pdfGeneration.isGenerateOnlyDebtor());
+        assertNotNull(pdfGeneration.getPayerMetadata());
+        assertNull(pdfGeneration.getPayerMetadata().getErrorMessage());
+        assertNotNull(pdfGeneration.getPayerMetadata().getDocumentName());
+        assertNotNull(pdfGeneration.getPayerMetadata().getDocumentUrl());
+        assertEquals(HttpStatus.SC_OK, pdfGeneration.getPayerMetadata().getStatusCode());
+
+        verify(buildTemplateServiceMock, times(1)).buildTemplate(any(), anyBoolean(), any(Receipt.class));
+        verify(pdfEngineClientMock, times(1)).generatePDF(any(), any());
+        verify(receiptBlobClientMock, times(1)).savePdfToBlobStorage(any(), anyString());
+    }
+
+    @Test
     void generateReceiptsPayerNullReceiptAlreadyCreatedWithSuccess() throws TemplateDataMappingException {
         Receipt receiptOnly = getReceiptWithOnlyDebtor(true);
         List<BizEvent> bizEventOnly = Collections.singletonList(getBizEventWithOnlyDebtor());
@@ -786,6 +817,7 @@ class GenerateReceiptPdfServiceImplTest {
                 .id("id")
                 .mdAttach(buildMetadata(debtorAlreadyCreated))
                 .mdAttachPayer(buildMetadata(payerAlreadyCreated))
+                .eventData(EventData.builder().debtorFiscalCode("DEBTOR").build())
                 .numRetry(0)
                 .generated_at(1L)
                 .inserted_at(1L)
