@@ -113,7 +113,8 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
                                     .type(getRefNumberType(bizEvent))
                                     .value(getRefNumberValue(bizEvent))
                                     .build())
-                            .debtor(Debtor.builder()
+                            .debtor("ANONIMO".equals(receipt.getEventData().getDebtorFiscalCode()) ?
+                                                null :Debtor.builder()
                                     .fullName(getDebtorFullName(bizEvent))
                                     .taxCode(getDebtorTaxCode(bizEvent))
                                     .build())
@@ -304,15 +305,15 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
         throw new TemplateDataMappingException(formatErrorMessage(TemplateDataField.CART_ITEM_PAYEE_TAX_CODE, event.getId()), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
     }
 
-    private String getItemSubject(Receipt receipt, int index) {
+    private String getItemSubject(Receipt receipt, int index) throws TemplateDataMappingException {
         if (receipt.getEventData() != null &&
                 !receipt.getEventData().getCart().isEmpty() &&
-                receipt.getEventData().getCart().get(index) != null
+                receipt.getEventData().getCart().get(index) != null &&
+                receipt.getEventData().getCart().get(0).getSubject() != null
         ) {
             return receipt.getEventData().getCart().get(index).getSubject();
         }
-
-        return null;
+        throw new TemplateDataMappingException(formatErrorMessage(TemplateDataField.CART_ITEM_SUBJECT), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
     }
 
     private String getItemAmount(BizEvent event, boolean currencyFormatted) throws TemplateDataMappingException {
@@ -450,3 +451,4 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
         return fullName.replaceAll("[,;:/]+", " ");
     }
 }
+
