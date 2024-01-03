@@ -43,7 +43,7 @@ import static org.mockito.Mockito.*;
 class ManageReceiptPoisonQueueTest {
 
     public static final String BIZ_EVENT_ID = "bizEventId";
-    private static final long ID_TRANSACTION = 0L;
+    private static final String ID_TRANSACTION = "100";
     private final String AES_SALT = "salt";
     private final String AES_KEY = "key";
     private final String VALID_CONTENT_TO_RETRY = buildQueueBizEventList(1, false);
@@ -203,7 +203,7 @@ class ManageReceiptPoisonQueueTest {
         ReceiptQueueClientImpl queueMock = mock(ReceiptQueueClientImpl.class);
 
         ReceiptCosmosService receiptCosmosService = mock(ReceiptCosmosService.class);
-        when(receiptCosmosService.getReceipt(String.valueOf(ID_TRANSACTION))).thenReturn(VALID_MULTIPLE_ITEM_RECEIPT);
+        when(receiptCosmosService.getReceipt(ID_TRANSACTION)).thenReturn(VALID_MULTIPLE_ITEM_RECEIPT);
 
         function = spy(new ManageReceiptPoisonQueue(receiptCosmosService, queueMock));
 
@@ -217,12 +217,12 @@ class ManageReceiptPoisonQueueTest {
         ReceiptError receiptErrorCaptor = this.receiptErrorCaptor.getValue();
         assertNotNull(receiptErrorCaptor.getMessagePayload());
         assertEquals(VALID_CONTENT_MULTIPLE_ITEMS_NOT_TO_RETRY, Aes256Utils.decrypt(receiptErrorCaptor.getMessagePayload()));
-        assertEquals(String.valueOf(ID_TRANSACTION), receiptErrorCaptor.getBizEventId());
+        assertEquals(ID_TRANSACTION, receiptErrorCaptor.getBizEventId());
         assertEquals(ReceiptErrorStatusType.TO_REVIEW, receiptErrorCaptor.getStatus());
 
         verify(receiptOutput).setValue(receiptCaptor.capture());
         Receipt receiptCaptor = this.receiptCaptor.getValue();
-        assertEquals(String.valueOf(ID_TRANSACTION), receiptCaptor.getEventId());
+        assertEquals(ID_TRANSACTION, receiptCaptor.getEventId());
         assertEquals(ReceiptStatusType.TO_REVIEW, receiptCaptor.getStatus());
     }
 
@@ -236,6 +236,7 @@ class ManageReceiptPoisonQueueTest {
                             .transactionDetails(TransactionDetails.builder()
                                     .transaction(Transaction.builder()
                                             .idTransaction(ID_TRANSACTION)
+                                            .transactionId(ID_TRANSACTION)
                                             .build())
                                     .build())
                             .build()
