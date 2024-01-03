@@ -142,7 +142,7 @@ public class GenerateReceiptPdf {
             }
 
             String debtorCF = receipt.getEventData().getDebtorFiscalCode();
-            if (debtorCF == null) {
+            if (debtorCF == null && receipt.getEventData().getPayerFiscalCode() == null) {
                 String errorMessage = String.format(
                         "Error processing receipt with id %s : debtor's fiscal code is null",
                         receipt.getEventId()

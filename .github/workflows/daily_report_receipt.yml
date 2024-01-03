@@ -69,6 +69,8 @@ jobs:
 
             export RECEIPTS_COSMOS_CONN_STRING='${{ secrets.RECEIPTS_COSMOS_CONN_STRING }}'
 
+            export BIZ_COSMOS_CONN_STRING='${{ secrets.BIZ_COSMOS_CONN_STRING }}'
+
             cd ./report
             chmod +x ./run.sh
             ./run.sh local
