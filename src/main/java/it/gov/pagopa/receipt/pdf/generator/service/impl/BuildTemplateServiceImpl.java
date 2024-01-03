@@ -313,7 +313,7 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
         ) {
             return receipt.getEventData().getCart().get(index).getSubject();
         }
-        throw new TemplateDataMappingException(formatErrorMessage(TemplateDataField.CART_ITEM_SUBJECT), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
+        throw new TemplateDataMappingException(formatErrorMessage(TemplateDataField.CART_ITEM_SUBJECT, receipt.getEventId()), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
     }
 
     private String getItemAmount(BizEvent event, boolean currencyFormatted) throws TemplateDataMappingException {

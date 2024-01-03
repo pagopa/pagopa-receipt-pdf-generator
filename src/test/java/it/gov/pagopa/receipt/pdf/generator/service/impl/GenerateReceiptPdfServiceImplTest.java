@@ -204,7 +204,7 @@ class GenerateReceiptPdfServiceImplTest {
     @Test
     void generateReceiptsDifferentDebtorPayerWithSuccessOnDebtAnonym() throws Exception {
         Receipt receiptOnly = getReceiptWithDebtorPayer(VALID_CF_PAYER, false, false);
-        BizEvent bizEventOnly = getBizEventWithDebtorPayer(VALID_CF_PAYER);
+        List<BizEvent> listOfBizEvents = Collections.singletonList(getBizEventWithDebtorPayer(VALID_CF_PAYER));
 
         receiptOnly.getEventData().setDebtorFiscalCode("ANONIMO");
 
@@ -217,7 +217,7 @@ class GenerateReceiptPdfServiceImplTest {
         doReturn(new ReceiptPDFTemplate())
                 .when(buildTemplateServiceMock).buildTemplate(any(), anyBoolean(), any(Receipt.class));
 
-        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly,Path.of("/tmp"));
+        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, listOfBizEvents,Path.of("/tmp"));
 
         assertNotNull(pdfGeneration);
         assertFalse(pdfGeneration.isGenerateOnlyDebtor());

@@ -12,10 +12,12 @@ import it.gov.pagopa.receipt.pdf.generator.utils.TemplateDataField;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.Collection;
+import java.math.BigDecimal;
+import java.text.NumberFormat;
 import java.util.Collections;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -1637,7 +1639,7 @@ class BuildTemplateServiceImplTest {
         TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.SERVICE_CUSTOMER_ID), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.SERVICE_CUSTOMER_ID, "undefined"), e.getMessage());
     }
 
     @Test
@@ -1646,7 +1648,7 @@ class BuildTemplateServiceImplTest {
         TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_TIMESTAMP), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_TIMESTAMP, BIZ_EVENT_ID), e.getMessage());
     }
 
     @Test
@@ -1661,7 +1663,7 @@ class BuildTemplateServiceImplTest {
         TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_AMOUNT), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_AMOUNT, BIZ_EVENT_ID), e.getMessage());
     }
 
     @Test
@@ -1677,7 +1679,7 @@ class BuildTemplateServiceImplTest {
         TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_PSP), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_PSP, BIZ_EVENT_ID), e.getMessage());
     }
 
     @Test
@@ -1696,7 +1698,7 @@ class BuildTemplateServiceImplTest {
         TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_PSP_NAME), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_PSP_NAME, BIZ_EVENT_ID), e.getMessage());
     }
 
     @Test
@@ -1716,7 +1718,7 @@ class BuildTemplateServiceImplTest {
         TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_PSP_COMPANY_NAME), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_PSP_COMPANY_NAME, BIZ_EVENT_ID), e.getMessage());
     }
 
     @Test
@@ -1736,7 +1738,7 @@ class BuildTemplateServiceImplTest {
         TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_PSP_ADDRESS), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_PSP_ADDRESS, BIZ_EVENT_ID), e.getMessage());
     }
 
     @Test
@@ -1756,7 +1758,7 @@ class BuildTemplateServiceImplTest {
         TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_PSP_CITY), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_PSP_CITY, BIZ_EVENT_ID), e.getMessage());
     }
 
     @Test
@@ -1776,7 +1778,7 @@ class BuildTemplateServiceImplTest {
         TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_PSP_PROVINCE), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_PSP_PROVINCE, BIZ_EVENT_ID), e.getMessage());
     }
 
     @Test
@@ -1796,7 +1798,7 @@ class BuildTemplateServiceImplTest {
         TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_PSP_BUILDING_NUMBER), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_PSP_BUILDING_NUMBER, BIZ_EVENT_ID), e.getMessage());
     }
 
     @Test
@@ -1816,7 +1818,7 @@ class BuildTemplateServiceImplTest {
         TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_PSP_POSTAL_CODE), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_PSP_POSTAL_CODE, BIZ_EVENT_ID), e.getMessage());
     }
 
     @Test
@@ -1841,7 +1843,7 @@ class BuildTemplateServiceImplTest {
         TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_PSP_LOGO), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_PSP_LOGO, BIZ_EVENT_ID), e.getMessage());
     }
 
     @Test
@@ -1865,7 +1867,7 @@ class BuildTemplateServiceImplTest {
         TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_RRN), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.TRANSACTION_RRN, BIZ_EVENT_ID), e.getMessage());
     }
 
     @Test
@@ -1885,7 +1887,7 @@ class BuildTemplateServiceImplTest {
         TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.USER_DATA_FULL_NAME), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.USER_DATA_FULL_NAME, BIZ_EVENT_ID), e.getMessage());
     }
 
     @Test
@@ -1908,7 +1910,7 @@ class BuildTemplateServiceImplTest {
         TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.USER_DATA_TAX_CODE), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.USER_DATA_TAX_CODE, BIZ_EVENT_ID), e.getMessage());
     }
 
     @Test
@@ -1932,7 +1934,7 @@ class BuildTemplateServiceImplTest {
         TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.CART_ITEM_REF_NUMBER_TYPE), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.CART_ITEM_REF_NUMBER_TYPE, BIZ_EVENT_ID), e.getMessage());
     }
 
     @Test
@@ -1959,7 +1961,7 @@ class BuildTemplateServiceImplTest {
         TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.CART_ITEM_REF_NUMBER_VALUE), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.CART_ITEM_REF_NUMBER_VALUE, BIZ_EVENT_ID), e.getMessage());
     }
 
     @Test
@@ -1987,7 +1989,7 @@ class BuildTemplateServiceImplTest {
         TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.CART_ITEM_REF_NUMBER_VALUE), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.CART_ITEM_REF_NUMBER_VALUE, BIZ_EVENT_ID), e.getMessage());
     }
 
     @Test
@@ -2016,7 +2018,7 @@ class BuildTemplateServiceImplTest {
                 Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().debtorFiscalCode(DEBTOR_VALID_CF).build()).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.CART_ITEM_DEBTOR_TAX_CODE), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.CART_ITEM_DEBTOR_TAX_CODE, BIZ_EVENT_ID), e.getMessage());
     }
 
     @Test
@@ -2048,7 +2050,7 @@ class BuildTemplateServiceImplTest {
                 EventData.builder().debtorFiscalCode(DEBTOR_VALID_CF).build()).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.CART_ITEM_PAYEE_TAX_CODE), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.CART_ITEM_PAYEE_TAX_CODE, BIZ_EVENT_ID), e.getMessage());
     }
 
     @Test
@@ -2090,12 +2092,12 @@ class BuildTemplateServiceImplTest {
         TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, receipt));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.CART_ITEM_AMOUNT), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.CART_ITEM_AMOUNT, BIZ_EVENT_ID), e.getMessage());
     }
 
     @Test
     void mapTemplateNoCartItemSubjectError() {
-        BizEvent event = BizEvent.builder()
+        List<BizEvent> listOfBizEvents = Collections.singletonList(BizEvent.builder()
                 .id(BIZ_EVENT_ID)
                 .paymentInfo(PaymentInfo.builder()
                         .IUR(IUR)
@@ -2127,14 +2129,14 @@ class BuildTemplateServiceImplTest {
                         )
                         .build()
                 )
-                .build();
+                .build());
         TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () ->
-                buildTemplateService.buildTemplate(event, GENERATED_BY_PAYER, Receipt.builder().eventData(
+                buildTemplateService.buildTemplate(listOfBizEvents, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).eventData(
                 EventData.builder().cart(Collections.singletonList(CartItem.builder().build()))
-                        .debtorFiscalCode("DEBTOR_FC").build()).build()));
+                        .debtorFiscalCode(DEBTOR_VALID_CF).build()).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.CART_ITEM_SUBJECT), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, TemplateDataField.CART_ITEM_SUBJECT, BIZ_EVENT_ID), e.getMessage());
     }
 
     @Test
@@ -2231,7 +2233,8 @@ class BuildTemplateServiceImplTest {
         assertNull(receiptPdfTemplate.getUser());
 
         it.gov.pagopa.receipt.pdf.generator.model.template.Cart cart = receiptPdfTemplate.getCart();
-        assertEquals(FORMATTED_AMOUNT, cart.getAmountPartial());
+        String decurrenciedFormattedAmount = FORMATTED_AMOUNT.replace(".", "").replace(",", ".");
+        assertEquals(currencyFormat(String.valueOf(Double.parseDouble(decurrenciedFormattedAmount)*bizEventList.size())), cart.getAmountPartial());
 
         for (int i = 0; i < bizEventList.size(); i++) {
             assertEquals(FORMATTED_AMOUNT, cart.getItems().get(i).getAmount());
@@ -2243,5 +2246,13 @@ class BuildTemplateServiceImplTest {
             assertEquals(MODEL_TYPE_IUV_TEXT, cart.getItems().get(i).getRefNumber().getType());
             assertEquals(IUV+i, cart.getItems().get(i).getRefNumber().getValue());
         }
+    }
+
+    private String currencyFormat(String value) {
+        BigDecimal valueToFormat = new BigDecimal(value);
+        NumberFormat numberFormat = NumberFormat.getInstance(Locale.ITALY);
+        numberFormat.setMaximumFractionDigits(2);
+        numberFormat.setMinimumFractionDigits(2);
+        return numberFormat.format(valueToFormat);
     }
 }
