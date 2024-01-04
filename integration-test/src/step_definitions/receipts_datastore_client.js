@@ -1,12 +1,5 @@
 const { CosmosClient } = require("@azure/cosmos");
-const { createReceipt, createEventForPoisonQueue } = require("./common");
-const {encryptText } = require("./aesUtils");
-
-const getTokenizedBizEvent = () => {
-    return encryptText("[{\"id\":\"1\"}]");
-}
-
-const TOKENIZED_BIZ_EVENT = getTokenizedBizEvent();
+const { createReceipt } = require("./common");
 
 const cosmos_db_conn_string     = process.env.RECEIPTS_COSMOS_CONN_STRING || "";
 const databaseId                = process.env.RECEIPT_COSMOS_DB_NAME;
@@ -64,15 +57,9 @@ async function getDocumentByBizEventIdFromErrorReceiptsDatastore(bizEventId) {
         .fetchNext();
 }
 
-async function createDocumentInErrorReceiptsDatastore(id) {
-    let payload = {
-        "messagePayload": TOKENIZED_BIZ_EVENT,
-        "bizEventId": id,
-        "status": "REVIEWED",
-        "id": id,
-    };
+async function createDocumentInErrorReceiptsDatastore(document) {
     try {
-        return await errorReceiptContainer.items.create(payload);
+        return await errorReceiptContainer.items.create(document);
     } catch (err) {
         console.log(err);
     }

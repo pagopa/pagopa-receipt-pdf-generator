@@ -1,6 +1,6 @@
 const assert = require('assert');
 const { After, Given, When, Then, setDefaultTimeout } = require('@cucumber/cucumber');
-const { sleep, createEventsForQueue, createEventsForPoisonQueue } = require("./common");
+const { sleep, createEventsForQueue, createEventsForPoisonQueue, createErrorReceipt } = require("./common");
 const { getDocumentByIdFromReceiptsDatastore, deleteDocumentFromErrorReceiptsDatastoreByBizEventId, deleteDocumentFromReceiptsDatastore, createDocumentInReceiptsDatastore, createDocumentInErrorReceiptsDatastore, deleteDocumentFromErrorReceiptsDatastore, getDocumentByBizEventIdFromErrorReceiptsDatastore } = require("./receipts_datastore_client");
 const { putMessageOnPoisonQueue, putMessageOnReceiptQueue } = require("./receipts_queue_client");
 const { receiptPDFExist } = require("./receipts_blob_storage_client");
@@ -126,7 +126,7 @@ Given('a error receipt with id {string} stored into receipt-message-error datast
     await deleteDocumentFromErrorReceiptsDatastore(id);
 
     assert.strictEqual(this.eventId, id);
-    let response = await createDocumentInErrorReceiptsDatastore(id);
+    let response = await createDocumentInErrorReceiptsDatastore(createErrorReceipt(id));
     this.errorReceiptId = id;
     assert.strictEqual(response.statusCode, 201);
 });

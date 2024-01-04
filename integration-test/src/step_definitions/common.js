@@ -1,5 +1,6 @@
 const FISCAL_CODE = "AAAAAA00A00A000A";
 const TOKENIZED_FISCAL_CODE = "cd07268c-73e8-4df4-8305-a35085e32eff";
+const {encryptText } = require("./aesUtils");
 
 function sleep(ms) {
 	return new Promise(resolve => setTimeout(resolve, ms));
@@ -154,6 +155,21 @@ function createReceipt(id, status) {
 	return receipt
 }
 
+const getTokenizedBizEvent = (id, numberOfEvents) => {
+	let arr = createEventsForQueue(id, numberOfEvents);
+    return encryptText(JSON.stringify(arr));
+}
+
+const createErrorReceipt = (id, numberOfEvents) => {
+	let payload = {
+        "messagePayload": getTokenizedBizEvent(id, numberOfEvents),
+        "bizEventId": id,
+        "status": "REVIEWED",
+        "id": id,
+    };
+	return payload;
+}
+
 module.exports = {
-	sleep, createReceipt, createEventsForPoisonQueue, createEventsForQueue
+	sleep, createReceipt, createEventsForPoisonQueue, createEventsForQueue, createErrorReceipt
 }
