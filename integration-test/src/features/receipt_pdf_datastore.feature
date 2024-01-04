@@ -44,3 +44,14 @@ Feature: All about payment events consumed by Azure functions receipt-pdf-genera
     When the error receipt has been properly stored on receipt-message-error datastore after 0 ms
     Then the receipt-message-error datastore returns the error receipt
     And the error receipt has the status "REQUEUED"
+
+  Scenario: a list of three biz event enqueued on receipts queue trigger the PDF receipt generation that is stored on receipts generator and blob storage
+    Given a receipt with id "receipt-generator-int-test-transactionId" and status "INSERTED" stored into receipt datastore
+    And a list of 3 biz event with id "receipt-generator-int-test-id-5" enqueued on receipts queue
+    When the PDF receipt has been properly generate from biz event after 20000 ms
+    Then the receipts datastore returns the receipt
+    And the receipt has eventId "receipt-generator-int-test-transactionId"
+    And the receipt has not the status "TO_REVIEW"
+    And the receipt has not the status "NOT_QUEUE_SENT"
+    And the receipt has not the status "INSERTED"
+    And the blob storage has the PDF document

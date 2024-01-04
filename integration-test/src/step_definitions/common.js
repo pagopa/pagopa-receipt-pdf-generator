@@ -112,7 +112,7 @@ function createEventsForPoisonQueue(id, attemptedPoisonRetry, numberOfEvents) {
 				},
 				"transaction": {
 					"idTransaction": "123456",
-					"transactionId": "123456",
+					"transactionId": "receipt-generator-int-test-transactionId",
 					"grandTotal": 0,
 					"amount": 0,
 					"fee": 0
