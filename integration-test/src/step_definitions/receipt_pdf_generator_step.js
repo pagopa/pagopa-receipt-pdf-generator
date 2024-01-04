@@ -46,13 +46,13 @@ Given('a receipt with id {string} and status {string} stored into receipt datast
 
 Given('a random biz event with id {string} enqueued on receipts queue', async function (id) {
     assert.strictEqual(this.eventId, id);
-    let event = createEventsForQueue(this.eventId);
-    await putMessageOnReceiptQueue(event);
+    let listOfEvents = createEventsForQueue(this.eventId);
+    await putMessageOnReceiptQueue(listOfEvents);
 });
 
 Given("a list of {int} biz event with id {string} and transactionId {string} enqueued on receipts queue", async function(numberOfEvents, id, transactionId){
-    let event = createEventsForQueue(id, numberOfEvents, transactionId);
-    await putMessageOnReceiptQueue(event);
+    let listOfEvents = createEventsForQueue(id, numberOfEvents, transactionId);
+    await putMessageOnReceiptQueue(listOfEvents);
 })
 
 Given('a list of {int} biz event with id {string} and transactionId {string} enqueued on receipts poison queue with poison retry {string}', async function (numberOfEvents, id, transactionId, value) {

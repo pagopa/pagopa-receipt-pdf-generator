@@ -303,7 +303,7 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
         if (receipt.getEventData() != null &&
                 !receipt.getEventData().getCart().isEmpty() &&
                 receipt.getEventData().getCart().get(index) != null &&
-                receipt.getEventData().getCart().get(0).getSubject() != null
+                receipt.getEventData().getCart().get(index).getSubject() != null
         ) {
             return receipt.getEventData().getCart().get(index).getSubject();
         }

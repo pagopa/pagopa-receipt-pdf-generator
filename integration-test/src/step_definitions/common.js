@@ -145,7 +145,15 @@ function createReceipt(id, status) {
 				{
 					"payeeName": "Comune di Milano",
 					"subject": "ACI"
-				}
+				},
+				{
+					"payeeName": "Comune di Milano",
+					"subject": "ACI"
+				},
+				{
+					"payeeName": "Comune di Milano",
+					"subject": "ACI"
+				},
 			]
 		},
 		"status": status,
