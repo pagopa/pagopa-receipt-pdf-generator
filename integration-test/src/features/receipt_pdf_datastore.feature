@@ -56,7 +56,7 @@ Feature: All about payment events consumed by Azure functions receipt-pdf-genera
     And the receipt has not the status "INSERTED"
     And the blob storage has the PDF document
 
-  Scenario: a list of thre event enqueued on receipts poison queue is stored on receipt-message-error datastore and the receipt status is updated to TO_REVIEW
+  Scenario: a list of three biz event enqueued on receipts poison queue is stored on receipt-message-error datastore and the receipt status is updated to TO_REVIEW
     Given a receipt with id "receipt-generator-int-test-transactionId-2" and status "INSERTED" stored into receipt datastore
     And a list of 3 biz event with id "receipt-generator-int-test-id-6" and transactionId "receipt-generator-int-test-transactionId-2" enqueued on receipts poison queue with poison retry "true"
     When the biz event has been properly stored on receipt-message-error datastore after 20000 ms

@@ -80,6 +80,7 @@ Then('the receipt has eventId {string}', function (targetId) {
 });
 
 Then('the receipt has not the status {string}', function (targetStatus) {
+    console.log("RECEIPT", responseToCheck.resources[0]);
     assert.notStrictEqual(this.responseToCheck.resources[0].status, targetStatus);
 });
 
