@@ -5,11 +5,11 @@ function sleep(ms) {
 	return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-function createEventsForQueue(id, numberOfEvents) {
-	return createEventsForPoisonQueue(id, false, numberOfEvents);
+function createEventsForQueue(id, numberOfEvents, transactionId) {
+	return createEventsForPoisonQueue(id, false, numberOfEvents, transactionId);
 }
 
-function createEventsForPoisonQueue(id, attemptedPoisonRetry, numberOfEvents) {
+function createEventsForPoisonQueue(id, attemptedPoisonRetry, numberOfEvents, transactionId) {
 	let arrayOfEvents = [];
 	for(let i = 0; i < (numberOfEvents ?? 1); i++) {
 		let finalId = id+(i != 0 ? i : "");
@@ -112,7 +112,7 @@ function createEventsForPoisonQueue(id, attemptedPoisonRetry, numberOfEvents) {
 				},
 				"transaction": {
 					"idTransaction": "123456",
-					"transactionId": "receipt-generator-int-test-transactionId",
+					"transactionId": transactionId ? transactionId : "receipt-generator-int-test-transactionId",
 					"grandTotal": 0,
 					"amount": 0,
 					"fee": 0

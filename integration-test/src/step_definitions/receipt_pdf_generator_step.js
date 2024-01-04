@@ -13,6 +13,7 @@ this.eventId = null;
 this.responseToCheck = null;
 this.receiptId = null;
 this.errorReceiptId = null;
+this.errorReceiptEventId = null;
 this.listOfEvents = null;
 
 // After each Scenario
@@ -28,7 +29,8 @@ After(async function () {
     this.responseToCheck = null;
     this.receiptId = null;
     this.errorReceiptId = null;
-    this.event = null;
+    this.errorReceiptEventId = null;
+    this.listOfEvents = null;
 });
 
 
@@ -48,10 +50,18 @@ Given('a random biz event with id {string} enqueued on receipts queue', async fu
     await putMessageOnReceiptQueue(event);
 });
 
-Given("a list of {int} biz event with id {string} enqueued on receipts queue", async function(numberOfEvents, id){
-    let event = createEventsForQueue(id, numberOfEvents);
+Given("a list of {int} biz event with id {string} and transactionId {string} enqueued on receipts queue", async function(numberOfEvents, id, transactionId){
+    let event = createEventsForQueue(id, numberOfEvents, transactionId);
     await putMessageOnReceiptQueue(event);
 })
+
+Given('a list of {int} biz event with id {string} and transactionId {string} enqueued on receipts poison queue with poison retry {string}', async function (numberOfEvents, id, transactionId, value) {
+    let attemptedPoisonRetry = (value === 'true');
+    this.listOfEvents = createEventsForPoisonQueue(id, attemptedPoisonRetry, numberOfEvents, transactionId);
+    this.errorReceiptEventId = transactionId;
+    await deleteDocumentFromErrorReceiptsDatastoreByBizEventId(id);
+    await putMessageOnPoisonQueue(this.listOfEvents);
+    });
 
 When('the PDF receipt has been properly generate from biz event after {int} ms', async function (time) {
     // boundary time spent by azure function to process event
@@ -90,6 +100,7 @@ Then('the blob storage has the PDF document', async function () {
 Given('a random biz event with id {string} enqueued on receipts poison queue with poison retry {string}', async function (id, value) {
     let attemptedPoisonRetry = (value === 'true');
     this.listOfEvents = createEventsForPoisonQueue(id, attemptedPoisonRetry);
+    this.errorReceiptEventId = id;
     await deleteDocumentFromErrorReceiptsDatastoreByBizEventId(id);
     await putMessageOnPoisonQueue(this.listOfEvents);
 });
@@ -97,7 +108,7 @@ Given('a random biz event with id {string} enqueued on receipts poison queue wit
 When('the biz event has been properly stored on receipt-message-error datastore after {int} ms', async function (time) {
     // boundary time spent by azure function to process event
     await sleep(time);
-    this.responseToCheck = await getDocumentByBizEventIdFromErrorReceiptsDatastore(this.listOfEvents[0].id); //TODO
+    this.responseToCheck = await getDocumentByBizEventIdFromErrorReceiptsDatastore(this.errorReceiptEventId);
 });
 
 Then('the receipt-message-error datastore returns the error receipt', async function () {
