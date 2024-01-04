@@ -1,6 +1,6 @@
 const assert = require('assert');
 const { After, Given, When, Then, setDefaultTimeout } = require('@cucumber/cucumber');
-const { sleep, createEventForQueue, createEventForPoisonQueue } = require("./common");
+const { sleep, createEventsForQueue, createEventsForPoisonQueue } = require("./common");
 const { getDocumentByIdFromReceiptsDatastore, deleteDocumentFromErrorReceiptsDatastoreByBizEventId, deleteDocumentFromReceiptsDatastore, createDocumentInReceiptsDatastore, createDocumentInErrorReceiptsDatastore, deleteDocumentFromErrorReceiptsDatastore, getDocumentByBizEventIdFromErrorReceiptsDatastore } = require("./receipts_datastore_client");
 const { putMessageOnPoisonQueue, putMessageOnReceiptQueue } = require("./receipts_queue_client");
 const { receiptPDFExist } = require("./receipts_blob_storage_client");
@@ -44,7 +44,7 @@ Given('a receipt with id {string} and status {string} stored into receipt datast
 
 Given('a random biz event with id {string} enqueued on receipts queue', async function (id) {
     assert.strictEqual(this.eventId, id);
-    let event = createEventForQueue(this.eventId);
+    let event = createEventsForQueue(this.eventId);
     await putMessageOnReceiptQueue(event);
 });
 
@@ -85,7 +85,7 @@ Then('the blob storage has the PDF document', async function () {
 
 Given('a random biz event with id {string} enqueued on receipts poison queue with poison retry {string}', async function (id, value) {
     let attemptedPoisonRetry = (value === 'true');
-    this.event = createEventForPoisonQueue(id, attemptedPoisonRetry);
+    this.event = createEventsForPoisonQueue(id, attemptedPoisonRetry);
     await deleteDocumentFromErrorReceiptsDatastoreByBizEventId(id);
     await putMessageOnPoisonQueue(this.event);
 });
