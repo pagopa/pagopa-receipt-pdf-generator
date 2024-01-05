@@ -1,9 +1,12 @@
 package it.gov.pagopa.receipt.pdf.generator;
 
+import com.azure.core.http.rest.Response;
+import com.azure.storage.queue.models.SendMessageResult;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.OutputBinding;
 import it.gov.pagopa.receipt.pdf.generator.client.ReceiptCosmosClient;
+import it.gov.pagopa.receipt.pdf.generator.client.ReceiptQueueClient;
 import it.gov.pagopa.receipt.pdf.generator.entity.event.*;
 import it.gov.pagopa.receipt.pdf.generator.entity.event.Info;
 import it.gov.pagopa.receipt.pdf.generator.entity.event.enumeration.BizEventStatusType;
@@ -23,9 +26,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -56,7 +56,7 @@ class GenerateReceiptPdfTest {
     private GenerateReceiptPdfService generateReceiptPdfServiceMock;
     private ReceiptCosmosClient receiptCosmosClientMock;
     private OutputBinding<Receipt> documentReceiptsMock;
-    private OutputBinding<String> requeueMessageMock;
+    private ReceiptQueueClient queueServiceMock;
     private ExecutionContext executionContextMock;
 
     private GenerateReceiptPdf sut;
@@ -66,10 +66,10 @@ class GenerateReceiptPdfTest {
         generateReceiptPdfServiceMock = mock(GenerateReceiptPdfService.class);
         receiptCosmosClientMock = mock(ReceiptCosmosClient.class);
         documentReceiptsMock = (OutputBinding<Receipt>) spy(OutputBinding.class);
-        requeueMessageMock = (OutputBinding<String>) spy(OutputBinding.class);
+        queueServiceMock = mock(ReceiptQueueClient.class);
         executionContextMock = mock(ExecutionContext.class);
 
-        sut = spy(new GenerateReceiptPdf(generateReceiptPdfServiceMock, new ReceiptCosmosServiceImpl(receiptCosmosClientMock)));
+        sut = spy(new GenerateReceiptPdf(generateReceiptPdfServiceMock, new ReceiptCosmosServiceImpl(receiptCosmosClientMock), queueServiceMock));
     }
 
     @Test
@@ -82,7 +82,7 @@ class GenerateReceiptPdfTest {
         doReturn(new PdfGeneration()).when(generateReceiptPdfServiceMock).generateReceipts(any(), any(), any());
         doReturn(true).when(generateReceiptPdfServiceMock).verifyAndUpdateReceipt(any(), any());
 
-        sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, requeueMessageMock, executionContextMock);
+        sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, executionContextMock);
 
         assertEquals(ReceiptStatusType.GENERATED, receipt.getStatus());
         assertNotEquals(ORIGINAL_GENERATED_AT, receipt.getGenerated_at());
@@ -94,7 +94,7 @@ class GenerateReceiptPdfTest {
         verify(generateReceiptPdfServiceMock).generateReceipts(any(), any(), any());
         verify(generateReceiptPdfServiceMock).verifyAndUpdateReceipt(any(), any());
         verify(documentReceiptsMock).setValue(any());
-        verify(requeueMessageMock, never()).setValue(any());
+        verify(queueServiceMock, never()).sendMessageToQueue(any());
     }
 
     @Test
@@ -107,7 +107,7 @@ class GenerateReceiptPdfTest {
         doReturn(new PdfGeneration()).when(generateReceiptPdfServiceMock).generateReceipts(any(), any(), any());
         doReturn(true).when(generateReceiptPdfServiceMock).verifyAndUpdateReceipt(any(), any());
 
-        sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, requeueMessageMock, executionContextMock);
+        sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, executionContextMock);
 
         assertEquals(ReceiptStatusType.GENERATED, receipt.getStatus());
         assertNotEquals(ORIGINAL_GENERATED_AT, receipt.getGenerated_at());
@@ -118,20 +118,20 @@ class GenerateReceiptPdfTest {
         verify(generateReceiptPdfServiceMock).generateReceipts(any(), any(), any());
         verify(generateReceiptPdfServiceMock).verifyAndUpdateReceipt(any(), any());
         verify(documentReceiptsMock).setValue(any());
-        verify(requeueMessageMock, never()).setValue(any());
+        verify(queueServiceMock, never()).sendMessageToQueue(any());
     }
 
     @Test
     @SneakyThrows
     void generatePDFFailParsingBizEventMessage() {
         assertThrows(BizEventNotValidException.class,
-                () -> sut.processGenerateReceipt(BIZ_EVENT_INVALID_MESSAGE, documentReceiptsMock, requeueMessageMock, executionContextMock));
+                () -> sut.processGenerateReceipt(BIZ_EVENT_INVALID_MESSAGE, documentReceiptsMock, executionContextMock));
 
         verify(receiptCosmosClientMock, never()).getReceiptDocument(anyString());
         verify(generateReceiptPdfServiceMock, never()).generateReceipts(any(), any(), any());
         verify(generateReceiptPdfServiceMock, never()).verifyAndUpdateReceipt(any(), any());
         verify(documentReceiptsMock, never()).setValue(any());
-        verify(requeueMessageMock, never()).setValue(any());
+        verify(queueServiceMock, never()).sendMessageToQueue(any());
     }
 
     @Test
@@ -140,13 +140,13 @@ class GenerateReceiptPdfTest {
         doThrow(ReceiptNotFoundException.class).when(receiptCosmosClientMock).getReceiptDocument(anyString());
 
         assertThrows(ReceiptNotFoundException.class,
-                () -> sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, requeueMessageMock, executionContextMock));
+                () -> sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, executionContextMock));
 
         verify(receiptCosmosClientMock).getReceiptDocument(anyString());
         verify(generateReceiptPdfServiceMock, never()).generateReceipts(any(), any(), any());
         verify(generateReceiptPdfServiceMock, never()).verifyAndUpdateReceipt(any(), any());
         verify(documentReceiptsMock, never()).setValue(any());
-        verify(requeueMessageMock, never()).setValue(any());
+        verify(queueServiceMock, never()).sendMessageToQueue(any());
     }
 
     @Test
@@ -155,13 +155,13 @@ class GenerateReceiptPdfTest {
         doReturn(null).when(receiptCosmosClientMock).getReceiptDocument(anyString());
 
         assertThrows(ReceiptNotFoundException.class,
-                () -> sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, requeueMessageMock, executionContextMock));
+                () -> sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, executionContextMock));
 
         verify(receiptCosmosClientMock).getReceiptDocument(anyString());
         verify(generateReceiptPdfServiceMock, never()).generateReceipts(any(), any(), any());
         verify(generateReceiptPdfServiceMock, never()).verifyAndUpdateReceipt(any(), any());
         verify(documentReceiptsMock, never()).setValue(any());
-        verify(requeueMessageMock, never()).setValue(any());
+        verify(queueServiceMock, never()).sendMessageToQueue(any());
     }
 
     @Test
@@ -169,13 +169,13 @@ class GenerateReceiptPdfTest {
     void generatePDFDiscardedReceiptWithNullEventData() {
         doReturn(new Receipt()).when(receiptCosmosClientMock).getReceiptDocument(anyString());
 
-        sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, requeueMessageMock, executionContextMock);
+        sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, executionContextMock);
 
         verify(receiptCosmosClientMock).getReceiptDocument(anyString());
         verify(generateReceiptPdfServiceMock, never()).generateReceipts(any(), any(), any());
         verify(generateReceiptPdfServiceMock, never()).verifyAndUpdateReceipt(any(), any());
         verify(documentReceiptsMock, never()).setValue(any());
-        verify(requeueMessageMock, never()).setValue(any());
+        verify(queueServiceMock, never()).sendMessageToQueue(any());
     }
 
     @Test
@@ -185,13 +185,13 @@ class GenerateReceiptPdfTest {
 
         doReturn(receipt).when(receiptCosmosClientMock).getReceiptDocument(anyString());
 
-        sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, requeueMessageMock, executionContextMock);
+        sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, executionContextMock);
 
         verify(receiptCosmosClientMock).getReceiptDocument(anyString());
         verify(generateReceiptPdfServiceMock, never()).generateReceipts(any(), any(), any());
         verify(generateReceiptPdfServiceMock, never()).verifyAndUpdateReceipt(any(), any());
         verify(documentReceiptsMock, never()).setValue(any());
-        verify(requeueMessageMock, never()).setValue(any());
+        verify(queueServiceMock, never()).sendMessageToQueue(any());
     }
 
     @Test
@@ -201,13 +201,13 @@ class GenerateReceiptPdfTest {
 
         doReturn(receipt).when(receiptCosmosClientMock).getReceiptDocument(anyString());
 
-        sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, requeueMessageMock, executionContextMock);
+        sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, executionContextMock);
 
         verify(receiptCosmosClientMock).getReceiptDocument(anyString());
         verify(generateReceiptPdfServiceMock, never()).generateReceipts(any(), any(), any());
         verify(generateReceiptPdfServiceMock, never()).verifyAndUpdateReceipt(any(), any());
         verify(documentReceiptsMock, never()).setValue(any());
-        verify(requeueMessageMock, never()).setValue(any());
+        verify(queueServiceMock, never()).sendMessageToQueue(any());
     }
 
     @Test
@@ -217,13 +217,13 @@ class GenerateReceiptPdfTest {
 
         doReturn(receipt).when(receiptCosmosClientMock).getReceiptDocument(anyString());
 
-        sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, requeueMessageMock, executionContextMock);
+        sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, executionContextMock);
 
         verify(receiptCosmosClientMock).getReceiptDocument(anyString());
         verify(generateReceiptPdfServiceMock, never()).generateReceipts(any(), any(), any());
         verify(generateReceiptPdfServiceMock, never()).verifyAndUpdateReceipt(any(), any());
         verify(documentReceiptsMock, never()).setValue(any());
-        verify(requeueMessageMock, never()).setValue(any());
+        verify(queueServiceMock, never()).sendMessageToQueue(any());
     }
 
     @Test
@@ -233,13 +233,13 @@ class GenerateReceiptPdfTest {
 
         doReturn(receipt).when(receiptCosmosClientMock).getReceiptDocument(anyString());
 
-        sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, requeueMessageMock, executionContextMock);
+        sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, executionContextMock);
 
         verify(receiptCosmosClientMock).getReceiptDocument(anyString());
         verify(generateReceiptPdfServiceMock, never()).generateReceipts(any(), any(), any());
         verify(generateReceiptPdfServiceMock, never()).verifyAndUpdateReceipt(any(), any());
         verify(documentReceiptsMock, never()).setValue(any());
-        verify(requeueMessageMock, never()).setValue(any());
+        verify(queueServiceMock, never()).sendMessageToQueue(any());
     }
 
     @Test
@@ -249,13 +249,13 @@ class GenerateReceiptPdfTest {
 
         doReturn(receipt).when(receiptCosmosClientMock).getReceiptDocument(anyString());
 
-        sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, requeueMessageMock, executionContextMock);
+        sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, executionContextMock);
 
         verify(receiptCosmosClientMock).getReceiptDocument(anyString());
         verify(generateReceiptPdfServiceMock, never()).generateReceipts(any(), any(), any());
         verify(generateReceiptPdfServiceMock, never()).verifyAndUpdateReceipt(any(), any());
         verify(documentReceiptsMock, never()).setValue(any());
-        verify(requeueMessageMock, never()).setValue(any());
+        verify(queueServiceMock, never()).sendMessageToQueue(any());
     }
 
     @Test
@@ -265,13 +265,13 @@ class GenerateReceiptPdfTest {
 
         doReturn(receipt).when(receiptCosmosClientMock).getReceiptDocument(anyString());
 
-        sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, requeueMessageMock, executionContextMock);
+        sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, executionContextMock);
 
         verify(receiptCosmosClientMock).getReceiptDocument(anyString());
         verify(generateReceiptPdfServiceMock, never()).generateReceipts(any(), any(), any());
         verify(generateReceiptPdfServiceMock, never()).verifyAndUpdateReceipt(any(), any());
         verify(documentReceiptsMock, never()).setValue(any());
-        verify(requeueMessageMock, never()).setValue(any());
+        verify(queueServiceMock, never()).sendMessageToQueue(any());
     }
 
     @Test
@@ -281,13 +281,13 @@ class GenerateReceiptPdfTest {
 
         doReturn(receipt).when(receiptCosmosClientMock).getReceiptDocument(anyString());
 
-        sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, requeueMessageMock, executionContextMock);
+        sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, executionContextMock);
 
         verify(receiptCosmosClientMock).getReceiptDocument(anyString());
         verify(generateReceiptPdfServiceMock, never()).generateReceipts(any(), any(), any());
         verify(generateReceiptPdfServiceMock, never()).verifyAndUpdateReceipt(any(), any());
         verify(documentReceiptsMock, never()).setValue(any());
-        verify(requeueMessageMock, never()).setValue(any());
+        verify(queueServiceMock, never()).sendMessageToQueue(any());
     }
 
     @Test
@@ -297,13 +297,13 @@ class GenerateReceiptPdfTest {
 
         doReturn(receipt).when(receiptCosmosClientMock).getReceiptDocument(anyString());
 
-        sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, requeueMessageMock, executionContextMock);
+        sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, executionContextMock);
 
         verify(receiptCosmosClientMock).getReceiptDocument(anyString());
         verify(generateReceiptPdfServiceMock, never()).generateReceipts(any(), any(), any());
         verify(generateReceiptPdfServiceMock, never()).verifyAndUpdateReceipt(any(), any());
         verify(documentReceiptsMock, never()).setValue(any());
-        verify(requeueMessageMock, never()).setValue(any());
+        verify(queueServiceMock, never()).sendMessageToQueue(any());
     }
 
     @Test
@@ -321,7 +321,7 @@ class GenerateReceiptPdfTest {
 
         doReturn(receipt).when(receiptCosmosClientMock).getReceiptDocument(anyString());
 
-        sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, requeueMessageMock, executionContextMock);
+        sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, executionContextMock);
 
         assertEquals(ReceiptStatusType.FAILED, receipt.getStatus());
         assertEquals(ORIGINAL_GENERATED_AT, receipt.getGenerated_at());
@@ -334,7 +334,7 @@ class GenerateReceiptPdfTest {
         verify(generateReceiptPdfServiceMock, never()).generateReceipts(any(), any(), any());
         verify(generateReceiptPdfServiceMock, never()).verifyAndUpdateReceipt(any(), any());
         verify(documentReceiptsMock).setValue(any());
-        verify(requeueMessageMock, never()).setValue(any());
+        verify(queueServiceMock, never()).sendMessageToQueue(any());
     }
 
     @Test
@@ -346,8 +346,11 @@ class GenerateReceiptPdfTest {
         doReturn(receipt).when(receiptCosmosClientMock).getReceiptDocument(anyString());
         doReturn(new PdfGeneration()).when(generateReceiptPdfServiceMock).generateReceipts(any(), any(), any());
         doReturn(false).when(generateReceiptPdfServiceMock).verifyAndUpdateReceipt(any(), any());
+        Response<SendMessageResult> response = mock(Response.class);
+        doReturn(com.microsoft.azure.functions.HttpStatus.CREATED.value()).when(response).getStatusCode();
+        doReturn(response).when(queueServiceMock).sendMessageToQueue(any());
 
-        sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, requeueMessageMock, executionContextMock);
+        sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, executionContextMock);
 
         assertEquals(ReceiptStatusType.RETRY, receipt.getStatus());
         assertEquals(ORIGINAL_GENERATED_AT, receipt.getGenerated_at());
@@ -358,7 +361,7 @@ class GenerateReceiptPdfTest {
         verify(generateReceiptPdfServiceMock).generateReceipts(any(), any(), any());
         verify(generateReceiptPdfServiceMock).verifyAndUpdateReceipt(any(), any());
         verify(documentReceiptsMock).setValue(any());
-        verify(requeueMessageMock).setValue(any());
+        verify(queueServiceMock).sendMessageToQueue(any());
     }
 
     @Test
@@ -371,7 +374,7 @@ class GenerateReceiptPdfTest {
         doReturn(new PdfGeneration()).when(generateReceiptPdfServiceMock).generateReceipts(any(), any(), any());
         doReturn(false).when(generateReceiptPdfServiceMock).verifyAndUpdateReceipt(any(), any());
 
-        sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, requeueMessageMock, executionContextMock);
+        sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, executionContextMock);
 
         assertEquals(ReceiptStatusType.FAILED, receipt.getStatus());
         assertEquals(ORIGINAL_GENERATED_AT, receipt.getGenerated_at());
@@ -382,7 +385,7 @@ class GenerateReceiptPdfTest {
         verify(generateReceiptPdfServiceMock).generateReceipts(any(), any(), any());
         verify(generateReceiptPdfServiceMock).verifyAndUpdateReceipt(any(), any());
         verify(documentReceiptsMock).setValue(any());
-        verify(requeueMessageMock, never()).setValue(any());
+        verify(queueServiceMock, never()).sendMessageToQueue(any());
     }
 
     @Test
@@ -395,7 +398,7 @@ class GenerateReceiptPdfTest {
         doReturn(new PdfGeneration()).when(generateReceiptPdfServiceMock).generateReceipts(any(), any(), any());
         doThrow(ReceiptGenerationNotToRetryException.class).when(generateReceiptPdfServiceMock).verifyAndUpdateReceipt(any(), any());
 
-        sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, requeueMessageMock, executionContextMock);
+        sut.processGenerateReceipt(BIZ_EVENT_VALID_MESSAGE, documentReceiptsMock, executionContextMock);
 
         assertEquals(ReceiptStatusType.FAILED, receipt.getStatus());
         assertEquals(ORIGINAL_GENERATED_AT, receipt.getGenerated_at());
@@ -406,7 +409,7 @@ class GenerateReceiptPdfTest {
         verify(generateReceiptPdfServiceMock).generateReceipts(any(), any(), any());
         verify(generateReceiptPdfServiceMock).verifyAndUpdateReceipt(any(), any());
         verify(documentReceiptsMock).setValue(any());
-        verify(requeueMessageMock, never()).setValue(any());
+        verify(queueServiceMock, never()).sendMessageToQueue(any());
     }
 
     @Test
@@ -419,7 +422,7 @@ class GenerateReceiptPdfTest {
         doReturn(new PdfGeneration()).when(generateReceiptPdfServiceMock).generateReceipts(any(), any(), any());
         doReturn(true).when(generateReceiptPdfServiceMock).verifyAndUpdateReceipt(any(), any());
 
-        sut.processGenerateReceipt(MULTIPLE_BIZ_EVENTS_VALID_MESSAGE, documentReceiptsMock, requeueMessageMock, executionContextMock);
+        sut.processGenerateReceipt(MULTIPLE_BIZ_EVENTS_VALID_MESSAGE, documentReceiptsMock, executionContextMock);
 
         assertEquals(ReceiptStatusType.GENERATED, receipt.getStatus());
         assertNotEquals(ORIGINAL_GENERATED_AT, receipt.getGenerated_at());
@@ -431,7 +434,7 @@ class GenerateReceiptPdfTest {
         verify(generateReceiptPdfServiceMock).generateReceipts(any(), any(), any());
         verify(generateReceiptPdfServiceMock).verifyAndUpdateReceipt(any(), any());
         verify(documentReceiptsMock).setValue(any());
-        verify(requeueMessageMock, never()).setValue(any());
+        verify(queueServiceMock, never()).sendMessageToQueue(any());
     }
 
     private Receipt buildReceiptWithStatus(ReceiptStatusType receiptStatusType, int numRetry, String id) {

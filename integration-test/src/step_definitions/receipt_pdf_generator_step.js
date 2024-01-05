@@ -1,6 +1,6 @@
 const assert = require('assert');
 const { After, Given, When, Then, setDefaultTimeout } = require('@cucumber/cucumber');
-const { sleep, createEventForQueue, createEventForPoisonQueue } = require("./common");
+const { sleep, createEventsForQueue, createEventsForPoisonQueue, createErrorReceipt } = require("./common");
 const { getDocumentByIdFromReceiptsDatastore, deleteDocumentFromErrorReceiptsDatastoreByBizEventId, deleteDocumentFromReceiptsDatastore, createDocumentInReceiptsDatastore, createDocumentInErrorReceiptsDatastore, deleteDocumentFromErrorReceiptsDatastore, getDocumentByBizEventIdFromErrorReceiptsDatastore } = require("./receipts_datastore_client");
 const { putMessageOnPoisonQueue, putMessageOnReceiptQueue } = require("./receipts_queue_client");
 const { receiptPDFExist } = require("./receipts_blob_storage_client");
@@ -13,7 +13,8 @@ this.eventId = null;
 this.responseToCheck = null;
 this.receiptId = null;
 this.errorReceiptId = null;
-this.event = null;
+this.errorReceiptEventId = null;
+this.listOfEvents = null;
 
 // After each Scenario
 After(async function () {
@@ -28,7 +29,8 @@ After(async function () {
     this.responseToCheck = null;
     this.receiptId = null;
     this.errorReceiptId = null;
-    this.event = null;
+    this.errorReceiptEventId = null;
+    this.listOfEvents = null;
 });
 
 
@@ -44,10 +46,22 @@ Given('a receipt with id {string} and status {string} stored into receipt datast
 
 Given('a random biz event with id {string} enqueued on receipts queue', async function (id) {
     assert.strictEqual(this.eventId, id);
-    let event = createEventForQueue(this.eventId);
-    await putMessageOnReceiptQueue(event);
+    let listOfEvents = createEventsForQueue(this.eventId);
+    await putMessageOnReceiptQueue(listOfEvents);
 });
 
+Given("a list of {int} biz event with id {string} and transactionId {string} enqueued on receipts queue", async function(numberOfEvents, id, transactionId){
+    let listOfEvents = createEventsForQueue(id, numberOfEvents, transactionId);
+    await putMessageOnReceiptQueue(listOfEvents);
+})
+
+Given('a list of {int} biz event with id {string} and transactionId {string} enqueued on receipts poison queue with poison retry {string}', async function (numberOfEvents, id, transactionId, value) {
+    let attemptedPoisonRetry = (value === 'true');
+    this.listOfEvents = createEventsForPoisonQueue(id, attemptedPoisonRetry, numberOfEvents, transactionId);
+    this.errorReceiptEventId = transactionId;
+    await deleteDocumentFromErrorReceiptsDatastoreByBizEventId(id);
+    await putMessageOnPoisonQueue(this.listOfEvents);
+    });
 
 When('the PDF receipt has been properly generate from biz event after {int} ms', async function (time) {
     // boundary time spent by azure function to process event
@@ -85,15 +99,16 @@ Then('the blob storage has the PDF document', async function () {
 
 Given('a random biz event with id {string} enqueued on receipts poison queue with poison retry {string}', async function (id, value) {
     let attemptedPoisonRetry = (value === 'true');
-    this.event = createEventForPoisonQueue(id, attemptedPoisonRetry);
+    this.listOfEvents = createEventsForPoisonQueue(id, attemptedPoisonRetry);
+    this.errorReceiptEventId = id;
     await deleteDocumentFromErrorReceiptsDatastoreByBizEventId(id);
-    await putMessageOnPoisonQueue(this.event);
+    await putMessageOnPoisonQueue(this.listOfEvents);
 });
 
 When('the biz event has been properly stored on receipt-message-error datastore after {int} ms', async function (time) {
     // boundary time spent by azure function to process event
     await sleep(time);
-    this.responseToCheck = await getDocumentByBizEventIdFromErrorReceiptsDatastore(this.event.id);
+    this.responseToCheck = await getDocumentByBizEventIdFromErrorReceiptsDatastore(this.errorReceiptEventId);
 });
 
 Then('the receipt-message-error datastore returns the error receipt', async function () {
@@ -110,7 +125,7 @@ Given('a error receipt with id {string} stored into receipt-message-error datast
     await deleteDocumentFromErrorReceiptsDatastore(id);
 
     assert.strictEqual(this.eventId, id);
-    let response = await createDocumentInErrorReceiptsDatastore(id);
+    let response = await createDocumentInErrorReceiptsDatastore(createErrorReceipt(id));
     this.errorReceiptId = id;
     assert.strictEqual(response.statusCode, 201);
 });

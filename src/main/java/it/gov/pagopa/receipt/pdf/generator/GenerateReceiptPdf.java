@@ -1,13 +1,16 @@
 package it.gov.pagopa.receipt.pdf.generator;
 
+import com.azure.core.http.rest.Response;
+import com.azure.storage.queue.models.SendMessageResult;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.OutputBinding;
 import com.microsoft.azure.functions.annotation.CosmosDBOutput;
 import com.microsoft.azure.functions.annotation.FunctionName;
-import com.microsoft.azure.functions.annotation.QueueOutput;
 import com.microsoft.azure.functions.annotation.QueueTrigger;
+import it.gov.pagopa.receipt.pdf.generator.client.ReceiptQueueClient;
+import it.gov.pagopa.receipt.pdf.generator.client.impl.ReceiptQueueClientImpl;
 import it.gov.pagopa.receipt.pdf.generator.entity.event.BizEvent;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.ReasonError;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.Receipt;
@@ -15,6 +18,7 @@ import it.gov.pagopa.receipt.pdf.generator.entity.receipt.enumeration.ReceiptSta
 import it.gov.pagopa.receipt.pdf.generator.exception.BizEventNotValidException;
 import it.gov.pagopa.receipt.pdf.generator.exception.ReceiptGenerationNotToRetryException;
 import it.gov.pagopa.receipt.pdf.generator.exception.ReceiptNotFoundException;
+import it.gov.pagopa.receipt.pdf.generator.exception.UnableToQueueException;
 import it.gov.pagopa.receipt.pdf.generator.model.PdfGeneration;
 import it.gov.pagopa.receipt.pdf.generator.service.GenerateReceiptPdfService;
 import it.gov.pagopa.receipt.pdf.generator.service.ReceiptCosmosService;
@@ -36,6 +40,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Base64;
 import java.util.List;
 
 /**
@@ -52,15 +57,18 @@ public class GenerateReceiptPdf {
 
     private final GenerateReceiptPdfService generateReceiptPdfService;
     private final ReceiptCosmosService receiptCosmosService;
+    private final ReceiptQueueClient queueService;
 
     public GenerateReceiptPdf() {
         this.generateReceiptPdfService = new GenerateReceiptPdfServiceImpl();
         this.receiptCosmosService = new ReceiptCosmosServiceImpl();
+        this.queueService = ReceiptQueueClientImpl.getInstance();
     }
 
-    GenerateReceiptPdf(GenerateReceiptPdfService generateReceiptPdfService, ReceiptCosmosService receiptCosmosService) {
+    GenerateReceiptPdf(GenerateReceiptPdfService generateReceiptPdfService, ReceiptCosmosService receiptCosmosService, ReceiptQueueClient queueService) {
         this.generateReceiptPdfService = generateReceiptPdfService;
         this.receiptCosmosService = receiptCosmosService;
+        this.queueService = queueService;
     }
 
     /**
@@ -112,11 +120,6 @@ public class GenerateReceiptPdf {
                     collectionName = "receipts",
                     connectionStringSetting = "COSMOS_RECEIPTS_CONN_STRING")
             OutputBinding<Receipt> documentdb,
-            @QueueOutput(
-                    name = "QueueReceiptWaitingForGenOutput",
-                    queueName = "%RECEIPT_QUEUE_TOPIC%",
-                    connection = "RECEIPTS_STORAGE_CONN_STRING")
-            OutputBinding<String> requeueMessage,
             final ExecutionContext context) throws BizEventNotValidException, ReceiptNotFoundException, IOException {
 
         //Map queue bizEventMessage to BizEvent
@@ -188,7 +191,13 @@ public class GenerateReceiptPdf {
                     } else {
                         receiptStatusType = ReceiptStatusType.RETRY;
                         receipt.setNumRetry(receipt.getNumRetry() + 1);
-                        requeueMessage.setValue(bizEventMessage);
+                        //Send decoded BizEvent to queue
+                        Response<SendMessageResult> sendMessageResult =
+                                this.queueService.sendMessageToQueue(Base64.getMimeEncoder().encodeToString(bizEventMessage.getBytes()));
+                        if (sendMessageResult.getStatusCode() != com.microsoft.azure.functions.HttpStatus.CREATED.value()) {
+                            throw new UnableToQueueException("Unable to queue due to error: " +
+                                    sendMessageResult.getStatusCode());
+                        }
                     }
                     receipt.setStatus(receiptStatusType);
                     logger.error("[{}] Error generating receipt for Receipt {} will be saved with status {}",
@@ -196,7 +205,7 @@ public class GenerateReceiptPdf {
                             receipt.getId(),
                             receiptStatusType);
                 }
-            } catch (ReceiptGenerationNotToRetryException e) {
+            } catch (UnableToQueueException | ReceiptGenerationNotToRetryException e) {
                 receipt.setStatus(ReceiptStatusType.FAILED);
                 logger.error("[{}] PDF Receipt generation for Receipt {} failed. This error will not be retried, the receipt will be saved with status {}",
                         context.getFunctionName(),

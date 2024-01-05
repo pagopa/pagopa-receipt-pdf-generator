@@ -42,3 +42,6 @@ obj/
 yarn.lock
 **/*.copy.js
 **/*.local
+.azure/
+
+.env
