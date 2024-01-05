@@ -89,7 +89,7 @@ jobs:
     needs: [ create_runner, integration_test ]
     runs-on: [ self-hosted, "${{ needs.create_runner.outputs.runner_name }}" ]
     name: Notify
-    if: ${{ (success() || failure()) && inputs.notify}}
+    if: ${{ (success() || failure()) && (github.event.inputs == null || inputs.notify)}}
     steps:
       - name: Report Status
         if: always()
