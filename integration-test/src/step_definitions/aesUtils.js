@@ -8,6 +8,7 @@ const ALGORITHM = 'aes-256-cbc';
 
 function encryptText(strToEncrypt) {
     try {
+        console.log("AES ENV", AES_SECRET_KEY[0], AES_SALT[0]);
         const iv = crypto.randomBytes(16);
         const key = crypto.pbkdf2Sync(AES_SECRET_KEY, AES_SALT, ITERATION_COUNT, KEY_LENGTH / 8, 'sha256');
         const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
