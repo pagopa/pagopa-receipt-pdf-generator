@@ -18,6 +18,11 @@ on:
         required: false
         type: boolean
         default: false
+      notify:
+        description: 'notify test results'
+        required: false
+        type: boolean
+        default: true
 
 permissions:
   id-token: write
@@ -74,7 +79,7 @@ jobs:
           export RECEIPTS_STORAGE_CONN_STRING='${{ secrets.RECEIPTS_STORAGE_CONN_STRING }}'
           export RECEIPTS_COSMOS_CONN_STRING='${{ secrets.RECEIPTS_COSMOS_CONN_STRING }}'
           export AES_SALT='${{ secrets.AES_SALT }}'
-          export AES_SECRET='${{ secrets.AES_SECRET }}'
+          export AES_SECRET_KEY='${{ secrets.AES_SECRET_KEY }}'
 
           cd ./integration-test
           chmod +x ./run_integration_test.sh
@@ -84,7 +89,7 @@ jobs:
     needs: [ create_runner, integration_test ]
     runs-on: [ self-hosted, "${{ needs.create_runner.outputs.runner_name }}" ]
     name: Notify
-    if: always()
+    if: ${{ (success() || failure()) && (github.event.inputs == null || inputs.notify)}}
     steps:
       - name: Report Status
         if: always()
