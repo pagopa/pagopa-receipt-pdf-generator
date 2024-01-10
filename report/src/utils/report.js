@@ -75,7 +75,7 @@ const start = async function (a, b) {
   report = JSON.parse(report_);
 
   report.text = `📈 _Riepilogo del_ *${yesterday_}*\n`
-  // let p = res.then(function (result) {
+  let p = res.then(function (result) {
   //   console.log(result.resources.forEach(e => {
   //       console.log(`> ${dictionary[e.status]} ${e.num.toString().padEnd(8, ' ')}\t ${e.status} `);
   //   }))
