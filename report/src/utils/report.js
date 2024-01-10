@@ -76,9 +76,9 @@ const start = async function (a, b) {
 
   report.text = `📈 _Riepilogo del_ *${yesterday_}*\n`
   let p = res.then(function (result) {
-    // console.log(result.resources.forEach(e => {
-    //     console.log(`> ${dictionary[e.status]} ${e.num.toString().padEnd(8, ' ')}\t ${e.status} `);
-    // }))
+    console.log(result.resources.forEach(e => {
+        console.log(`> ${dictionary[e.status]} ${e.num.toString().padEnd(8, ' ')}\t ${e.status} `);
+    }))
     let sum = 0;
     let dic_sum = {}
     result.resources.forEach(element => {
@@ -86,7 +86,8 @@ const start = async function (a, b) {
       sum += element.num;
       dic_sum[element.status] = element.num;
     });
-    // console.log(dic_sum);
+    console.log("Resul array");
+    console.log(dic_sum);
 
     report.text += `-\n`;
     report.text += `Pagamenti registrati sul nodo 🪢 \`${totBiz.toLocaleString('it-IT')}\` (di cui \`${sum.toLocaleString('it-IT')}\` con CF debitore e/o pagatore noto)\n`;
@@ -96,7 +97,7 @@ const start = async function (a, b) {
     // :white_circle: Ricevute di debitori non presenti su IO: ZZ% · numeroAssolutoC
     report.text += `⚪️ Ricevute di debitori/pagatori non presenti su IO : *${(100 * dic_sum["NOT_TO_NOTIFY"] / sum).toFixed(2)}%* - \`${dic_sum["NOT_TO_NOTIFY"]?.toLocaleString('it-IT')}\` \n`;
     // :large_yellow_circle: Ricevute in attesa di essere inviate: QQ% · numeroAssolutoD
-    let GENERATED_INSERTED = dic_sum["GENERATED"] + dic_sum["INSERTED"];
+    let GENERATED_INSERTED = (dic_sum["GENERATED"] || 0) + (dic_sum["INSERTED"] || 0);
     report.text += `🟡 Ricevute in attesa di essere inviate: *${(100 * GENERATED_INSERTED / sum).toFixed(2)}%* - \`${GENERATED_INSERTED.toLocaleString('it-IT')}\` \n`;
     // :red_circle: Ricevute non inviate a causa di un errore: NN% · numeroAssolutoE (edited)
     let errori = (dic_sum["NOT_QUEUE_SENT"] != undefined ? dic_sum["NOT_QUEUE_SENT"] : 0) +
