@@ -82,6 +82,7 @@ const start = async function (a, b) {
     let sum = 0;
     let dic_sum = {}
     result.resources.forEach(element => {
+      console.log(`${element.status} : ${element.num}`)
       sum += element.num;
       dic_sum[element.status] = element.num;
     });
