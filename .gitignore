@@ -41,7 +41,6 @@ obj/
 **/node_modules
 yarn.lock
 **/*.copy.js
-**/*.local
 **/*.local.prod
 **/*.local.uat
 .azure/
