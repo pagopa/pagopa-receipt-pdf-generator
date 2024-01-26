@@ -20,8 +20,8 @@ switch(dateRange) {
     case "weekly":
         minDate.setDate(minDate.getDate() - 7);
         break;
-    case "monthly":
-        minDate.setDate(minDate.getDate() - 30)
+    case "bi-weekly":
+        minDate.setDate(minDate.getDate() - 15)
 }
 
 function padTo2Digits(num) {
