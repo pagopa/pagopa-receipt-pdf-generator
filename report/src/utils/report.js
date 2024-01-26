@@ -54,7 +54,7 @@ function formatDate(date) {
 }
 
 // console.log(formatDate(new Date()));
-yesterday_ = formatDate(yesterday);
+minDate_ = formatDate(minDate);
 // console.log(formatDate(yesterday));
 
 
