@@ -15,23 +15,23 @@ on:
           - prod
         default: prod
 
-    time_range:
-      inputs:
-        environment:
-          required: true
-          type: choice
-          description: Select the Time Range
-          options:
-            - daily
-            - weekly
-            - monthly
-          default: weekly
+      time_range:
+        inputs:
+          environment:
+            required: true
+            type: choice
+            description: Select the Time Range
+            options:
+              - daily
+              - weekly
+              - monthly
+            default: weekly
 
-    notify:
-      description: 'notify report results'
-      required: false
-      type: boolean
-      default: true
+      notify:
+        description: 'notify report results'
+        required: false
+        type: boolean
+        default: true
 
 permissions:
   id-token: write
