@@ -16,16 +16,14 @@ on:
         default: prod
 
       time_range:
-        inputs:
-          environment:
-            required: true
-            type: choice
-            description: Select the Time Range
-            options:
-              - daily
-              - weekly
-              - monthly
-            default: weekly
+        required: true
+        type: choice
+        description: Select the Time Range
+        options:
+          - daily
+          - weekly
+          - monthly
+        default: weekly
 
       notify:
         description: 'notify report results'
