@@ -22,7 +22,7 @@ on:
         options:
           - daily
           - weekly
-          - monthly
+          - bi-weekly
         default: weekly
 
       notify:
