@@ -55,17 +55,18 @@ function formatDate(date) {
 
 // console.log(formatDate(new Date()));
 minDate_ = formatDate(minDate);
+yesterday_ = formatDate(yesterday)
 // console.log(formatDate(yesterday));
 
 
 // Start function
 const start = async function (a, b) {
-  const resBiz = await getBizCount(minDate + "T00:00:00", yesterday_ + "T23:59:59");
+  const resBiz = await getBizCount(minDate_ + "T00:00:00", yesterday_ + "T23:59:59");
   const totBiz = resBiz.resources[0].num;
   // console.log(totBiz);
 
   // >>>>>>>>>>>>> start-RECEIPTs
-  const res = getReceiptsStatusCount(minDate + "T00:00:00", yesterday_ + "T23:59:59");
+  const res = getReceiptsStatusCount(minDate_ + "T00:00:00", yesterday_ + "T23:59:59");
 
   const dictionary = {
     "NOT_QUEUE_SENT": "🟢",
