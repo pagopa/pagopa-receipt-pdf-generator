@@ -15,6 +15,24 @@ on:
           - prod
         default: prod
 
+    time_range:
+      inputs:
+        environment:
+          required: true
+          type: choice
+          description: Select the Time Range
+          options:
+            - daily
+            - weekly
+            - monthly
+          default: weekly
+
+    notify:
+      description: 'notify report results'
+      required: false
+      type: boolean
+      default: true
+
 permissions:
   id-token: write
   contents: read
@@ -70,6 +88,8 @@ jobs:
             export RECEIPTS_COSMOS_CONN_STRING='${{ secrets.RECEIPTS_COSMOS_CONN_STRING }}'
 
             export BIZ_COSMOS_CONN_STRING='${{ secrets.BIZ_COSMOS_CONN_STRING }}'
+          
+            export DATE_RANGE='${{(github.event.inputs == null && 'weekly') || inputs.time_range }}'
 
             cd ./report
             chmod +x ./run.sh
@@ -93,7 +113,7 @@ jobs:
 
       - name: Send notification to Slack
         id: slack
-        if: always()
+        if: ${{ (success() || failure()) && (github.event.inputs == null || inputs.notify)}}
         uses: slackapi/slack-github-action@e28cf165c92ffef168d23c5c9000cffc8a25e117 #v1.24.0
         with:
           payload-file-path: "./report/src/report.json"
