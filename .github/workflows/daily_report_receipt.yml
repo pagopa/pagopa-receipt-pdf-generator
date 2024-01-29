@@ -1,7 +1,7 @@
 name: ReportPdf
 on:
   schedule:
-    - cron: '00 05 * * *'
+    - cron: '00 05 * * MON'
 
   workflow_dispatch:
     inputs:
