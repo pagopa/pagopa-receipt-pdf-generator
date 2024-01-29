@@ -9,6 +9,9 @@ const dateRange = process.env.DATE_RANGE || 'weekly';
 
 let currentDate = new Date();
 
+const customStartDate = process.env.CUSTOM_START_DATE || currentDate.getDate();
+const customEndDate = process.env.CUSTOM_END_DATE || currentDate.getDate();
+
 let yesterday = new Date(currentDate);
 yesterday.setDate(yesterday.getDate() - 1);
 
@@ -20,8 +23,15 @@ switch(dateRange) {
     case "weekly":
         minDate.setDate(minDate.getDate() - 7);
         break;
-    case "bi-weekly":
-        minDate.setDate(minDate.getDate() - 15)
+    case "dozen":
+        minDate.setDate(minDate.getDate() - 12);
+        break;
+    case "monthly":
+        minDate.setDate(minDate.getDate() - 30);
+        break;
+    case "custom":
+        minDate.setDate(customStartDate);
+        yesterday.setDate(customEndDate);
 }
 
 function padTo2Digits(num) {
@@ -89,7 +99,7 @@ const start = async function (a, b) {
 
   report = JSON.parse(report_);
 
-  report.text = `📈 _Riepilogo a partire dal_ *${minDate_}*\n`
+  report.text = `📈 _Riepilogo dal_ *${minDate_}* _al_ *${yesterday_}*\n`
   let p = res.then(function (result) {
   //   console.log(result.resources.forEach(e => {
   //       console.log(`> ${dictionary[e.status]} ${e.num.toString().padEnd(8, ' ')}\t ${e.status} `);

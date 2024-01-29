@@ -22,8 +22,20 @@ on:
         options:
           - daily
           - weekly
-          - bi-weekly
+          - dozen
+          - monthly
+          - custom
         default: weekly
+
+      custom_start_date:
+        required: false
+        type: number
+        description: Start date for custom range in millis
+
+      custom_end_date:
+        required: false
+        type: number
+        description: End date for custom range in millis
 
       notify:
         description: 'notify report results'
@@ -83,15 +95,27 @@ jobs:
         shell: bash
         run: |
 
-            export RECEIPTS_COSMOS_CONN_STRING='${{ secrets.RECEIPTS_COSMOS_CONN_STRING }}'
-
-            export BIZ_COSMOS_CONN_STRING='${{ secrets.BIZ_COSMOS_CONN_STRING }}'
+          export RECEIPTS_COSMOS_ENDPOINT='${{ secrets.RECEIPTS_COSMOS_ENDPOINT }}'
           
-            export DATE_RANGE='${{(github.event.inputs == null && 'weekly') || inputs.time_range }}'
+          export RECEIPTS_COSMOS_KEY='${{ secrets.RECEIPTS_COSMOS_KEY }}'
+          
+          export RECEIPTS_COSMOS_TIMEOUT='${{ secrets.RECEIPTS_COSMOS_TIMEOUT }}'
+          
+          export BIZ_COSMOS_ENDPOINT='${{ secrets.BIZ_COSMOS_ENDPOINT }}'
+          
+          export BIZ_COSMOS_KEY='${{ secrets.BIZ_COSMOS_KEY }}'
+          
+          export BIZ_COSMOS_TIMEOUT='${{ secrets.BIZ_COSMOS_TIMEOUT }}'
 
-            cd ./report
-            chmod +x ./run.sh
-            ./run.sh local
+          export DATE_RANGE='${{(github.event.inputs == null && 'weekly') || inputs.time_range }}'
+          
+          export CUSTOM_START_DATE='${{(github.event.inputs == null && '0') || inputs.custom_start_date }}'
+
+          export CUSTOM_END_DATE='${{(github.event.inputs == null && '0') || inputs.custom_end_date }}'
+
+          cd ./report
+          chmod +x ./run.sh
+          ./run.sh local
 
 
       # - name: Set the value in bash

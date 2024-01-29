@@ -23,6 +23,17 @@ locals {
     name           = "${local.prefix}-${var.env_short}-${local.location_short}-github-runner-cae",
     resource_group = "${local.prefix}-${var.env_short}-${local.location_short}-github-runner-rg",
   }
+
+}
+
+variable "receipt_cosmos_timeout" {
+  type = number,
+  default = 30000
+}
+
+variable "biz_cosmos_timeout" {
+  type = number,
+  default = 30000
 }
 
 variable "env" {
