@@ -27,13 +27,15 @@ locals {
 }
 
 variable "receipt_cosmos_timeout" {
-  type = number,
-  default = 30000
+  type = number
+  default = 20000
+  description = "millsec"
 }
 
 variable "biz_cosmos_timeout" {
-  type = number,
-  default = 30000
+  type = number
+  default = 20000
+  description = "millsec"
 }
 
 variable "env" {
