@@ -5,10 +5,34 @@ const { getReceiptsStatusCount, getBizCount } = require("./utils");
 // const from = "2023-11-23T00:00:00";
 // const to = "2023-11-25T23:59:59";
 
-let currentDate = new Date()
-let yesterday = new Date(currentDate)
-yesterday.setDate(yesterday.getDate() - 1)
-// console.log(yesterday);
+const dateRange = process.env.DATE_RANGE || 'weekly';
+
+let currentDate = new Date();
+
+const customStartDate = process.env.CUSTOM_START_DATE || currentDate.getDate();
+const customEndDate = process.env.CUSTOM_END_DATE || currentDate.getDate();
+
+let yesterday = new Date(currentDate);
+yesterday.setDate(yesterday.getDate() - 1);
+
+let minDate = new Date(currentDate);
+switch(dateRange) {
+    case "daily":
+        minDate.setDate(minDate.getDate() - 1);
+        break;
+    case "weekly":
+        minDate.setDate(minDate.getDate() - 7);
+        break;
+    case "dozen":
+        minDate.setDate(minDate.getDate() - 12);
+        break;
+    case "monthly":
+        minDate.setDate(minDate.getDate() - 30);
+        break;
+    case "custom":
+        minDate.setDate(customStartDate);
+        yesterday.setDate(customEndDate);
+}
 
 function padTo2Digits(num) {
   return num.toString().padStart(2, '0');
@@ -40,18 +64,19 @@ function formatDate(date) {
 }
 
 // console.log(formatDate(new Date()));
-yesterday_ = formatDate(yesterday);
+minDate_ = formatDate(minDate);
+yesterday_ = formatDate(yesterday)
 // console.log(formatDate(yesterday));
 
 
 // Start function
 const start = async function (a, b) {
-  const resBiz = await getBizCount(yesterday_ + "T00:00:00", yesterday_ + "T23:59:59");
+  const resBiz = await getBizCount(minDate_ + "T00:00:00", yesterday_ + "T23:59:59");
   const totBiz = resBiz.resources[0].num;
   // console.log(totBiz);
 
   // >>>>>>>>>>>>> start-RECEIPTs
-  const res = getReceiptsStatusCount(yesterday_ + "T00:00:00", yesterday_ + "T23:59:59");
+  const res = getReceiptsStatusCount(minDate_ + "T00:00:00", yesterday_ + "T23:59:59");
 
   const dictionary = {
     "NOT_QUEUE_SENT": "🟢",
@@ -74,7 +99,7 @@ const start = async function (a, b) {
 
   report = JSON.parse(report_);
 
-  report.text = `📈 _Riepilogo del_ *${yesterday_}*\n`
+  report.text = `📈 _Riepilogo dal_ *${minDate_}* _al_ *${yesterday_}*\n`
   let p = res.then(function (result) {
   //   console.log(result.resources.forEach(e => {
   //       console.log(`> ${dictionary[e.status]} ${e.num.toString().padEnd(8, ' ')}\t ${e.status} `);
