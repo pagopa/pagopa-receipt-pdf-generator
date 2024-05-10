@@ -81,7 +81,7 @@ class GenerateReceiptPdfServiceImplTest {
     private PdfEngineClient pdfEngineClientMock;
     private ReceiptBlobClient receiptBlobClientMock;
     private BuildTemplateService buildTemplateServiceMock;
-    private GenerateReceiptPdfService sut;
+    private GenerateReceiptPdfServiceImpl sut;
 
     @BeforeEach
     void setUp() throws IOException {
@@ -90,6 +90,7 @@ class GenerateReceiptPdfServiceImplTest {
         buildTemplateServiceMock = mock(BuildTemplateService.class);
 
         sut = spy(new GenerateReceiptPdfServiceImpl(pdfEngineClientMock, receiptBlobClientMock, buildTemplateServiceMock));
+        sut.setMinFileLength(0);
         Path basePath = Path.of("src/test/resources");
         tempDirectoryDebtor = Files.createTempDirectory(basePath, "tempDebtor").toFile();
         outputPdfDebtor = File.createTempFile("outputDebtor", ".tmp", tempDirectoryDebtor);
@@ -811,6 +812,55 @@ class GenerateReceiptPdfServiceImplTest {
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), receipt.getReasonErrPayer().getCode());
         assertEquals(errorMessagePayer, receipt.getReasonErrPayer().getMessage());
     }
+
+    @Test
+    void generateReceiptsSameDebtorPayerWithErrorOnFile() throws Exception {
+        Receipt receiptOnly = getReceiptWithDebtorPayer(VALID_CF_DEBTOR, false, false);
+        List<BizEvent> bizEventOnly = Collections.singletonList(getBizEventWithDebtorPayer(VALID_CF_DEBTOR));
+
+        doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdfDebtor.getPath()))
+                .when(pdfEngineClientMock).generatePDF(any(), any());
+        doReturn(getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.CREATED.value()))
+                .when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
+        doReturn(new ReceiptPDFTemplate())
+                .when(buildTemplateServiceMock).buildTemplate(any(), anyBoolean(), any(Receipt.class));
+
+        sut.setMinFileLength(10);
+        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly,Path.of("/tmp"));
+
+        assertNotNull(pdfGeneration);
+        assertTrue(pdfGeneration.isGenerateOnlyDebtor());
+        assertNotNull(pdfGeneration.getDebtorMetadata());
+        assertEquals("Minimum file size not reached", pdfGeneration.getDebtorMetadata().getErrorMessage());
+
+        verify(buildTemplateServiceMock).buildTemplate(any(), anyBoolean(), any(Receipt.class));
+        verify(pdfEngineClientMock).generatePDF(any(), any());
+    }
+
+    @Test
+    void verifyPayerNullOrSameDebtorPayerWithErrorOnFile() throws ReceiptGenerationNotToRetryException {
+        Receipt receipt = buildReceiptForVerify(false, false);
+
+        PdfGeneration pdfGeneration = PdfGeneration.builder()
+                .debtorMetadata(PdfMetadata.builder()
+                        .statusCode(HttpStatus.SC_OK)
+                        .documentName(DEBTOR_DOCUMENT_NAME)
+                        .documentUrl(DEBTOR_DOCUMENT_URL)
+                        .build())
+                .generateOnlyDebtor(true)
+                .build();
+
+        sut.setMinFileLength(10);
+        boolean result = sut.verifyAndUpdateReceipt(receipt, pdfGeneration);
+
+        assertTrue(result);
+        assertNotNull(receipt.getMdAttach());
+        assertNotNull(receipt.getMdAttach().getUrl());
+        assertNotNull(receipt.getMdAttach().getName());
+        assertEquals("Minimum file size not reached", pdfGeneration.getDebtorMetadata().getErrorMessage());
+
+    }
+
 
     private Receipt buildReceiptForVerify(boolean debtorAlreadyCreated, boolean payerAlreadyCreated) {
         return Receipt.builder()

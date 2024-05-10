@@ -23,11 +23,13 @@ import it.gov.pagopa.receipt.pdf.generator.model.template.ReceiptPDFTemplate;
 import it.gov.pagopa.receipt.pdf.generator.service.BuildTemplateService;
 import it.gov.pagopa.receipt.pdf.generator.service.GenerateReceiptPdfService;
 import it.gov.pagopa.receipt.pdf.generator.utils.ObjectMapperUtils;
+import lombok.Setter;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedInputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.net.URL;
 import java.nio.file.Path;
@@ -48,6 +50,9 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
     private final PdfEngineClient pdfEngineClient;
     private final ReceiptBlobClient receiptBlobClient;
     private final BuildTemplateService buildTemplateService;
+    @Setter
+    private long minFileLength = Long.parseLong(
+            System.getenv().getOrDefault("MIN_PDF_LENGTH", "10000"));
 
     public GenerateReceiptPdfServiceImpl() {
         this.pdfEngineClient = PdfEngineClientImpl.getInstance();
@@ -186,6 +191,10 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
 
     private PdfMetadata saveToBlobStorage(PdfEngineResponse pdfEngineResponse, String blobName) throws SavePDFToBlobException {
         String tempPdfPath = pdfEngineResponse.getTempPdfPath();
+
+        if (new File(tempPdfPath).length() < minFileLength) {
+            throw new SavePDFToBlobException("Minimum file size not reached", ReasonErrorCode.ERROR_BLOB_STORAGE.getCode());
+        }
 
         BlobStorageResponse blobStorageResponse;
         //Save to Blob Storage
