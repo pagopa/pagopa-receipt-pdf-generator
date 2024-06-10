@@ -3533,8 +3533,8 @@
     "ABI08365": {
         "logo": "https://assets.cdn.io.italia.it/logos/abi/08365.png",
         "fiscalCode": "00945950780",
-        "name": "BCC dell'Alto Tirreno della Calabria Verbicaro",
-        "companyName": "Banca Di Credito Cooperativo Dell'Alto Tirreno Della Calabria Verbicaro (Provincia Di Cosenza) Societ\u00e0 Cooperativa",
+        "name": "BCC Calabria Nord",
+        "companyName": "Banca Di Credito Cooperativo Calabria Nord",
         "address": "Via Roma",
         "buildingNumber": "153-155",
         "postalCode": "87020",
@@ -6113,7 +6113,7 @@
         "buildingNumber": "13",
         "postalCode": "00161",
         "city": "Padova",
-        "province": "PD"
+        "province": "RM"
     },
     "ABI36042": {
         "logo": "https://assets.cdn.io.italia.it/logos/abi/36042.png",
@@ -6124,7 +6124,7 @@
         "buildingNumber": "13",
         "postalCode": "00161",
         "city": "Padova",
-        "province": "PD"
+        "province": "RM"
     },
     "SEPFIT31XXX": {
         "logo": "https://assets.cdn.io.italia.it/logos/abi/36063.png",
