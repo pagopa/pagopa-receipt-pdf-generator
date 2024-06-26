@@ -1876,23 +1876,67 @@ class BuildTemplateServiceImplTest {
     }
 
     @Test
-    void mapTemplateNoUserDataFullNameError() {
-        List<BizEvent> bizEventList = Collections.singletonList(BizEvent.builder()
+    void mapTemplateUserDataFullNameBlank() {
+    	
+    	List<BizEvent> bizEventList = Collections.singletonList(BizEvent.builder()
                 .id(BIZ_EVENT_ID)
-                .paymentInfo(PaymentInfo.builder()
-                        .IUR(IUR)
-                        .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS_DST_WINTER)
-                        .amount(AMOUNT_WITHOUT_CENTS)
+                .idPaymentManager(BIZ_EVENT_ID)
+                .debtorPosition(DebtorPosition.builder()
+                        .iuv(IUV)
+                        .modelType(MODEL_TYPE_IUV_CODE)
+                        .build())
+                .creditor(Creditor.builder()
+                        .companyName(COMPANY_NAME)
+                        .idPA(ID_PA)
                         .build())
                 .psp(Psp.builder()
                         .idPsp(ID_PSP)
                         .psp(PSP_NAME)
                         .build())
+                .debtor(Debtor.builder()
+                        .fullName(DEBTOR_FULL_NAME)
+                        .entityUniqueIdentifierValue(DEBTOR_VALID_CF)
+                        .build())
+                 // no  User Data Full Name in payer and transactionDetails sections
+                .payer(Payer.builder().entityUniqueIdentifierValue(PAYER_VALID_CF).build())
+                .paymentInfo(PaymentInfo.builder()
+                        .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS_DST_WINTER)
+                        .paymentToken(PAYMENT_TOKEN)
+                        .amount(AMOUNT_WITHOUT_CENTS)
+                        .fee(FEE_WITH_SINGLE_DIGIT_CENTS)
+                        .remittanceInformation(REMITTANCE_INFORMATION)
+                        .IUR(IUR)
+                        .build())
+                .transactionDetails(TransactionDetails.builder()
+                        .wallet(WalletItem.builder()
+                                .info(Info.builder().brand(BRAND).holder(HOLDER_FULL_NAME).build())
+                                .onboardingChannel(PAGO_PA_CHANNEL_IO)
+                                .build())
+                        .transaction(Transaction.builder()
+                                .idTransaction(ID_TRANSACTION)
+                                .grandTotal(GRAND_TOTAL_LONG)
+                                .amount(AMOUNT_LONG)
+                                .fee(FEE_LONG)
+                                .rrn(RRN)
+                                .numAut(AUTH_CODE)
+                                .creationDate(DATE_TIME_TIMESTAMP_ZONED_DST_SUMMER)
+                                .psp(TransactionPsp.builder()
+                                        .businessName(PSP_NAME)
+                                        .build())
+                                .origin(PAGOPA_PA_CHANNEL_ID)
+                                .build())
+                        .build())
+                .eventStatus(BizEventStatusType.DONE)
                 .build());
-        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).build()).build()));
+    	
+    	Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
+        
+        AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
+        assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, receipt)));
 
-        assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, BIZ_EVENT,TemplateDataField.USER_DATA_FULL_NAME, BIZ_EVENT,BIZ_EVENT_ID), e.getMessage());
+        ReceiptPDFTemplate receiptPdfTemplate = atomicReference.get();
+        
+        assertEquals("",receiptPdfTemplate.getUser().getData().getFullName());
     }
 
     @Test
