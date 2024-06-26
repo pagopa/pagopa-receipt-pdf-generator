@@ -222,7 +222,7 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
         return null;
     }
 
-    private String getUserFullName(BizEvent event) throws TemplateDataMappingException {
+    private String getUserFullName(BizEvent event) {
         if (
                 event.getTransactionDetails() != null &&
                         event.getTransactionDetails().getUser() != null &&
@@ -236,7 +236,7 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
         if (event.getPayer() != null && event.getPayer().getFullName() != null) {
             return event.getPayer().getFullName();
         }
-        throw new TemplateDataMappingException(formatErrorMessage(TemplateDataField.USER_DATA_FULL_NAME, event.getId(), true), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
+        return "";
     }
 
     private String getUserTaxCode(BizEvent event) throws TemplateDataMappingException {
