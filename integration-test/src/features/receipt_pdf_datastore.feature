@@ -64,3 +64,25 @@ Feature: All about payment events consumed by Azure functions receipt-pdf-genera
     And the error receipt has the status "TO_REVIEW"
     And the receipts datastore returns the updated receipt
     And the receipt has the status "TO_REVIEW"
+
+  Scenario: a biz event enqueued on receipts queue trigger the PDF receipt generation that is stored on receipts generator and blob storage, with wisp noticeCode
+    Given a receipt with id "receipt-generator-int-test-id-7" and status "INSERTED" stored into receipt datastore
+    And a random biz event with id "receipt-generator-int-test-id-7" enqueued on receipts queue with wisp noticeCode
+    When the PDF receipt has been properly generate from biz event after 20000 ms
+    Then the receipts datastore returns the receipt
+    And the receipt has eventId "receipt-generator-int-test-id-7"
+    And the receipt has not the status "TO_REVIEW"
+    And the receipt has not the status "NOT_QUEUE_SENT"
+    And the receipt has not the status "INSERTED"
+    And the blob storage has the PDF document
+
+  Scenario: a biz event enqueued on receipts queue trigger the PDF receipt generation that is stored on receipts generator and blob storage, with wisp noticeCode and missing iuv
+    Given a receipt with id "receipt-generator-int-test-id-8" and status "INSERTED" stored into receipt datastore
+    And a random biz event with id "receipt-generator-int-test-id-8" enqueued on receipts queue with wisp noticeCode and missing iuv
+    When the PDF receipt has been properly generate from biz event after 20000 ms
+    Then the receipts datastore returns the receipt
+    And the receipt has eventId "receipt-generator-int-test-id-8"
+    And the receipt has not the status "TO_REVIEW"
+    And the receipt has not the status "NOT_QUEUE_SENT"
+    And the receipt has not the status "INSERTED"
+    And the blob storage has the PDF document
