@@ -81,7 +81,7 @@ Feature: All about payment events consumed by Azure functions receipt-pdf-genera
     And a random biz event with id "receipt-generator-int-test-id-8" enqueued on receipts queue with wisp noticeCode and missing iuv
     When the PDF receipt has been properly generate from biz event after 20000 ms
     Then the receipts datastore returns the receipt
-    And the receipt has eventId "receipt-generator-int-test-id-7"
+    And the receipt has eventId "receipt-generator-int-test-id-8"
     And the receipt has not the status "TO_REVIEW"
     And the receipt has not the status "NOT_QUEUE_SENT"
     And the receipt has not the status "INSERTED"
