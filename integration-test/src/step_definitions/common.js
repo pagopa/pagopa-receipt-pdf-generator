@@ -6,11 +6,11 @@ function sleep(ms) {
 	return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-function createEventsForQueue(id, numberOfEvents, transactionId) {
-	return createEventsForPoisonQueue(id, false, numberOfEvents, transactionId);
+function createEventsForQueue(id, numberOfEvents, transactionId, noticeNumber, iuv) {
+	return createEventsForPoisonQueue(id, false, numberOfEvents, transactionId, noticeNumber, iuv);
 }
 
-function createEventsForPoisonQueue(id, attemptedPoisonRetry, numberOfEvents, transactionId) {
+function createEventsForPoisonQueue(id, attemptedPoisonRetry, numberOfEvents, transactionId, noticeNumber, iuv) {
 	let arrayOfEvents = [];
 	for(let i = 0; i < (numberOfEvents ?? 1); i++) {
 		let finalId = id+(i != 0 ? i : "");
@@ -29,8 +29,8 @@ function createEventsForPoisonQueue(id, attemptedPoisonRetry, numberOfEvents, tr
 			],
 			"debtorPosition": {
 				"modelType": "2",
-				"noticeNumber": "310391366991197059",
-				"iuv": "10391366991197059"
+				"noticeNumber": noticeNumber,
+				"iuv": iuv
 			},
 			"creditor": {
 				"idPA": "66666666666",

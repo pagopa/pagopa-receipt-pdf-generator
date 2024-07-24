@@ -45,6 +45,8 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
     public static final String MODEL_TYPE_NOTICE = "2";
     public static final String DEBTOR_ANONIMO_CF = "ANONIMO";
 
+    public static final String WISP_REGEX = "^348.*";
+
     static {
         try {
             brandLogoMap = ObjectMapperUtils.mapString(System.getenv().get(BRAND_LOGO_MAP_ENV_KEY), Map.class);
@@ -255,7 +257,10 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
 
     private String getRefNumberType(BizEvent event) throws TemplateDataMappingException {
         if (event.getDebtorPosition() != null && event.getDebtorPosition().getModelType() != null) {
-            if (event.getDebtorPosition().getModelType().equals(MODEL_TYPE_IUV)) {
+            if (event.getDebtorPosition().getModelType().equals(MODEL_TYPE_IUV) || (
+                    event.getDebtorPosition().getNoticeNumber() != null &&
+                            event.getDebtorPosition().getNoticeNumber().matches(WISP_REGEX) &&
+                            event.getDebtorPosition().getIuv() != null) ) {
                 return REF_TYPE_IUV;
             }
             if (event.getDebtorPosition().getModelType().equals(MODEL_TYPE_NOTICE)) {
@@ -267,7 +272,10 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
 
     private String getRefNumberValue(BizEvent event) throws TemplateDataMappingException {
         if (event.getDebtorPosition() != null && event.getDebtorPosition().getModelType() != null) {
-            if (event.getDebtorPosition().getModelType().equals(MODEL_TYPE_IUV) && event.getDebtorPosition().getIuv() != null) {
+            if ((event.getDebtorPosition().getModelType().equals(MODEL_TYPE_IUV) || (
+                    event.getDebtorPosition().getNoticeNumber() != null &&
+                            event.getDebtorPosition().getNoticeNumber().matches(WISP_REGEX))) &&
+                            event.getDebtorPosition().getIuv() != null) {
                 return event.getDebtorPosition().getIuv();
             }
             if (event.getDebtorPosition().getModelType().equals(MODEL_TYPE_NOTICE) && event.getDebtorPosition().getNoticeNumber() != null) {

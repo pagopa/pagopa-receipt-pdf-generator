@@ -4,6 +4,9 @@ const { sleep, createEventsForQueue, createEventsForPoisonQueue, createErrorRece
 const { getDocumentByIdFromReceiptsDatastore, deleteDocumentFromErrorReceiptsDatastoreByBizEventId, deleteDocumentFromReceiptsDatastore, createDocumentInReceiptsDatastore, createDocumentInErrorReceiptsDatastore, deleteDocumentFromErrorReceiptsDatastore, getDocumentByBizEventIdFromErrorReceiptsDatastore } = require("./receipts_datastore_client");
 const { putMessageOnPoisonQueue, putMessageOnReceiptQueue } = require("./receipts_queue_client");
 const { receiptPDFExist } = require("./receipts_blob_storage_client");
+const STANDARD_NOTICE_NUMBER = "310391366991197059"
+const WISP_NOTICE_NUMBER = "348391366991197059"
+const IUV = "10391366991197059"
 
 // set timeout for Hooks function, it allows to wait for long task
 setDefaultTimeout(360 * 1000);
@@ -46,18 +49,31 @@ Given('a receipt with id {string} and status {string} stored into receipt datast
 
 Given('a random biz event with id {string} enqueued on receipts queue', async function (id) {
     assert.strictEqual(this.eventId, id);
-    let listOfEvents = createEventsForQueue(this.eventId);
+    let listOfEvents = createEventsForQueue(this.eventId, null, null, STANDARD_NOTICE_NUMBER, IUV);
+    await putMessageOnReceiptQueue(listOfEvents);
+});
+
+Given('a random biz event with id {string} enqueued on receipts queue enqueued on receipts queue with wisp noticeCode', async function (id) {
+    assert.strictEqual(this.eventId, id);
+    let listOfEvents = createEventsForQueue(this.eventId, null, null, WISP_NOTICE_NUMBER, IUV);
+    await putMessageOnReceiptQueue(listOfEvents);
+});
+
+Given('a random biz event with id {string} enqueued on receipts queue enqueued on receipts queue with wisp noticeCode and missing iuv', async function (id) {
+    assert.strictEqual(this.eventId, id);
+    this.errorReceiptEventId = id;
+    let listOfEvents = createEventsForQueue(this.eventId, null, null, WISP_NOTICE_NUMBER, null);
     await putMessageOnReceiptQueue(listOfEvents);
 });
 
 Given("a list of {int} biz event with id {string} and transactionId {string} enqueued on receipts queue", async function(numberOfEvents, id, transactionId){
-    let listOfEvents = createEventsForQueue(id, numberOfEvents, transactionId);
+    let listOfEvents = createEventsForQueue(id, numberOfEvents, transactionId, STANDARD_NOTICE_NUMBER, IUV);
     await putMessageOnReceiptQueue(listOfEvents);
 })
 
 Given('a list of {int} biz event with id {string} and transactionId {string} enqueued on receipts poison queue with poison retry {string}', async function (numberOfEvents, id, transactionId, value) {
     let attemptedPoisonRetry = (value === 'true');
-    this.listOfEvents = createEventsForPoisonQueue(id, attemptedPoisonRetry, numberOfEvents, transactionId);
+    this.listOfEvents = createEventsForPoisonQueue(id, attemptedPoisonRetry, numberOfEvents, transactionId, STANDARD_NOTICE_NUMBER, IUV);
     this.errorReceiptEventId = transactionId;
     await deleteDocumentFromErrorReceiptsDatastoreByBizEventId(id);
     await putMessageOnPoisonQueue(this.listOfEvents);
@@ -99,7 +115,7 @@ Then('the blob storage has the PDF document', async function () {
 
 Given('a random biz event with id {string} enqueued on receipts poison queue with poison retry {string}', async function (id, value) {
     let attemptedPoisonRetry = (value === 'true');
-    this.listOfEvents = createEventsForPoisonQueue(id, attemptedPoisonRetry);
+    this.listOfEvents = createEventsForPoisonQueue(id, attemptedPoisonRetry, null, null, STANDARD_NOTICE_NUMBER, IUV);
     this.errorReceiptEventId = id;
     await deleteDocumentFromErrorReceiptsDatastoreByBizEventId(id);
     await putMessageOnPoisonQueue(this.listOfEvents);
