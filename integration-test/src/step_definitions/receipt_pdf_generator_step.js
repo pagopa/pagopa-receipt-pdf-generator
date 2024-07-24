@@ -53,13 +53,13 @@ Given('a random biz event with id {string} enqueued on receipts queue', async fu
     await putMessageOnReceiptQueue(listOfEvents);
 });
 
-Given('a random biz event with id {string} enqueued on receipts queue enqueued on receipts queue with wisp noticeCode', async function (id) {
+Given('a random biz event with id {string} enqueued on receipts queue with wisp noticeCode', async function (id) {
     assert.strictEqual(this.eventId, id);
     let listOfEvents = createEventsForQueue(this.eventId, null, null, WISP_NOTICE_NUMBER, IUV);
     await putMessageOnReceiptQueue(listOfEvents);
 });
 
-Given('a random biz event with id {string} enqueued on receipts queue enqueued on receipts queue with wisp noticeCode and missing iuv', async function (id) {
+Given('a random biz event with id {string} enqueued on receipts queue with wisp noticeCode and missing iuv', async function (id) {
     assert.strictEqual(this.eventId, id);
     this.errorReceiptEventId = id;
     let listOfEvents = createEventsForQueue(this.eventId, null, null, WISP_NOTICE_NUMBER, null);
