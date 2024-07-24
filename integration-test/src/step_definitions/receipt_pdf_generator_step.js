@@ -22,12 +22,12 @@ this.listOfEvents = null;
 // After each Scenario
 After(async function () {
     // remove documents
-//    if (this.receiptId != null) {
-//        await deleteDocumentFromReceiptsDatastore(this.receiptId);
-//    }
-//    if (this.errorReceiptId != null) {
-//        await deleteDocumentFromErrorReceiptsDatastore(this.errorReceiptId);
-//    }
+    if (this.receiptId != null) {
+        await deleteDocumentFromReceiptsDatastore(this.receiptId);
+    }
+    if (this.errorReceiptId != null) {
+        await deleteDocumentFromErrorReceiptsDatastore(this.errorReceiptId);
+    }
     this.eventId = null;
     this.responseToCheck = null;
     this.receiptId = null;
