@@ -6807,5 +6807,16 @@
         "postalCode": "33100",
         "city": "Udine",
         "province": "UD"
+    },
+    "WOLLNLB1": {
+        "logo": "https://assets.cdn.io.italia.it/logos/abi/WOLLNLB1.png",
+        "fiscalCode": "NL853935051B01",
+        "name": "Worldpay B.V.",
+        "companyName": "Worldpay B.V.",
+        "address": "De Entree",
+        "buildingNumber": "248",
+        "postalCode": "1101EE",
+        "city": "Amsterdam",
+        "province": "EE"
     }
 }
