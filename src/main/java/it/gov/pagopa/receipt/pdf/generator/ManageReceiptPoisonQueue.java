@@ -158,7 +158,7 @@ public class ManageReceiptPoisonQueue {
         }
 
         logger.info("[{}] set value new document receiptError {}",
-                context.getFunctionName(), receiptError);
+                context.getFunctionName(), receiptError.toString());
 
         receiptErrorOutputBinding.setValue(receiptError);
     }
