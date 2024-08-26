@@ -3,6 +3,8 @@ package it.gov.pagopa.receipt.pdf.generator.entity.receipt;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.enumeration.ReceiptErrorStatusType;
 import lombok.*;
 
+import java.util.UUID;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -11,7 +13,8 @@ import lombok.*;
 @Builder
 public class ReceiptError {
 
-    private String id;
+    @Builder.Default
+    private String id = UUID.randomUUID().toString();
     private String bizEventId;
     private String messagePayload;
     private String messageError;
