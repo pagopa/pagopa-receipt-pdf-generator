@@ -97,7 +97,7 @@ public class ManageReceiptPoisonQueue {
             //attempt to Map queue bizEventMessage to BizEvent
             listOfBizEvents = ObjectMapperUtils.mapBizEventListString(errorMessage, new TypeReference<>() {});
             bizEvent = listOfBizEvents.get(0);
-            logger.info("[{}] function called at {} recognized as valid BizEvent with id {}",
+            logger.debug("[{}] function called at {} recognized as valid BizEvent with id {}",
                     context.getFunctionName(), LocalDateTime.now(), bizEvent.getId());
             if (Boolean.TRUE.equals(bizEvent.getAttemptedPoisonRetry())) {
                 logger.info("[{}] function called at {} for event with id {} has ingestion already retried, sending to review",
@@ -151,7 +151,7 @@ public class ManageReceiptPoisonQueue {
             String encodedEvent = Aes256Utils.encrypt(errorMessage);
             receiptError.setMessagePayload(encodedEvent);
 
-            logger.info("[{}] saving new entry to the retry error to review with payload {}",
+            logger.debug("[{}] saving new entry to the retry error to review with payload {}",
                     context.getFunctionName(), encodedEvent);
         } catch (Aes256Exception e) {
             receiptError.setMessageError(e.getMessage());
@@ -167,7 +167,7 @@ public class ManageReceiptPoisonQueue {
 
             receipt.setStatus(ReceiptStatusType.TO_REVIEW);
 
-            logger.info("[{}] updating receipt with id {} to status {}",
+            logger.debug("[{}] updating receipt with id {} to status {}",
                     context.getFunctionName(), receipt.getId(), ReceiptStatusType.TO_REVIEW);
             receiptOutputBinding.setValue(receipt);
         } catch (ReceiptNotFoundException e) {

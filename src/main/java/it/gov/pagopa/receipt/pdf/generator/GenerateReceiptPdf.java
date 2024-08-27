@@ -159,7 +159,7 @@ public class GenerateReceiptPdf {
                 return;
             }
 
-            logger.info("[{}] Generating pdf for Receipt with id {} and eventId {}",
+            logger.debug("[{}] Generating pdf for Receipt with id {} and eventId {}",
                     context.getFunctionName(),
                     receipt.getId(),
                     receiptEventReference);
@@ -179,7 +179,7 @@ public class GenerateReceiptPdf {
                 if (success) {
                     receipt.setStatus(ReceiptStatusType.GENERATED);
                     receipt.setGenerated_at(System.currentTimeMillis());
-                    logger.info("[{}] Receipt with id {} being saved with status {}",
+                    logger.debug("[{}] Receipt with id {} being saved with status {}",
                             context.getFunctionName(),
                             receipt.getEventId(),
                             receipt.getStatus());
