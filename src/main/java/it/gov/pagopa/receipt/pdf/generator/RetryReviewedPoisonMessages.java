@@ -131,7 +131,7 @@ public class RetryReviewedPoisonMessages {
     private void updateReceiptToInserted(ExecutionContext context, String bizEventId) throws ReceiptNotFoundException, UnableToSaveException {
             Receipt receipt = this.receiptCosmosService.getReceipt(bizEventId);
             receipt.setStatus(ReceiptStatusType.INSERTED);
-            logger.info("[{}] updating receipt with id {} to status {}", context.getFunctionName(), receipt.getId(), ReceiptStatusType.INSERTED);
+            logger.debug("[{}] updating receipt with id {} to status {}", context.getFunctionName(), receipt.getId(), ReceiptStatusType.INSERTED);
             this.receiptCosmosService.updateReceipt(receipt);
     }
 }
