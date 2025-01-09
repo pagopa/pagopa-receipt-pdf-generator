@@ -10,6 +10,17 @@
         "city": "city",
         "province": "province"
     },
+    "BCITITMM": {
+        "logo": "logo",
+        "fiscalCode": "fiscalCode",
+        "name": "Intesa Sanpaolo",
+        "companyName": "Intesa Sanpaolo S.P.A.",
+        "address": "address",
+        "buildingNumber": "buildingNumber",
+        "postalCode": "postalCode",
+        "city": "city",
+        "province": "province"
+    },
     "noName": {
         "logo": "logo",
         "fiscalCode": "fiscalCode",

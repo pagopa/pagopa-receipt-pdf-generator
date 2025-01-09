@@ -2,6 +2,10 @@ package it.gov.pagopa.receipt.pdf.generator.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import it.gov.pagopa.receipt.pdf.generator.entity.event.BizEvent;
+import it.gov.pagopa.receipt.pdf.generator.entity.event.Info;
+import it.gov.pagopa.receipt.pdf.generator.entity.event.InfoTransaction;
+import it.gov.pagopa.receipt.pdf.generator.entity.event.TransactionDetails;
+import it.gov.pagopa.receipt.pdf.generator.entity.event.WalletItem;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.enumeration.ReasonErrorCode;
 import it.gov.pagopa.receipt.pdf.generator.exception.PdfJsonMappingException;
@@ -195,21 +199,23 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
         }
         return null;
     }
-
+    
     private String getPaymentMethodName(BizEvent event) {
-        if (
-                event.getTransactionDetails() != null &&
-                        event.getTransactionDetails().getWallet() != null &&
-                        event.getTransactionDetails().getWallet().getInfo() != null &&
-                        event.getTransactionDetails().getWallet().getInfo().getBrand() != null
-        ) {
-            return event.getTransactionDetails().getWallet().getInfo().getBrand();
-        }
-        return null;
+        return Optional.ofNullable(event.getTransactionDetails())
+                .map(TransactionDetails::getWallet)
+                .map(WalletItem::getInfo)
+                .map(Info::getBrand)
+                .or(() -> Optional.ofNullable(event.getTransactionDetails())
+                        .map(TransactionDetails::getInfo)
+                        .map(InfoTransaction::getBrand))
+                .orElse(null);
     }
-
+    
     private String getPaymentMethodLogo(BizEvent event) {
-        return brandLogoMap.getOrDefault(getPaymentMethodName(event), null);
+        return Optional.ofNullable(event.getTransactionDetails())
+                .map(TransactionDetails::getInfo)
+                .map(InfoTransaction::getBrandLogo)
+                .orElseGet(() -> brandLogoMap.getOrDefault(getPaymentMethodName(event), null));
     }
 
     private String getPaymentMethodAccountHolder(BizEvent event) {
