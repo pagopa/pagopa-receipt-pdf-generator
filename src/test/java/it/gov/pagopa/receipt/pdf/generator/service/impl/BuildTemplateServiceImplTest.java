@@ -8,10 +8,12 @@ import it.gov.pagopa.receipt.pdf.generator.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.enumeration.ReasonErrorCode;
 import it.gov.pagopa.receipt.pdf.generator.exception.TemplateDataMappingException;
 import it.gov.pagopa.receipt.pdf.generator.model.template.ReceiptPDFTemplate;
+import it.gov.pagopa.receipt.pdf.generator.utils.ObjectMapperUtilsTest;
 import it.gov.pagopa.receipt.pdf.generator.utils.TemplateDataField;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.util.Collections;
@@ -2491,6 +2493,33 @@ class BuildTemplateServiceImplTest {
         assertEquals(ID_PA, cart.getItems().get(0).getPayee().getTaxCode());
         assertEquals(MODEL_TYPE_NOTICE_TEXT, cart.getItems().get(0).getRefNumber().getType());
         assertEquals(WISP_NOTICE_CODE, cart.getItems().get(0).getRefNumber().getValue());
+    }
+    
+    @Test
+    void mapTemplatePaymentMethodFieldsSuccessGuestMYBK() throws IOException {
+    	List<BizEvent> bizEventList = Collections.singletonList(getBizEventFromFile("biz-events/bizEventGuest.json"));
+    	
+        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
+
+        AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
+        assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_DEBTOR, receipt)));
+
+        ReceiptPDFTemplate receiptPdfTemplate = atomicReference.get();
+
+        assertNotNull(receiptPdfTemplate);
+        assertEquals(BIZ_EVENT_ID, receiptPdfTemplate.getServiceCustomerId());
+
+        it.gov.pagopa.receipt.pdf.generator.model.template.Transaction transaction = receiptPdfTemplate.getTransaction();
+        assertEquals("MYBK", transaction.getPaymentMethod().getName());
+        assertEquals("mybank.png", transaction.getPaymentMethod().getLogo());
+        assertEquals(null, transaction.getPaymentMethod().getAccountHolder());
+        assertTrue(transaction.isProcessedByPagoPA());
+
+        assertNull(receiptPdfTemplate.getUser());
+    }
+    
+    private BizEvent getBizEventFromFile(String relativePath) throws IOException {
+    	return ObjectMapperUtilsTest.readModelFromFile(relativePath, BizEvent.class);
     }
 
     private String currencyFormat(String value) {
