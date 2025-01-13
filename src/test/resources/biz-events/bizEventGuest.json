@@ -1,0 +1,105 @@
+{
+   "id":"biz-event-id",
+   "version":"2",
+   "complete":"false",
+   "receiptId":"3e3dad81092a4d398e3c99469edb785f",
+   "missingInfo":[
+      "idPaymentManager",
+      "creditor.officeName",
+      "psp.pspPartitaIVA",
+      "debtor.streetName",
+      "debtor.civicNumber",
+      "debtor.postalCode",
+      "debtor.city",
+      "debtor.stateProvinceRegion",
+      "debtor.country",
+      "payer",
+      "paymentInfo.primaryCiIncurredFee",
+      "paymentInfo.idCiBundle",
+      "paymentInfo.metadata"
+   ],
+   "debtorPosition":{
+      "modelType":"2",
+      "noticeNumber":"301012400000152316",
+      "iuv":"01012400000123456",
+      "iur":"3e3xxx81092a4d393e3dad8109285f"
+   },
+   "creditor":{
+      "idPA":"00311740609",
+      "idBrokerPA":"08543640158",
+      "idStation":"08543640158_01",
+      "companyName":"Comune di XXXX"
+   },
+   "psp":{
+      "idPsp":"BCITITMM",
+      "idBrokerPsp":"00799960158",
+      "idChannel":"00799960158_70",
+      "psp":"Intesa Sanpaolo S.p.A",
+      "pspFiscalCode":"00799960158",
+      "channelDescription":"app"
+   },
+   "debtor":{
+      "fullName":"John Doe",
+      "entityUniqueIdentifierType":"F",
+      "entityUniqueIdentifierValue":"JHNDOE00A01F205N",
+      "eMail":"john.doe@pagopa.it"
+   },
+   "paymentInfo":{
+      "paymentDateTime":"2024-12-19T19:09:19.183127",
+      "applicationDate":"2024-12-19",
+      "transferDate":"2024-12-20",
+      "dueDate":"2024-12-20",
+      "paymentToken":"3e3dad81092a4d398dad81092a49edbdad81092a4",
+      "amount":"0.01",
+      "fee":"0.5",
+      "idBundle":"005de505-zzzz-yyyy-xxxx-0fbe95370b03",
+      "totalNotice":"1",
+      "paymentMethod":"other",
+      "touchpoint":"app",
+      "remittanceInformation":"Codice Fiscale/Partita IVA: JHNDOE00A01F205N. Cognome Nome/Ragione Soc",
+      "description":"Codice Fiscale/Partita IVA: JHNDOE00A01F205N. Cognome Nome/Ragione Soc",
+      "IUR":"3e3xxx81092a4d393e3dad8109285f"
+   },
+   "transferList":[
+      {
+         "idTransfer":"1",
+         "fiscalCodePA":"00311740609",
+         "companyName":"Comune di XXXXX",
+         "amount":"0.01",
+         "transferCategory":"9/0115102AP/",
+         "remittanceInformation":"Codice Fiscale/Partita IVA: JHNDOE00A01F205N. Cognome Nome/Ragione Sociale: John Doe. Email: john",
+         "IBAN":"IT73Y0620111100000012345678"
+      }
+   ],
+   "transactionDetails":{
+      "user":{
+         "type":"GUEST"
+      },
+      "transaction":{
+         "transactionId":"0b486031ed4941f78353d0563bb219ed",
+         "grandTotal":51,
+         "amount":1,
+         "fee":50,
+         "transactionStatus":"Confermato",
+         "creationDate":"2024-12-19T19:09:16.254351779Z",
+         "psp":{
+            "idChannel":"00799960158_70",
+            "businessName":"Intesa Sanpaolo S.p.A."
+         }
+      },
+      "info":{
+         "brand":"MYBK",
+         "brandLogo":"mybank.png",
+         "clientId":"CHECKOUT_CART",
+         "paymentMethodName":"MYBANK",
+         "type":"MYBK"
+      }
+   },
+   "timestamp":1733764282519,
+   "properties":{
+      "serviceIdentifier":"NDP002SIT"
+   },
+   "eventStatus":"DONE",
+   "eventRetryEnrichmentCount":0,
+   "eventTriggeredBySchedule":false
+}
