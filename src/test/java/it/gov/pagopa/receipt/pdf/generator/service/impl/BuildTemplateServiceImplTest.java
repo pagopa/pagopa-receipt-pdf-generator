@@ -90,7 +90,7 @@ class BuildTemplateServiceImplTest {
     public static final String BIZ_EVENT = "bizEvent";
     public static final String RECEIPT = "receipt";
 
-    public static final String WISP_NOTICE_CODE = "34800000000000";
+    public static final String WISP_NOTICE_CODE = "35100000000000";
 
     private BuildTemplateServiceImpl buildTemplateService;
 
