@@ -49,7 +49,7 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
     public static final String MODEL_TYPE_NOTICE = "2";
     public static final String DEBTOR_ANONIMO_CF = "ANONIMO";
 
-    public static final String WISP_REGEX = "^348.*";
+    public static final String WISP_REGEX = "^351.*";
 
     static {
         try {
