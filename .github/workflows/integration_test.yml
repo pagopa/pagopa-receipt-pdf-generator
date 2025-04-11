@@ -18,11 +18,6 @@ on:
         required: false
         type: boolean
         default: false
-      notify:
-        description: 'notify test results'
-        required: false
-        type: boolean
-        default: true
 
 permissions:
   id-token: write
@@ -67,7 +62,7 @@ jobs:
     needs: [ integration_test ]
     runs-on: [ self-hosted-job, "${{(github.event.inputs == null && 'uat') || inputs.environment }}" ]
     name: Notify
-    if: ${{ (success() || failure()) && (github.event.inputs == null || inputs.notify)}}
+    if: always()
     steps:
       - name: Report Status
         if: always()
