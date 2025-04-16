@@ -5,7 +5,7 @@ const { getReceiptsStatusCount, getBizCount } = require("./utils");
 // const from = "2023-11-23T00:00:00";
 // const to = "2023-11-25T23:59:59";
 
-const dateRange = process.env.DATE_RANGE || 'weekly';
+const dateRange = process.env.DATE_RANGE || 'weekly'; // set daily for today
 
 let currentDate = new Date();
 
@@ -13,12 +13,12 @@ const customStartDate = process.env.CUSTOM_START_DATE || currentDate.getDate();
 const customEndDate = process.env.CUSTOM_END_DATE || currentDate.getDate();
 
 let yesterday = new Date(currentDate);
-yesterday.setDate(yesterday.getDate() - 1);
+yesterday.setDate(yesterday.getDate() - 1); // remove -1 for today
 
 let minDate = new Date(currentDate);
 switch(dateRange) {
     case "daily":
-        minDate.setDate(minDate.getDate() - 1);
+        minDate.setDate(minDate.getDate() - 1); // remove -1 for today
         break;
     case "weekly":
         minDate.setDate(minDate.getDate() - 7);

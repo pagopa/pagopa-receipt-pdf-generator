@@ -22,11 +22,20 @@ const biz_cosmos_key = process.env.BIZ_COSMOS_KEY || "";
 const biz_databaseId = process.env.BIZ_COSMOS_DB_NAME;
 const bizContainerId = process.env.BIZ_COSMOS_DB_CONTAINER_NAME;
 const biz_request_timeout = process.env.RECEIPTS_COSMOS_TIMEOUT || 10000;
+
+// https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/tutorial-global-distribution?tabs=dotnetv2%2Capi-async#nodejsjavascript
+// Setting read region selection preference, in the following order -
+// 1 - West Europe
+// 2 - North Europe
+// const preferredLocations_ = ['West Europe', 'North Europe'];
+const preferredLocations_ = ['North Europe'];
+
 const biz_client = new CosmosClient({
    endpoint: biz_cosmos_endpoint,
    key: biz_cosmos_key,
       connectionPolicy: {
-         requestTimeout: biz_request_timeout
+         requestTimeout: biz_request_timeout,
+         preferredLocations :  preferredLocations_
       }
 });
 const bizContainer = biz_client.database(biz_databaseId).container(bizContainerId);
