@@ -70,3 +70,8 @@ data "azurerm_key_vault_secret" "key_vault_integration_test_aes_key" {
   name         = "aes-secret-key"
   key_vault_id = data.azurerm_key_vault.key_vault_domain.id
 }
+
+data "azurerm_user_assigned_identity" "workload_identity_clientid" {
+  name                = "receipts-workload-identity"
+  resource_group_name = "pagopa-${var.env_short}-itn-${var.env}-aks-rg"
+}
