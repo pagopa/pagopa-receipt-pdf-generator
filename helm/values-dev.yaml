@@ -10,14 +10,14 @@ microservice-chart:
   livenessProbe:
     handlerType: tcpSocket
     tcpSocket:
-      port: 80
+      port: 8080
     initialDelaySeconds: 30
     periodSeconds: 30
     failureThreshold: 10
   readinessProbe:
     handlerType: tcpSocket
     tcpSocket:
-      port: 80
+      port: 8080
     initialDelaySeconds: 30
     periodSeconds: 30
     failureThreshold: 10
@@ -31,18 +31,18 @@ microservice-chart:
         targetPort: 12345
         path: /metrics
   ports:
-    - 80 #http
+    - 8080 #http
     - 12345 #jmx-exporter
   service:
     type: ClusterIP
     ports:
-      - 80 #http
+      - 8080 #http
       - 12345 #jmx-exporter
   ingress:
     create: true
     host: "weudev.receipts.internal.dev.platform.pagopa.it"
     path: /pagopa-receipt-pdf-generator/(.*)
-    servicePort: 80
+    servicePort: 8080
   serviceAccount:
     name: "receipts-workload-identity"
   azure:
