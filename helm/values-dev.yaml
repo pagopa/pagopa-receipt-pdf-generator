@@ -8,22 +8,21 @@ microservice-chart:
     pullPolicy: Always
   # https://github.com/Azure/azure-functions-host/blob/dev/src/WebJobs.Script.WebHost/Controllers/HostController.cs
   livenessProbe:
-    httpGet:
-      path: /health
-      port: 80
-    initialDelaySeconds: 60
-    failureThreshold: 6
-    periodSeconds: 10
+    handlerType: tcpSocket
+    tcpSocket:
+      port: 8080
+    initialDelaySeconds: 30
+    periodSeconds: 30
+    failureThreshold: 10
   readinessProbe:
-    httpGet:
-      path: /health
-      port: 80
-    initialDelaySeconds: 60
-    failureThreshold: 6
-    periodSeconds: 10
+    handlerType: tcpSocket
+    tcpSocket:
+      port: 8080
+    initialDelaySeconds: 30
+    periodSeconds: 30
+    failureThreshold: 10
   deployment:
     create: true
-    replicas: 1
   serviceMonitor:
     create: true
     endpoints:
@@ -31,18 +30,18 @@ microservice-chart:
         targetPort: 12345
         path: /metrics
   ports:
-    - 80 #http
     - 12345 #jmx-exporter
+    - 8080
   service:
     type: ClusterIP
     ports:
-      - 80 #http
+      - 8080
       - 12345 #jmx-exporter
   ingress:
     create: true
     host: "weudev.receipts.internal.dev.platform.pagopa.it"
     path: /pagopa-receipt-pdf-generator/(.*)
-    servicePort: 80
+    servicePort: 8080
   serviceAccount:
     name: "receipts-workload-identity"
   azure:
