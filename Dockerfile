@@ -28,6 +28,6 @@ FROM mcr.microsoft.com/azure-functions/java:4-java$JAVA_VERSION
 ENV AzureWebJobsScriptRoot=/home/site/wwwroot \
     AzureFunctionsJobHost__Logging__Console__IsEnabled=true
 
-EXPOSE 8080
+EXPOSE 80
 EXPOSE 12345
 COPY --from=installer-env ["/home/site/wwwroot", "/home/site/wwwroot"]
