@@ -171,8 +171,8 @@ public class GenerateReceiptPdf {
                     receipt.getId(),
                     receiptEventReference));
             //Generate and save PDF
-            // PdfGeneration pdfGeneration;
-            // Path workingDirPath = createWorkingDirectory();
+            PdfGeneration pdfGeneration;
+            Path workingDirPath = createWorkingDirectory();
             logger.info(String.format("[%s] Generating pdf for Receipt with id %s and eventId %s",
                     context.getFunctionName(),
                     receipt.getId(),
