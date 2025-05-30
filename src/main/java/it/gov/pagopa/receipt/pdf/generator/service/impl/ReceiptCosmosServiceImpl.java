@@ -55,7 +55,7 @@ public class ReceiptCosmosServiceImpl implements ReceiptCosmosService {
             statusCode = response.getStatusCode();
         }  catch (Exception e) {
             statusCode = HttpStatus.SC_INTERNAL_SERVER_ERROR;
-            logger.error(() -> String.format(String.format("Save receipt with eventId %s on cosmos failed", receipt.getEventId()), e));
+            logger.error(String.format(String.format("Save receipt with eventId %s on cosmos failed", receipt.getEventId()), e));
         }
 
         if(statusCode != com.microsoft.azure.functions.HttpStatus.OK.value()){

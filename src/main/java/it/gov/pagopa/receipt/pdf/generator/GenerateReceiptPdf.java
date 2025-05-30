@@ -28,6 +28,8 @@ import it.gov.pagopa.receipt.pdf.generator.utils.ObjectMapperUtils;
 import it.gov.pagopa.receipt.pdf.generator.utils.ReceiptUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
+
+import java.util.logging.Level;
 // import org.slf4j.Logger;
 // import org.slf4j.LoggerFactory;
 import java.util.logging.Logger;
@@ -49,7 +51,7 @@ import java.util.List;
  */
 public class GenerateReceiptPdf {
 
-    // private final Logger logger = LoggerFactory.getLogger(GenerateReceiptPdf.class);
+    private Logger logger = Logger.getLogger(GenerateReceiptPdf.class.getName());
     
 
     private static final int MAX_NUMBER_RETRY = Integer.parseInt(System.getenv().getOrDefault("COSMOS_RECEIPT_QUEUE_MAX_RETRY", "5"));
@@ -124,7 +126,7 @@ public class GenerateReceiptPdf {
             OutputBinding<Receipt> documentdb,
             final ExecutionContext context) throws BizEventNotValidException, ReceiptNotFoundException, IOException {
 
-        Logger logger = context.getLogger();
+        logger = context.getLogger();
 
         //Map queue bizEventMessage to BizEvent
         List<BizEvent> listOfBizEvent = getBizEventListFromMessage(context, bizEventMessage);
@@ -157,22 +159,22 @@ public class GenerateReceiptPdf {
                 //Update the receipt's status and error message
                 ReasonError reasonError = new ReasonError(HttpStatus.SC_INTERNAL_SERVER_ERROR, errorMessage);
                 receipt.setReasonErr(reasonError);
-                logger.error(() -> String.format("[{}] Error generating PDF: {}", context.getFunctionName(), errorMessage));
+                logger.severe(String.format("[%s] Error generating PDF: %s", context.getFunctionName(), errorMessage));
                 documentdb.setValue(receipt);
                 return;
             }
 
-            logger.info(() -> String.format("[{}] Generating pdf for Receipt with id {} and eventId {}",
+            logger.info(String.format("[{}] Generating pdf for Receipt with id {} and eventId {}",
                     context.getFunctionName(),
                     receipt.getId(),
-                    receiptEventReference);
+                    receiptEventReference));
             //Generate and save PDF
             PdfGeneration pdfGeneration;
             Path workingDirPath = createWorkingDirectory();
-            logger.info(() -> String.format("[{}] Generating pdf for Receipt with id {} and eventId {}",
+            logger.info(String.format("[{}] Generating pdf for Receipt with id {} and eventId {}",
                     context.getFunctionName(),
                     receipt.getId(),
-                    "Ho creato la dir .......");
+                    "Ho creato la dir ......."));
             try {
                 pdfGeneration = generateReceiptPdfService.generateReceipts(receipt, listOfBizEvent, workingDirPath);
             } finally {
@@ -186,7 +188,7 @@ public class GenerateReceiptPdf {
                 if (success) {
                     receipt.setStatus(ReceiptStatusType.GENERATED);
                     receipt.setGenerated_at(System.currentTimeMillis());
-                    logger.debug(() -> String.format("[{}] Receipt with id {} being saved with status {}",
+                    logger.fine(() -> String.format("[{}] Receipt with id {} being saved with status {}",
                             context.getFunctionName(),
                             receipt.getEventId(),
                             receipt.getStatus()));
@@ -207,14 +209,14 @@ public class GenerateReceiptPdf {
                         }
                     }
                     receipt.setStatus(receiptStatusType);
-                    logger.error(() -> String.format("[{}] Error generating receipt for Receipt {} will be saved with status {}",
+                    logger.fine(() -> String.format("[{}] Error generating receipt for Receipt {} will be saved with status {}",
                             context.getFunctionName(),
                             receipt.getId(),
                             receiptStatusType));
                 }
             } catch (UnableToQueueException | ReceiptGenerationNotToRetryException e) {
                 receipt.setStatus(ReceiptStatusType.FAILED);
-                logger.error(() -> String.format("[{}] PDF Receipt generation for Receipt {} failed. This error will not be retried, the receipt will be saved with status {}",
+                logger.severe(() -> String.format("[{}] PDF Receipt generation for Receipt {} failed. This error will not be retried, the receipt will be saved with status {}",
                         context.getFunctionName(),
                         receipt.getId(),
                         ReceiptStatusType.FAILED, e));
@@ -247,7 +249,7 @@ public class GenerateReceiptPdf {
                 Files.createDirectory(workingDirectory.toPath());
             } catch (FileAlreadyExistsException ignored) {
                 // If the directory already exists, we can ignore this exception
-				logger.error(() -> String.format("Working directory already exists: {}", WORKING_DIRECTORY_PATH));
+				logger.severe(() -> String.format("Working directory already exists: {}", WORKING_DIRECTORY_PATH));
             }
             p = Files.createTempDirectory(workingDirectory.toPath(),
                     DateTimeFormatter.ofPattern(PATTERN_FORMAT)
@@ -255,7 +257,7 @@ public class GenerateReceiptPdf {
                     .format(Instant.now()));
         }
     	} catch (IOException e) {
-			logger.error(() -> String.format("Unable to create working directory: {}", WORKING_DIRECTORY_PATH, e));
+			logger.severe(() -> String.format("Unable to create working directory: {}", WORKING_DIRECTORY_PATH, e));
 			throw e;
 		}
         
@@ -266,7 +268,7 @@ public class GenerateReceiptPdf {
         try {
             FileUtils.deleteDirectory(workingDirPath.toFile());
         } catch (IOException e) {
-            logger.warn("Unable to clear working directory: {}", workingDirPath, e);
+        	logger.log(Level.WARNING, String.format("Unable to clear working directory: %s", workingDirPath), e);
         }
     }
 }

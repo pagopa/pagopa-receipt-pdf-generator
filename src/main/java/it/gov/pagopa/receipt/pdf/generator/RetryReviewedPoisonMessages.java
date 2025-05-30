@@ -25,19 +25,17 @@ import it.gov.pagopa.receipt.pdf.generator.service.impl.ReceiptCosmosServiceImpl
 import it.gov.pagopa.receipt.pdf.generator.utils.Aes256Utils;
 import it.gov.pagopa.receipt.pdf.generator.utils.ObjectMapperUtils;
 import it.gov.pagopa.receipt.pdf.generator.utils.ReceiptUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * Azure Functions with Azure CosmosDB trigger.
  */
 public class RetryReviewedPoisonMessages {
 
-     private final Logger logger = LoggerFactory.getLogger(RetryReviewedPoisonMessages.class);
+     private final Logger logger = Logger.getLogger(RetryReviewedPoisonMessages.class.getName());
 
     private final ReceiptCosmosService receiptCosmosService;
     private final ReceiptQueueClient queueService;
@@ -86,7 +84,7 @@ public class RetryReviewedPoisonMessages {
         List<ReceiptError> itemsDone = new ArrayList<>();
 
          logger.info(() -> String.format("[{}] documentCaptorValue stat {} function - num errors reviewed triggered {}",
-                 context.getFunctionName(), context.getInvocationId(), items.size());
+                 context.getFunctionName(), context.getInvocationId(), items.size()));
 
         //Retrieve receipt data from biz-event
         for (ReceiptError receiptError : items) {
@@ -113,7 +111,7 @@ public class RetryReviewedPoisonMessages {
                         receiptError.setStatus(ReceiptErrorStatusType.REQUEUED);
                     } catch (Exception e) {
                         //Error info
-                         logger.error(() -> String.format("[{}] Error to process receiptError with id {}",
+                         logger.severe(() -> String.format("[{}] Error to process receiptError with id {}",
                                  context.getFunctionName(), receiptError.getId(), e));
                         receiptError.setMessageError(e.getMessage());
                         receiptError.setStatus(ReceiptErrorStatusType.TO_REVIEW);
@@ -131,7 +129,7 @@ public class RetryReviewedPoisonMessages {
     private void updateReceiptToInserted(ExecutionContext context, String bizEventId) throws ReceiptNotFoundException, UnableToSaveException {
             Receipt receipt = this.receiptCosmosService.getReceipt(bizEventId);
             receipt.setStatus(ReceiptStatusType.INSERTED);
-            logger.debug(() -> String.format("[{}] updating receipt with id {} to status {}", context.getFunctionName(), receipt.getId(), ReceiptStatusType.INSERTED));
+            logger.fine(() -> String.format("[{}] updating receipt with id {} to status {}", context.getFunctionName(), receipt.getId(), ReceiptStatusType.INSERTED));
             this.receiptCosmosService.updateReceipt(receipt);
     }
 }

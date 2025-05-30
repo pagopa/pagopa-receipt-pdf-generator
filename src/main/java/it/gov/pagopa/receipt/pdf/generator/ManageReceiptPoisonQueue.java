@@ -25,21 +25,20 @@ import it.gov.pagopa.receipt.pdf.generator.service.impl.ReceiptCosmosServiceImpl
 import it.gov.pagopa.receipt.pdf.generator.utils.Aes256Utils;
 import it.gov.pagopa.receipt.pdf.generator.utils.ObjectMapperUtils;
 import it.gov.pagopa.receipt.pdf.generator.utils.ReceiptUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Objects;
+import java.util.logging.Logger;
 
 /**
  * Azure Functions with Azure Queue trigger.
  */
 public class ManageReceiptPoisonQueue {
 
-    private final Logger logger = LoggerFactory.getLogger(ManageReceiptPoisonQueue.class);
+	private final Logger logger = Logger.getLogger(ManageReceiptPoisonQueue.class.getName());
 
     private final ReceiptCosmosService receiptCosmosService;
     private final ReceiptQueueClient queueService;
@@ -90,23 +89,23 @@ public class ManageReceiptPoisonQueue {
         List<BizEvent> listOfBizEvents = new ArrayList<>();
         BizEvent bizEvent = null;
 
-        logger.info(() -> String.format("[{}] function called at {}", context.getFunctionName(), LocalDateTime.now());
+        logger.info(() -> String.format("[{}] function called at {}", context.getFunctionName(), LocalDateTime.now()));
         boolean retriableContent = false;
 
         try {
             //attempt to Map queue bizEventMessage to BizEvent
             listOfBizEvents = ObjectMapperUtils.mapBizEventListString(errorMessage, new TypeReference<>() {});
             bizEvent = listOfBizEvents.get(0);
-            logger.debug(() -> String.format("[{}] function called at {} recognized as valid BizEvent with id {}",
+            logger.fine(String.format("[{}] function called at {} recognized as valid BizEvent with id {}",
                     context.getFunctionName(), LocalDateTime.now(), bizEvent.getId()));
             if (Boolean.TRUE.equals(bizEvent.getAttemptedPoisonRetry())) {
-                logger.info(() -> String.format("[{}] function called at {} for event with id {} has ingestion already retried, sending to review",
-                        context.getFunctionName(), LocalDateTime.now(), bizEvent.getId());
+                logger.info(String.format("[{}] function called at {} for event with id {} has ingestion already retried, sending to review",
+                        context.getFunctionName(), LocalDateTime.now(), bizEvent.getId()));
             } else {
                 retriableContent = true;
             }
         } catch (JsonProcessingException e) {
-            logger.error(() -> String.format("[{}] received parsing error in the function called at {}",
+            logger.severe(() -> String.format("[{}] received parsing error in the function called at {}",
                     context.getFunctionName(), LocalDateTime.now(), e));
         }
 
@@ -122,7 +121,7 @@ public class ManageReceiptPoisonQueue {
                             sendMessageResult.getStatusCode());
                 }
             } catch (Exception e) {
-                logger.error(() -> String.format("[{}] error for the function called at {} when attempting" +
+                logger.severe(String.format("[{}] error for the function called at {} when attempting" +
                                 "to requeue BizEvent with id {}, saving to cosmos for review",
                         context.getFunctionName(), LocalDateTime.now(), bizEvent.getId(), e));
                 saveReceiptErrorAndUpdateReceipt(errorMessage, receiptsOutputBinding, receiptErrorOutputBinding, context, bizEvent, listOfBizEvents.size() > 1);
@@ -151,7 +150,7 @@ public class ManageReceiptPoisonQueue {
             String encodedEvent = Aes256Utils.encrypt(errorMessage);
             receiptError.setMessagePayload(encodedEvent);
 
-            logger.debug(() -> String.format("[{}] saving new entry to the retry error to review with payload {}",
+            logger.fine(() -> String.format("[{}] saving new entry to the retry error to review with payload {}",
                     context.getFunctionName(), encodedEvent));
         } catch (Aes256Exception e) {
             receiptError.setMessageError(e.getMessage());
@@ -167,11 +166,11 @@ public class ManageReceiptPoisonQueue {
 
             receipt.setStatus(ReceiptStatusType.TO_REVIEW);
 
-            logger.debug(() -> String.format("[{}] updating receipt with id {} to status {}",
+            logger.fine(() -> String.format("[{}] updating receipt with id {} to status {}",
                     context.getFunctionName(), receipt.getId(), ReceiptStatusType.TO_REVIEW));
             receiptOutputBinding.setValue(receipt);
         } catch (ReceiptNotFoundException e) {
-            logger.error(() -> String.format("[{}] error updating status of receipt with eventId {}, receipt not found",
+            logger.severe(() -> String.format("[{}] error updating status of receipt with eventId {}, receipt not found",
                     context.getFunctionName(), eventId, e));
         }
     }

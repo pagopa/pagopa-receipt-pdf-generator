@@ -9,12 +9,12 @@ import com.microsoft.azure.functions.annotation.AuthorizationLevel;
 import com.microsoft.azure.functions.annotation.FunctionName;
 import com.microsoft.azure.functions.annotation.HttpTrigger;
 import it.gov.pagopa.receipt.pdf.generator.model.AppInfo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 /**
@@ -22,7 +22,7 @@ import java.util.Properties;
  */
 public class Info {
 
-    private final Logger logger = LoggerFactory.getLogger(Info.class);
+    private final Logger logger = Logger.getLogger(Info.class.getName());
 
     /**
      * This function will be invoked when a Http Trigger occurs
@@ -52,7 +52,7 @@ public class Info {
                  name = properties.getProperty("name", null);
              }
          } catch (Exception e) {
-             logger.error(() -> String.format("Impossible to retrieve information from pom.properties file.", e));
+        	 logger.log(Level.SEVERE, "Impossible to retrieve information from pom.properties file.", e);
          }
          return AppInfo.builder().version(version).environment("azure-fn").name(name).build();
     }
