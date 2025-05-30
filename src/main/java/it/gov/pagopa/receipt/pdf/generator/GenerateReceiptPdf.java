@@ -127,6 +127,8 @@ public class GenerateReceiptPdf {
             final ExecutionContext context) throws BizEventNotValidException, ReceiptNotFoundException, IOException {
 
         logger = context.getLogger();
+        
+        logger.info(String.format("[{}] function called at {}", context.getFunctionName(), LocalDateTime.now()));
 
         //Map queue bizEventMessage to BizEvent
         List<BizEvent> listOfBizEvent = getBizEventListFromMessage(context, bizEventMessage);
