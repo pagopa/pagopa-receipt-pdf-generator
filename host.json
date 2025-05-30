@@ -17,7 +17,7 @@
     }
   },
   "logging": {
-    "fileLoggingMode": "alaways",
+    "fileLoggingMode": "always",
     "logLevel": {
       "default": "Information",
       "Host.Results": "Information",
