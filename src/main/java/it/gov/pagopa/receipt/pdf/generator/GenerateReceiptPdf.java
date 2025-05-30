@@ -128,7 +128,7 @@ public class GenerateReceiptPdf {
 
         logger = context.getLogger();
         
-        logger.info(String.format("[{}] function called at {}", context.getFunctionName(), LocalDateTime.now()));
+        logger.info(String.format("[%s] function called at %s", context.getFunctionName(), LocalDateTime.now()));
 
         //Map queue bizEventMessage to BizEvent
         List<BizEvent> listOfBizEvent = getBizEventListFromMessage(context, bizEventMessage);
@@ -136,14 +136,14 @@ public class GenerateReceiptPdf {
         if(!listOfBizEvent.isEmpty()){
             String receiptEventReference = ReceiptUtils.getReceiptEventReference(listOfBizEvent.get(0), listOfBizEvent.size() > 1);
 
-            logger.info(() -> String.format("[{}] function called at {} for receipt with bizEvent reference {}", context.getFunctionName(), LocalDateTime.now(), receiptEventReference));
+            logger.info(() -> String.format("[%s] function called at %s for receipt with bizEvent reference %s", context.getFunctionName(), LocalDateTime.now(), receiptEventReference));
 
             //Retrieve receipt's data from CosmosDB
             Receipt receipt = this.receiptCosmosService.getReceipt(receiptEventReference);
 
             //Verify receipt status
             if (isReceiptInInValidState(receipt)) {
-                logger.info(() -> String.format("[{}] Receipt with id {} is discarded from generation because it is not in INSERTED or RETRY (status: {}) or have null event data (eventData is null: {})",
+                logger.info(() -> String.format("[%s] Receipt with id %s is discarded from generation because it is not in INSERTED or RETRY (status: %s) or have null event data (eventData is null: %s)",
                         context.getFunctionName(),
                         receipt.getEventId(),
                         receipt.getStatus(),
@@ -166,14 +166,14 @@ public class GenerateReceiptPdf {
                 return;
             }
 
-            logger.info(String.format("[{}] Generating pdf for Receipt with id {} and eventId {}",
+            logger.info(String.format("[%s] Generating pdf for Receipt with id %s and eventId %s",
                     context.getFunctionName(),
                     receipt.getId(),
                     receiptEventReference));
             //Generate and save PDF
             PdfGeneration pdfGeneration;
             Path workingDirPath = createWorkingDirectory();
-            logger.info(String.format("[{}] Generating pdf for Receipt with id {} and eventId {}",
+            logger.info(String.format("[%s] Generating pdf for Receipt with id %s and eventId %s",
                     context.getFunctionName(),
                     receipt.getId(),
                     "Ho creato la dir ......."));
@@ -190,7 +190,7 @@ public class GenerateReceiptPdf {
                 if (success) {
                     receipt.setStatus(ReceiptStatusType.GENERATED);
                     receipt.setGenerated_at(System.currentTimeMillis());
-                    logger.fine(() -> String.format("[{}] Receipt with id {} being saved with status {}",
+                    logger.fine(() -> String.format("[%s] Receipt with id %s being saved with status %s",
                             context.getFunctionName(),
                             receipt.getEventId(),
                             receipt.getStatus()));
@@ -211,14 +211,14 @@ public class GenerateReceiptPdf {
                         }
                     }
                     receipt.setStatus(receiptStatusType);
-                    logger.fine(() -> String.format("[{}] Error generating receipt for Receipt {} will be saved with status {}",
+                    logger.fine(() -> String.format("[%s] Error generating receipt for Receipt %s will be saved with status %s",
                             context.getFunctionName(),
                             receipt.getId(),
                             receiptStatusType));
                 }
             } catch (UnableToQueueException | ReceiptGenerationNotToRetryException e) {
                 receipt.setStatus(ReceiptStatusType.FAILED);
-                logger.severe(() -> String.format("[{}] PDF Receipt generation for Receipt {} failed. This error will not be retried, the receipt will be saved with status {}",
+                logger.severe(() -> String.format("[%s] PDF Receipt generation for Receipt %s failed. This error will not be retried, the receipt will be saved with status %s",
                         context.getFunctionName(),
                         receipt.getId(),
                         ReceiptStatusType.FAILED, e));
@@ -251,7 +251,7 @@ public class GenerateReceiptPdf {
                 Files.createDirectory(workingDirectory.toPath());
             } catch (FileAlreadyExistsException ignored) {
                 // If the directory already exists, we can ignore this exception
-				logger.severe(() -> String.format("Working directory already exists: {}", WORKING_DIRECTORY_PATH));
+				logger.severe(() -> String.format("Working directory already exists: %s", WORKING_DIRECTORY_PATH));
             }
             p = Files.createTempDirectory(workingDirectory.toPath(),
                     DateTimeFormatter.ofPattern(PATTERN_FORMAT)
@@ -259,7 +259,7 @@ public class GenerateReceiptPdf {
                     .format(Instant.now()));
         }
     	} catch (IOException e) {
-			logger.severe(() -> String.format("Unable to create working directory: {}", WORKING_DIRECTORY_PATH, e));
+			logger.severe(() -> String.format("Unable to create working directory: %s", WORKING_DIRECTORY_PATH, e));
 			throw e;
 		}
         
