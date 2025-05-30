@@ -55,7 +55,7 @@ public class GenerateReceiptPdf {
     
 
     private static final int MAX_NUMBER_RETRY = Integer.parseInt(System.getenv().getOrDefault("COSMOS_RECEIPT_QUEUE_MAX_RETRY", "5"));
-    private static final String WORKING_DIRECTORY_PATH = System.getenv().getOrDefault("WORKING_DIRECTORY_PATH", "");
+    private static final String WORKING_DIRECTORY_PATH = System.getenv().getOrDefault("WORKING_DIRECTORY_PATH", "/temp");
 
     private static final String PATTERN_FORMAT = "yyyy.MM.dd.HH.mm.ss";
 
