@@ -159,13 +159,17 @@ public class GenerateReceiptPdf {
                 return;
             }
 
-            logger.debug("[{}] Generating pdf for Receipt with id {} and eventId {}",
+            logger.info("[{}] Generating pdf for Receipt with id {} and eventId {}",
                     context.getFunctionName(),
                     receipt.getId(),
                     receiptEventReference);
             //Generate and save PDF
             PdfGeneration pdfGeneration;
             Path workingDirPath = createWorkingDirectory();
+            logger.info("[{}] Generating pdf for Receipt with id {} and eventId {}",
+                    context.getFunctionName(),
+                    receipt.getId(),
+                    "Ho creato la dir .......");
             try {
                 pdfGeneration = generateReceiptPdfService.generateReceipts(receipt, listOfBizEvent, workingDirPath);
             } finally {
