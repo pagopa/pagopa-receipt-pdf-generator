@@ -44,7 +44,9 @@ microservice-chart:
     path: /pagopa-receipt-pdf-generator/(.*)
     servicePort: 8080
   serviceAccount:
-    name: "receipts-workload-identity"
+    create: false
+    annotations: {}
+    name: ""    
   azure:
     workloadIdentityClientId: <workload-identity-client-id-set-automatically-by-gha>
   podAnnotations: {}

@@ -177,52 +177,52 @@ public class GenerateReceiptPdf {
                     context.getFunctionName(),
                     receipt.getId(),
                     "Ho creato la dir ......."));
-            // try {
-            //     pdfGeneration = generateReceiptPdfService.generateReceipts(receipt, listOfBizEvent, workingDirPath);
-            // } finally {
-            //     deleteTempFolder(workingDirPath);
-            // }
+            try {
+                pdfGeneration = generateReceiptPdfService.generateReceipts(receipt, listOfBizEvent, workingDirPath);
+            } finally {
+                deleteTempFolder(workingDirPath);
+            }
 
             //Verify PDF generation success
             boolean success;
-            // try {
-            //     success = generateReceiptPdfService.verifyAndUpdateReceipt(receipt, pdfGeneration);
-            //     if (success) {
-            //         receipt.setStatus(ReceiptStatusType.GENERATED);
-            //         receipt.setGenerated_at(System.currentTimeMillis());
-            //         logger.fine(() -> String.format("[%s] Receipt with id %s being saved with status %s",
-            //                 context.getFunctionName(),
-            //                 receipt.getEventId(),
-            //                 receipt.getStatus()));
-            //     } else {
-            //         ReceiptStatusType receiptStatusType;
-            //         //Verify if the max number of retry have been passed
-            //         if (receipt.getNumRetry() > MAX_NUMBER_RETRY) {
-            //             receiptStatusType = ReceiptStatusType.FAILED;
-            //         } else {
-            //             receiptStatusType = ReceiptStatusType.RETRY;
-            //             receipt.setNumRetry(receipt.getNumRetry() + 1);
-            //             //Send decoded BizEvent to queue
-            //             Response<SendMessageResult> sendMessageResult =
-            //                     this.queueService.sendMessageToQueue(Base64.getMimeEncoder().encodeToString(bizEventMessage.getBytes()));
-            //             if (sendMessageResult.getStatusCode() != com.microsoft.azure.functions.HttpStatus.CREATED.value()) {
-            //                 throw new UnableToQueueException("Unable to queue due to error: " +
-            //                         sendMessageResult.getStatusCode());
-            //             }
-            //         }
-            //         receipt.setStatus(receiptStatusType);
-            //         logger.fine(() -> String.format("[%s] Error generating receipt for Receipt %s will be saved with status %s",
-            //                 context.getFunctionName(),
-            //                 receipt.getId(),
-            //                 receiptStatusType));
-            //     }
-            // } catch (UnableToQueueException | ReceiptGenerationNotToRetryException e) {
-            //     receipt.setStatus(ReceiptStatusType.FAILED);
-            //     logger.severe(() -> String.format("[%s] PDF Receipt generation for Receipt %s failed. This error will not be retried, the receipt will be saved with status %s",
-            //             context.getFunctionName(),
-            //             receipt.getId(),
-            //             ReceiptStatusType.FAILED, e));
-            // }
+            try {
+                success = generateReceiptPdfService.verifyAndUpdateReceipt(receipt, pdfGeneration);
+                if (success) {
+                    receipt.setStatus(ReceiptStatusType.GENERATED);
+                    receipt.setGenerated_at(System.currentTimeMillis());
+                    logger.fine(() -> String.format("[%s] Receipt with id %s being saved with status %s",
+                            context.getFunctionName(),
+                            receipt.getEventId(),
+                            receipt.getStatus()));
+                } else {
+                    ReceiptStatusType receiptStatusType;
+                    //Verify if the max number of retry have been passed
+                    if (receipt.getNumRetry() > MAX_NUMBER_RETRY) {
+                        receiptStatusType = ReceiptStatusType.FAILED;
+                    } else {
+                        receiptStatusType = ReceiptStatusType.RETRY;
+                        receipt.setNumRetry(receipt.getNumRetry() + 1);
+                        //Send decoded BizEvent to queue
+                        Response<SendMessageResult> sendMessageResult =
+                                this.queueService.sendMessageToQueue(Base64.getMimeEncoder().encodeToString(bizEventMessage.getBytes()));
+                        if (sendMessageResult.getStatusCode() != com.microsoft.azure.functions.HttpStatus.CREATED.value()) {
+                            throw new UnableToQueueException("Unable to queue due to error: " +
+                                    sendMessageResult.getStatusCode());
+                        }
+                    }
+                    receipt.setStatus(receiptStatusType);
+                    logger.fine(() -> String.format("[%s] Error generating receipt for Receipt %s will be saved with status %s",
+                            context.getFunctionName(),
+                            receipt.getId(),
+                            receiptStatusType));
+                }
+            } catch (UnableToQueueException | ReceiptGenerationNotToRetryException e) {
+                receipt.setStatus(ReceiptStatusType.FAILED);
+                logger.severe(() -> String.format("[%s] PDF Receipt generation for Receipt %s failed. This error will not be retried, the receipt will be saved with status %s",
+                        context.getFunctionName(),
+                        receipt.getId(),
+                        ReceiptStatusType.FAILED, e));
+            }
             documentdb.setValue(receipt);
         }
     }
