@@ -17,12 +17,17 @@
     }
   },
   "logging": {
-    "fileLoggingMode": "always",
+    "fileLoggingMode": "debugOnly",
     "logLevel": {
-      "default": "Information",
-      "Host.Results": "Information",
-      "Function": "Information",
-      "Host.Aggregator": "Trace"
+      "default": "None",
+      "Host.Results": "Error",
+      "Function.GenerateReceiptProcess": "Information",
+      "Function.ManageReceiptPoisonQueueProcessor": "Information",
+      "Function.RetryReviewedPoisonMessagesProcessor": "Information",
+      "Microsoft": "Information",
+      "Worker": "Information",
+      "Host.Aggregator": "Error",
+      "Host": "Error"
     },
     "applicationInsights": {
       "samplingSettings": {
