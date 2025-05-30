@@ -24,10 +24,7 @@
       "Function.GenerateReceiptProcess": "Information",
       "Function.ManageReceiptPoisonQueueProcessor": "Information",
       "Function.RetryReviewedPoisonMessagesProcessor": "Information",
-      "Microsoft": "Information",
-      "Worker": "Information",
-      "Host.Aggregator": "Error",
-      "Host": "Error"
+      "Host.Aggregator": "Error"
     },
     "applicationInsights": {
       "samplingSettings": {
