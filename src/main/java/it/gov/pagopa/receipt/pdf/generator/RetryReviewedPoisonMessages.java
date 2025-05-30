@@ -85,7 +85,7 @@ public class RetryReviewedPoisonMessages {
 
         List<ReceiptError> itemsDone = new ArrayList<>();
 
-         logger.info("[{}] documentCaptorValue stat {} function - num errors reviewed triggered {}",
+         logger.info(() -> String.format("[{}] documentCaptorValue stat {} function - num errors reviewed triggered {}",
                  context.getFunctionName(), context.getInvocationId(), items.size());
 
         //Retrieve receipt data from biz-event
@@ -113,8 +113,8 @@ public class RetryReviewedPoisonMessages {
                         receiptError.setStatus(ReceiptErrorStatusType.REQUEUED);
                     } catch (Exception e) {
                         //Error info
-                         logger.error("[{}] Error to process receiptError with id {}",
-                                 context.getFunctionName(), receiptError.getId(), e);
+                         logger.error(() -> String.format("[{}] Error to process receiptError with id {}",
+                                 context.getFunctionName(), receiptError.getId(), e));
                         receiptError.setMessageError(e.getMessage());
                         receiptError.setStatus(ReceiptErrorStatusType.TO_REVIEW);
                     }
@@ -131,7 +131,7 @@ public class RetryReviewedPoisonMessages {
     private void updateReceiptToInserted(ExecutionContext context, String bizEventId) throws ReceiptNotFoundException, UnableToSaveException {
             Receipt receipt = this.receiptCosmosService.getReceipt(bizEventId);
             receipt.setStatus(ReceiptStatusType.INSERTED);
-            logger.debug("[{}] updating receipt with id {} to status {}", context.getFunctionName(), receipt.getId(), ReceiptStatusType.INSERTED);
+            logger.debug(() -> String.format("[{}] updating receipt with id {} to status {}", context.getFunctionName(), receipt.getId(), ReceiptStatusType.INSERTED));
             this.receiptCosmosService.updateReceipt(receipt);
     }
 }

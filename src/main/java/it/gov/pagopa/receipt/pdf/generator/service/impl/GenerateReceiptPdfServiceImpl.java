@@ -72,7 +72,7 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
     @Override
     public PdfGeneration generateReceipts(Receipt receipt, List<BizEvent> listOfBizEvents, Path workingDirPath) {
 
-        logger.info("sono entrato in generateReceipts");
+        logger.info(() -> String.format("sono entrato in generateReceipts");
 
         PdfGeneration pdfGeneration = new PdfGeneration();
 
@@ -127,7 +127,7 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
         if (receipt.getEventData() != null && !"ANONIMO".equals(receipt.getEventData().getDebtorFiscalCode())) {
 
             if (debtorMetadata == null) {
-                logger.error("Unexpected result for debtor pdf receipt generation. Receipt id {}", receipt.getId());
+                logger.error(() -> String.format("Unexpected result for debtor pdf receipt generation. Receipt id {}", receipt.getId()));
                 return false;
             }
 
@@ -154,7 +154,7 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
 
         PdfMetadata payerMetadata = pdfGeneration.getPayerMetadata();
         if (payerMetadata == null) {
-            logger.error("Unexpected result for payer pdf receipt generation. Receipt id {}", receipt.getId());
+            logger.error(() -> String.format("Unexpected result for payer pdf receipt generation. Receipt id {}", receipt.getId()));
             return false;
         }
 
@@ -180,20 +180,20 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
     }
 
     private PdfMetadata generateAndSavePDFReceipt(List<BizEvent> listOfBizEvents, Receipt receipt, String templateSuffix, boolean isGeneratingDebtor, Path workingDirPath) {
-        logger.info("sono entrato in generateAndSavePDFReceipt");
+        logger.info(() -> String.format("sono entrato in generateAndSavePDFReceipt");
         try {
-            logger.info("sono entrato in generateAndSavePDFReceipt-1");
+            logger.info(() -> String.format("sono entrato in generateAndSavePDFReceipt-1");
             ReceiptPDFTemplate template = buildTemplateService.buildTemplate(listOfBizEvents, isGeneratingDebtor, receipt);
-            logger.info("sono entrato in generateAndSavePDFReceipt-2");
+            logger.info(() -> String.format("sono entrato in generateAndSavePDFReceipt-2");
             String dateFormatted = LocalDate.now().format(DateTimeFormatter.ofPattern("yyMMdd"));
-            logger.info("sono entrato in generateAndSavePDFReceipt-3");
+            logger.info(() -> String.format("sono entrato in generateAndSavePDFReceipt-3");
             String blobName = String.format("%s-%s-%s-%s", TEMPLATE_PREFIX, dateFormatted, receipt.getEventId(), templateSuffix);
-            logger.info("sono entrato in generateAndSavePDFReceipt-4");
+            logger.info(() -> String.format("sono entrato in generateAndSavePDFReceipt-4");
             PdfEngineResponse pdfEngineResponse = generatePDFReceipt(template, workingDirPath);
-            logger.info("sono entrato in generateAndSavePDFReceipt-5");
+            logger.info(() -> String.format("sono entrato in generateAndSavePDFReceipt-5");
             return saveToBlobStorage(pdfEngineResponse, blobName);
         } catch (PDFReceiptGenerationException e) {
-            logger.error("An error occurred when generating or saving the PDF receipt with eventId {}. Error: {}", receipt.getEventId(), e.getMessage(), e);
+            logger.error(() -> String.format("An error occurred when generating or saving the PDF receipt with eventId {}. Error: {}", receipt.getEventId(), e.getMessage(), e));
             return PdfMetadata.builder().statusCode(e.getStatusCode()).errorMessage(e.getMessage()).build();
         }
     }

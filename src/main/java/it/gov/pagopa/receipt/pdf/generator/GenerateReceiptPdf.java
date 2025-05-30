@@ -28,8 +28,9 @@ import it.gov.pagopa.receipt.pdf.generator.utils.ObjectMapperUtils;
 import it.gov.pagopa.receipt.pdf.generator.utils.ReceiptUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+// import org.slf4j.Logger;
+// import org.slf4j.LoggerFactory;
+import java.util.logging.Logger;
 
 import java.io.File;
 import java.io.IOException;
@@ -48,7 +49,8 @@ import java.util.List;
  */
 public class GenerateReceiptPdf {
 
-    private final Logger logger = LoggerFactory.getLogger(GenerateReceiptPdf.class);
+    // private final Logger logger = LoggerFactory.getLogger(GenerateReceiptPdf.class);
+    
 
     private static final int MAX_NUMBER_RETRY = Integer.parseInt(System.getenv().getOrDefault("COSMOS_RECEIPT_QUEUE_MAX_RETRY", "5"));
     private static final String WORKING_DIRECTORY_PATH = System.getenv().getOrDefault("WORKING_DIRECTORY_PATH", "");
@@ -122,25 +124,26 @@ public class GenerateReceiptPdf {
             OutputBinding<Receipt> documentdb,
             final ExecutionContext context) throws BizEventNotValidException, ReceiptNotFoundException, IOException {
 
+        Logger logger = context.getLogger();
+
         //Map queue bizEventMessage to BizEvent
         List<BizEvent> listOfBizEvent = getBizEventListFromMessage(context, bizEventMessage);
 
         if(!listOfBizEvent.isEmpty()){
             String receiptEventReference = ReceiptUtils.getReceiptEventReference(listOfBizEvent.get(0), listOfBizEvent.size() > 1);
 
-            logger.info("[{}] function called at {} for receipt with bizEvent reference {}",
-                    context.getFunctionName(), LocalDateTime.now(), receiptEventReference);
+            logger.info(() -> String.format("[{}] function called at {} for receipt with bizEvent reference {}", context.getFunctionName(), LocalDateTime.now(), receiptEventReference));
 
             //Retrieve receipt's data from CosmosDB
             Receipt receipt = this.receiptCosmosService.getReceipt(receiptEventReference);
 
             //Verify receipt status
             if (isReceiptInInValidState(receipt)) {
-                logger.info("[{}] Receipt with id {} is discarded from generation because it is not in INSERTED or RETRY (status: {}) or have null event data (eventData is null: {})",
+                logger.info(() -> String.format("[{}] Receipt with id {} is discarded from generation because it is not in INSERTED or RETRY (status: {}) or have null event data (eventData is null: {})",
                         context.getFunctionName(),
                         receipt.getEventId(),
                         receipt.getStatus(),
-                        receipt.getEventData() == null);
+                        receipt.getEventData() == null));
                 return;
             }
 
@@ -154,19 +157,19 @@ public class GenerateReceiptPdf {
                 //Update the receipt's status and error message
                 ReasonError reasonError = new ReasonError(HttpStatus.SC_INTERNAL_SERVER_ERROR, errorMessage);
                 receipt.setReasonErr(reasonError);
-                logger.error("[{}] Error generating PDF: {}", context.getFunctionName(), errorMessage);
+                logger.error(() -> String.format("[{}] Error generating PDF: {}", context.getFunctionName(), errorMessage));
                 documentdb.setValue(receipt);
                 return;
             }
 
-            logger.info("[{}] Generating pdf for Receipt with id {} and eventId {}",
+            logger.info(() -> String.format("[{}] Generating pdf for Receipt with id {} and eventId {}",
                     context.getFunctionName(),
                     receipt.getId(),
                     receiptEventReference);
             //Generate and save PDF
             PdfGeneration pdfGeneration;
             Path workingDirPath = createWorkingDirectory();
-            logger.info("[{}] Generating pdf for Receipt with id {} and eventId {}",
+            logger.info(() -> String.format("[{}] Generating pdf for Receipt with id {} and eventId {}",
                     context.getFunctionName(),
                     receipt.getId(),
                     "Ho creato la dir .......");
@@ -183,10 +186,10 @@ public class GenerateReceiptPdf {
                 if (success) {
                     receipt.setStatus(ReceiptStatusType.GENERATED);
                     receipt.setGenerated_at(System.currentTimeMillis());
-                    logger.debug("[{}] Receipt with id {} being saved with status {}",
+                    logger.debug(() -> String.format("[{}] Receipt with id {} being saved with status {}",
                             context.getFunctionName(),
                             receipt.getEventId(),
-                            receipt.getStatus());
+                            receipt.getStatus()));
                 } else {
                     ReceiptStatusType receiptStatusType;
                     //Verify if the max number of retry have been passed
@@ -204,17 +207,17 @@ public class GenerateReceiptPdf {
                         }
                     }
                     receipt.setStatus(receiptStatusType);
-                    logger.error("[{}] Error generating receipt for Receipt {} will be saved with status {}",
+                    logger.error(() -> String.format("[{}] Error generating receipt for Receipt {} will be saved with status {}",
                             context.getFunctionName(),
                             receipt.getId(),
-                            receiptStatusType);
+                            receiptStatusType));
                 }
             } catch (UnableToQueueException | ReceiptGenerationNotToRetryException e) {
                 receipt.setStatus(ReceiptStatusType.FAILED);
-                logger.error("[{}] PDF Receipt generation for Receipt {} failed. This error will not be retried, the receipt will be saved with status {}",
+                logger.error(() -> String.format("[{}] PDF Receipt generation for Receipt {} failed. This error will not be retried, the receipt will be saved with status {}",
                         context.getFunctionName(),
                         receipt.getId(),
-                        ReceiptStatusType.FAILED, e);
+                        ReceiptStatusType.FAILED, e));
             }
             documentdb.setValue(receipt);
         }
@@ -244,7 +247,7 @@ public class GenerateReceiptPdf {
                 Files.createDirectory(workingDirectory.toPath());
             } catch (FileAlreadyExistsException ignored) {
                 // If the directory already exists, we can ignore this exception
-				logger.error("Working directory already exists: {}", WORKING_DIRECTORY_PATH);
+				logger.error(() -> String.format("Working directory already exists: {}", WORKING_DIRECTORY_PATH));
             }
             p = Files.createTempDirectory(workingDirectory.toPath(),
                     DateTimeFormatter.ofPattern(PATTERN_FORMAT)
@@ -252,7 +255,7 @@ public class GenerateReceiptPdf {
                     .format(Instant.now()));
         }
     	} catch (IOException e) {
-			logger.error("Unable to create working directory: {}", WORKING_DIRECTORY_PATH, e);
+			logger.error(() -> String.format("Unable to create working directory: {}", WORKING_DIRECTORY_PATH, e));
 			throw e;
 		}
         
