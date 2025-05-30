@@ -52,7 +52,7 @@ microservice-chart:
     seccompProfile:
       type: RuntimeDefault
   securityContext:
-    allowPrivilegeEscalation: false
+    allowPrivilegeEscalation: true
   resources:
     requests:
       memory: "1024Mi"
