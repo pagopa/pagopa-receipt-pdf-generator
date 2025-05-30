@@ -2,8 +2,8 @@ apiVersion: v2
 name: pagopareceiptpdfgenerator
 description: Microservice description
 type: application
-version: 0.172.0
-appVersion: 2.0.3-test
+version: 0.173.0
+appVersion: 2.0.4-test
 dependencies:
   - name: microservice-chart
     version: 7.5.0
