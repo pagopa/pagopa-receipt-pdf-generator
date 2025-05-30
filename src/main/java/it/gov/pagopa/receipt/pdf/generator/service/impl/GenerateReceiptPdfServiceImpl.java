@@ -192,7 +192,6 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
             PdfEngineResponse pdfEngineResponse = generatePDFReceipt(template, workingDirPath);
             logger.info("sono entrato in generateAndSavePDFReceipt-5");
             return saveToBlobStorage(pdfEngineResponse, blobName);
-            logger.info("sono entrato in generateAndSavePDFReceipt-6");
         } catch (PDFReceiptGenerationException e) {
             logger.error("An error occurred when generating or saving the PDF receipt with eventId {}. Error: {}", receipt.getEventId(), e.getMessage(), e);
             return PdfMetadata.builder().statusCode(e.getStatusCode()).errorMessage(e.getMessage()).build();
