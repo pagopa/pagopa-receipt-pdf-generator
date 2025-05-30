@@ -232,18 +232,27 @@ public class GenerateReceiptPdf {
     }
 
     private Path createWorkingDirectory() throws IOException {
+    	Path p = null;
+    	try {
         File workingDirectory = new File(WORKING_DIRECTORY_PATH);
         if (!workingDirectory.exists()) {
             try {
                 Files.createDirectory(workingDirectory.toPath());
             } catch (FileAlreadyExistsException ignored) {
-                // The working directory already exist we don't need to create it
+                // If the directory already exists, we can ignore this exception
+				logger.error("Working directory already exists: {}", WORKING_DIRECTORY_PATH);
             }
+            p = Files.createTempDirectory(workingDirectory.toPath(),
+                    DateTimeFormatter.ofPattern(PATTERN_FORMAT)
+                    .withZone(ZoneId.systemDefault())
+                    .format(Instant.now()));
         }
-        return Files.createTempDirectory(workingDirectory.toPath(),
-                DateTimeFormatter.ofPattern(PATTERN_FORMAT)
-                        .withZone(ZoneId.systemDefault())
-                        .format(Instant.now()));
+    	} catch (IOException e) {
+			logger.error("Unable to create working directory: {}", WORKING_DIRECTORY_PATH, e);
+			throw e;
+		}
+        
+        return p;
     }
 
     private void deleteTempFolder(Path workingDirPath) {
