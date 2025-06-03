@@ -66,15 +66,15 @@ microservice-chart:
   #       mountPath: /temp
   resources:
     requests:
-      memory: "1024Mi"
-      cpu: "0.40"
+      memory: "2Gi"
+      cpu: "0.70"
     limits:
       memory: "3Gi"
-      cpu: "0.75"
+      cpu: "1.0"
   autoscaling:
     enable: true
     minReplica: 3
-    maxReplica: 6
+    maxReplica: 10
     pollingInterval: 10 # seconds
     cooldownPeriod: 50 # seconds
     triggers:
