@@ -52,12 +52,18 @@ microservice-chart:
     seccompProfile:
       type: RuntimeDefault
   securityContext:
-    runAsUser: 1000
     readOnlyRootFilesystem: false
-    allowPrivilegeEscalation: false
+    allowPrivilegeEscalation: false # https://learn.microsoft.com/it-it/azure/aks/developer-best-practices-pod-security
     capabilities:
       drop:
         - all
+  tmpVolumeMount:
+    create: true
+    mounts:
+      - name: access-logs
+        mountPath: /tmp
+      - name: temp
+        mountPath: /temp
   resources:
     requests:
       memory: "1024Mi"
