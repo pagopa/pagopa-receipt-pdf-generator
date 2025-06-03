@@ -53,6 +53,10 @@ microservice-chart:
       type: RuntimeDefault
   securityContext:
     allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: true
   resources:
     requests:
       memory: "1024Mi"
