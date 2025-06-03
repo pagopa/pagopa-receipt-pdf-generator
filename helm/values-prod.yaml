@@ -52,7 +52,18 @@ microservice-chart:
     seccompProfile:
       type: RuntimeDefault
   securityContext:
-    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: false # https://github.com/pagopa/aks-microservice-chart-blueprint/blob/main/MIGRATION_GUIDE.md#from-v2x-to-v53
+    allowPrivilegeEscalation: false # https://learn.microsoft.com/it-it/azure/aks/developer-best-practices-pod-security
+    capabilities:
+      drop:
+        - all
+  # tmpVolumeMount:
+  #   create: true
+  #   mounts:
+  #     - name: access-logs
+  #       mountPath: /tmp
+  #     - name: temp
+  #       mountPath: /temp
   resources:
     requests:
       memory: "1024Mi"
@@ -105,7 +116,8 @@ microservice-chart:
     OTEL_LOGS_EXPORTER: "none"
     OTEL_TRACES_SAMPLER: "always_on"
     AZURE_FUNCTIONS_MESH_JAVA_OPTS: "-javaagent:/home/site/wwwroot/jmx_prometheus_javaagent-0.19.0.jar=12345:/home/site/wwwroot/config.yaml -javaagent:/home/site/wwwroot/opentelemetry-javaagent.jar -Xmx1024m -XX:+UseG1GC"
-  envConfigMapExternals:
+  # envConfigMapExternals:
+  externalConfigMapValues:
     template-maps:
       BRAND_LOGO_MAP: brand-logo-map
   envFieldRef:
