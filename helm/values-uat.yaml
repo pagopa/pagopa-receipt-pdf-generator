@@ -57,13 +57,13 @@ microservice-chart:
     capabilities:
       drop:
         - all
-  tmpVolumeMount:
-    create: true
-    mounts:
-      - name: access-logs
-        mountPath: /tmp
-      - name: temp
-        mountPath: /temp
+  # tmpVolumeMount:
+  #   create: true
+  #   mounts:
+  #     - name: access-logs
+  #       mountPath: /tmp
+  #     - name: temp
+  #       mountPath: /temp
   resources:
     requests:
       memory: "1024Mi"
