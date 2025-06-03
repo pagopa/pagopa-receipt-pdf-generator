@@ -52,7 +52,7 @@ microservice-chart:
     seccompProfile:
       type: RuntimeDefault
   securityContext:
-    readOnlyRootFilesystem: false
+    readOnlyRootFilesystem: false # https://github.com/pagopa/aks-microservice-chart-blueprint/blob/main/MIGRATION_GUIDE.md#from-v2x-to-v53
     allowPrivilegeEscalation: false # https://learn.microsoft.com/it-it/azure/aks/developer-best-practices-pod-security
     capabilities:
       drop:
