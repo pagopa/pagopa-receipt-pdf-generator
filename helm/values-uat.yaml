@@ -56,7 +56,7 @@ microservice-chart:
     capabilities:
       drop:
         - ALL
-    readOnlyRootFilesystem: true
+    readOnlyRootFilesystem: false
   resources:
     requests:
       memory: "1024Mi"
