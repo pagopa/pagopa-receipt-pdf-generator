@@ -4,5 +4,31 @@ metadata:
   name: template-maps
   namespace: receipts
 data:
+  payment-method-name-map: |
+    {
+      "CP": "Carta di credito o debito",
+      "APPL": "Apple Pay",
+      "BPAY": "BANCOMAT Pay",
+      "RBPS": "Conto Banca Popolare di Sondrio",
+      "RBPR": "Conto BancoPosta",
+      "RBPB": "Conto BancoPosta Impresa",
+      "RICO": "Conto ICONTO",
+      "RPIC": "Conto Intesa Sanpaolo",
+      "GOOG": "Google Pay",
+      "MYBK": "MyBank",
+      "RBPP": "Paga con Postepay",
+      "PPAL": "PayPal (anche in 3 rate)",
+      "SATY": "Satispay"
+    }
   brand-logo-map: |
-    {"MASTERCARD":"assets/mastercard.png","VISA":"assets/visa.png","AMEX":"https://assets.cdn.platform.pagopa.it/payment-methods/amex.png","MAESTRO":"assets/maestro.png","JCB":"assets/jcb.png","OTHER":"","DINERS":"assets/diners.png","DISCOVER":"assets/discover.png","UNIONPAY":"assets/unionpay.png"}
+    {
+      "MASTERCARD": "assets/mastercard.png",
+      "VISA": "assets/visa.png",
+      "AMEX": "https://assets.cdn.platform.pagopa.it/payment-methods/amex.png",
+      "MAESTRO": "assets/maestro.png",
+      "JCB": "assets/jcb.png",
+      "OTHER": "",
+      "DINERS": "assets/diners.png",
+      "DISCOVER": "assets/discover.png",
+      "UNIONPAY": "assets/unionpay.png"
+    }

@@ -119,6 +119,7 @@ microservice-chart:
   # envConfigMapExternals:
   externalConfigMapValues:
     template-maps:
+      PAYMENT_METHOD_NAME_MAP: payment-method-name-map
       BRAND_LOGO_MAP: brand-logo-map
   envFieldRef:
     APP_NAME: "metadata.labels['app.kubernetes.io/instance']"
