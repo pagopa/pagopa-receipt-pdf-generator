@@ -21,4 +21,14 @@ data:
       "SATY": "Satispay"
     }
   brand-logo-map: |
-    {"MASTERCARD":"assets/mastercard.png","VISA":"assets/visa.png","AMEX":"https://assets.cdn.platform.pagopa.it/payment-methods/amex.png","MAESTRO":"assets/maestro.png","JCB":"assets/jcb.png","OTHER":"","DINERS":"assets/diners.png","DISCOVER":"assets/discover.png","UNIONPAY":"assets/unionpay.png"}
+    {
+      "MASTERCARD": "assets/mastercard.png",
+      "VISA": "assets/visa.png",
+      "AMEX": "https://assets.cdn.platform.pagopa.it/payment-methods/amex.png",
+      "MAESTRO": "assets/maestro.png",
+      "JCB": "assets/jcb.png",
+      "OTHER": "",
+      "DINERS": "assets/diners.png",
+      "DISCOVER": "assets/discover.png",
+      "UNIONPAY": "assets/unionpay.png"
+    }
