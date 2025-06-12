@@ -35,6 +35,7 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
     private static final String REF_TYPE_NOTICE = "codiceAvviso";
     private static final String REF_TYPE_IUV = "IUV";
 
+    private static final String PAYMENT_METHOD_NAME_KEY = "PAYMENT_METHOD_NAME_MAP";
     private static final String BRAND_LOGO_MAP_ENV_KEY = "BRAND_LOGO_MAP";
     private static final String PSP_CONFIG_FILE_JSON_FILE_NAME = "psp_config_file.json";
     private static final String RECEIPT_DATE_FORMAT = "dd MMMM yyyy, HH:mm:ss";
@@ -43,6 +44,7 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
      * Hide from public usage.
      */
 
+    private static final Map<String, String> paymentMethodNameMap;
     private static final Map<String, String> brandLogoMap;
     private static final Map<String, Object> pspMap;
     public static final String MODEL_TYPE_IUV = "1";
@@ -50,6 +52,15 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
     public static final String DEBTOR_ANONIMO_CF = "ANONIMO";
 
     public static final String WISP_REGEX = "^351.*";
+
+    static {
+        try {
+            paymentMethodNameMap = ObjectMapperUtils.mapString(System.getenv().get(PAYMENT_METHOD_NAME_KEY), Map.class);
+        } catch (JsonProcessingException e) {
+            throw new PdfJsonMappingException(e);
+        }
+
+    }
 
     static {
         try {
@@ -201,6 +212,18 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
     }
     
     private String getPaymentMethodName(BizEvent event) {
+        String paymentMethodType = Optional.ofNullable(event.getTransactionDetails())
+                .map(TransactionDetails::getWallet)
+                .map(WalletItem::getInfo)
+                .map(Info::getType)
+                .or(() -> Optional.ofNullable(event.getTransactionDetails())
+                        .map(TransactionDetails::getInfo)
+                        .map(InfoTransaction::getType))
+                .orElse(null);
+        return paymentMethodNameMap.getOrDefault(paymentMethodType, null);
+    }
+
+    private String getPaymentMethod(BizEvent event) {
         return Optional.ofNullable(event.getTransactionDetails())
                 .map(TransactionDetails::getWallet)
                 .map(WalletItem::getInfo)
@@ -210,12 +233,12 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
                         .map(InfoTransaction::getBrand))
                 .orElse(null);
     }
-    
+
     private String getPaymentMethodLogo(BizEvent event) {
         return Optional.ofNullable(event.getTransactionDetails())
                 .map(TransactionDetails::getInfo)
                 .map(InfoTransaction::getBrandLogo)
-                .orElseGet(() -> brandLogoMap.getOrDefault(getPaymentMethodName(event), null));
+                .orElseGet(() -> brandLogoMap.getOrDefault(getPaymentMethod(event), null));
     }
 
     private String getPaymentMethodAccountHolder(BizEvent event) {
