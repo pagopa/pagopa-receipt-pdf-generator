@@ -48,6 +48,10 @@ class BuildTemplateServiceImplTest {
     public static final String REMITTANCE_INFORMATION = "TARI 2021";
     public static final String IUR = "IUR";
     public static final String BRAND = "MASTER";
+    public static final String PAYMENT_METHOD_TYPE = "CP";
+    public static final String PAYMENT_METHOD_NAME = "Carta di credito o debito";
+    public static final String MYBK_PAYMENT_METHOD_TYPE = "MYBK";
+    public static final String MYBKPAYMENT_METHOD_NAME = "MyBank";
     public static final String ID_TRANSACTION = "1";
     public static final String RRN = "rrn";
     public static final String AUTH_CODE = "authCode";
@@ -97,8 +101,11 @@ class BuildTemplateServiceImplTest {
     @BeforeEach
     void setUp() throws Exception {
         AtomicReference<BuildTemplateServiceImpl> atomicBuildTemplateService = new AtomicReference<>();
-        withEnvironmentVariables().set("BRAND_LOGO_MAP", String.format("{\"%s\":\"%s\"}\n", BRAND, BRAND_ASSET_URL)).execute(() ->
-                atomicBuildTemplateService.set(new BuildTemplateServiceImpl())
+        withEnvironmentVariables().set(
+                "PAYMENT_METHOD_NAME_MAP", String.format("{\"%s\":\"%s\", \"%s\":\"%s\"}%n", PAYMENT_METHOD_TYPE, PAYMENT_METHOD_NAME, MYBK_PAYMENT_METHOD_TYPE, MYBKPAYMENT_METHOD_NAME),
+                "BRAND_LOGO_MAP", String.format("{\"%s\":\"%s\"}%n", BRAND, BRAND_ASSET_URL)
+        ).execute(
+                () -> atomicBuildTemplateService.set(new BuildTemplateServiceImpl())
         );
         buildTemplateService = atomicBuildTemplateService.get();
     }
@@ -135,7 +142,7 @@ class BuildTemplateServiceImplTest {
                         .build())
                 .transactionDetails(TransactionDetails.builder()
                         .wallet(WalletItem.builder()
-                                .info(Info.builder().brand(BRAND).holder(HOLDER_FULL_NAME).build())
+                                .info(Info.builder().brand(BRAND).holder(HOLDER_FULL_NAME).type(PAYMENT_METHOD_TYPE).build())
                                 .onboardingChannel(PAGO_PA_CHANNEL_IO)
                                 .build())
                         .transaction(Transaction.builder()
@@ -178,7 +185,7 @@ class BuildTemplateServiceImplTest {
         assertEquals(PSP_BUILDING_NUMBER, transaction.getPsp().getBuildingNumber());
         assertEquals(PSP_PROVINCE, transaction.getPsp().getProvince());
         assertEquals(RRN, transaction.getRrn());
-        assertEquals(BRAND, transaction.getPaymentMethod().getName());
+        assertEquals(PAYMENT_METHOD_NAME, transaction.getPaymentMethod().getName());
         assertEquals(BRAND_ASSET_URL, transaction.getPaymentMethod().getLogo());
         assertEquals(HOLDER_FULL_NAME, transaction.getPaymentMethod().getAccountHolder());
         assertEquals(AUTH_CODE, transaction.getAuthCode());
@@ -231,7 +238,7 @@ class BuildTemplateServiceImplTest {
                         .build())
                 .transactionDetails(TransactionDetails.builder()
                         .wallet(WalletItem.builder()
-                                .info(Info.builder().brand(BRAND).holder(HOLDER_FULL_NAME).build())
+                                .info(Info.builder().brand(BRAND).holder(HOLDER_FULL_NAME).type(PAYMENT_METHOD_TYPE).build())
                                 .onboardingChannel(PAGO_PA_CHANNEL_IO)
                                 .build())
                         .transaction(Transaction.builder()
@@ -273,7 +280,7 @@ class BuildTemplateServiceImplTest {
         assertEquals(PSP_BUILDING_NUMBER, transaction.getPsp().getBuildingNumber());
         assertEquals(PSP_PROVINCE, transaction.getPsp().getProvince());
         assertEquals(RRN, transaction.getRrn());
-        assertEquals(BRAND, transaction.getPaymentMethod().getName());
+        assertEquals(PAYMENT_METHOD_NAME, transaction.getPaymentMethod().getName());
         assertEquals(BRAND_ASSET_URL, transaction.getPaymentMethod().getLogo());
         assertEquals(HOLDER_FULL_NAME, transaction.getPaymentMethod().getAccountHolder());
         assertEquals(AUTH_CODE, transaction.getAuthCode());
@@ -326,7 +333,7 @@ class BuildTemplateServiceImplTest {
                         .build())
                 .transactionDetails(TransactionDetails.builder()
                         .wallet(WalletItem.builder()
-                                .info(Info.builder().brand(BRAND).holder(HOLDER_FULL_NAME).build())
+                                .info(Info.builder().brand(BRAND).holder(HOLDER_FULL_NAME).type(PAYMENT_METHOD_TYPE).build())
                                 .onboardingChannel(PAGO_PA_CHANNEL_IO)
                                 .build())
                         .transaction(Transaction.builder()
@@ -368,7 +375,7 @@ class BuildTemplateServiceImplTest {
         assertEquals(PSP_BUILDING_NUMBER, transaction.getPsp().getBuildingNumber());
         assertEquals(PSP_PROVINCE, transaction.getPsp().getProvince());
         assertEquals(RRN, transaction.getRrn());
-        assertEquals(BRAND, transaction.getPaymentMethod().getName());
+        assertEquals(PAYMENT_METHOD_NAME, transaction.getPaymentMethod().getName());
         assertEquals(BRAND_ASSET_URL, transaction.getPaymentMethod().getLogo());
         assertEquals(HOLDER_FULL_NAME, transaction.getPaymentMethod().getAccountHolder());
         assertEquals(AUTH_CODE, transaction.getAuthCode());
@@ -421,7 +428,7 @@ class BuildTemplateServiceImplTest {
                         .build())
                 .transactionDetails(TransactionDetails.builder()
                         .wallet(WalletItem.builder()
-                                .info(Info.builder().brand(BRAND).holder(HOLDER_FULL_NAME).build())
+                                .info(Info.builder().brand(BRAND).holder(HOLDER_FULL_NAME).type(PAYMENT_METHOD_TYPE).build())
                                 .onboardingChannel(PAGO_PA_CHANNEL_IO)
                                 .build())
                         .transaction(Transaction.builder()
@@ -463,7 +470,7 @@ class BuildTemplateServiceImplTest {
         assertEquals(PSP_BUILDING_NUMBER, transaction.getPsp().getBuildingNumber());
         assertEquals(PSP_PROVINCE, transaction.getPsp().getProvince());
         assertEquals(RRN, transaction.getRrn());
-        assertEquals(BRAND, transaction.getPaymentMethod().getName());
+        assertEquals(PAYMENT_METHOD_NAME, transaction.getPaymentMethod().getName());
         assertEquals(BRAND_ASSET_URL, transaction.getPaymentMethod().getLogo());
         assertEquals(HOLDER_FULL_NAME, transaction.getPaymentMethod().getAccountHolder());
         assertEquals(AUTH_CODE, transaction.getAuthCode());
@@ -516,7 +523,7 @@ class BuildTemplateServiceImplTest {
                         .build())
                 .transactionDetails(TransactionDetails.builder()
                         .wallet(WalletItem.builder()
-                                .info(Info.builder().brand(BRAND).holder(HOLDER_FULL_NAME).build())
+                                .info(Info.builder().brand(BRAND).holder(HOLDER_FULL_NAME).type(PAYMENT_METHOD_TYPE).build())
                                 .onboardingChannel(PAGO_PA_CHANNEL_IO)
                                 .build())
                         .transaction(Transaction.builder()
@@ -558,7 +565,7 @@ class BuildTemplateServiceImplTest {
         assertEquals(PSP_BUILDING_NUMBER, transaction.getPsp().getBuildingNumber());
         assertEquals(PSP_PROVINCE, transaction.getPsp().getProvince());
         assertEquals(RRN, transaction.getRrn());
-        assertEquals(BRAND, transaction.getPaymentMethod().getName());
+        assertEquals(PAYMENT_METHOD_NAME, transaction.getPaymentMethod().getName());
         assertEquals(BRAND_ASSET_URL, transaction.getPaymentMethod().getLogo());
         assertEquals(HOLDER_FULL_NAME, transaction.getPaymentMethod().getAccountHolder());
         assertEquals(AUTH_CODE, transaction.getAuthCode());
@@ -611,7 +618,7 @@ class BuildTemplateServiceImplTest {
                         .build())
                 .transactionDetails(TransactionDetails.builder()
                         .wallet(WalletItem.builder()
-                                .info(Info.builder().brand(BRAND).holder(HOLDER_FULL_NAME).build())
+                                .info(Info.builder().brand(BRAND).holder(HOLDER_FULL_NAME).type(PAYMENT_METHOD_TYPE).build())
                                 .onboardingChannel(PAGO_PA_CHANNEL_IO_PAY)
                                 .build())
                         .transaction(Transaction.builder()
@@ -653,7 +660,7 @@ class BuildTemplateServiceImplTest {
         assertEquals(PSP_BUILDING_NUMBER, transaction.getPsp().getBuildingNumber());
         assertEquals(PSP_PROVINCE, transaction.getPsp().getProvince());
         assertEquals(RRN, transaction.getRrn());
-        assertEquals(BRAND, transaction.getPaymentMethod().getName());
+        assertEquals(PAYMENT_METHOD_NAME, transaction.getPaymentMethod().getName());
         assertEquals(BRAND_ASSET_URL, transaction.getPaymentMethod().getLogo());
         assertEquals(HOLDER_FULL_NAME, transaction.getPaymentMethod().getAccountHolder());
         assertEquals(AUTH_CODE, transaction.getAuthCode());
@@ -706,7 +713,7 @@ class BuildTemplateServiceImplTest {
                         .build())
                 .transactionDetails(TransactionDetails.builder()
                         .wallet(WalletItem.builder()
-                                .info(Info.builder().brand(BRAND).holder(HOLDER_FULL_NAME).build())
+                                .info(Info.builder().brand(BRAND).holder(HOLDER_FULL_NAME).type(PAYMENT_METHOD_TYPE).build())
                                 .onboardingChannel(PAGO_PA_CHANNEL_IO_PAY)
                                 .build())
                         .info(InfoTransaction.builder().clientId(PAGOPA_PA_CHANNEL_ID).build())
@@ -748,7 +755,7 @@ class BuildTemplateServiceImplTest {
         assertEquals(PSP_BUILDING_NUMBER, transaction.getPsp().getBuildingNumber());
         assertEquals(PSP_PROVINCE, transaction.getPsp().getProvince());
         assertEquals(RRN, transaction.getRrn());
-        assertEquals(BRAND, transaction.getPaymentMethod().getName());
+        assertEquals(PAYMENT_METHOD_NAME, transaction.getPaymentMethod().getName());
         assertEquals(BRAND_ASSET_URL, transaction.getPaymentMethod().getLogo());
         assertEquals(HOLDER_FULL_NAME, transaction.getPaymentMethod().getAccountHolder());
         assertEquals(AUTH_CODE, transaction.getAuthCode());
@@ -1025,7 +1032,7 @@ class BuildTemplateServiceImplTest {
                         .build())
                 .transactionDetails(TransactionDetails.builder()
                         .wallet(WalletItem.builder()
-                                .info(Info.builder().brand(BRAND).holder(HOLDER_FULL_NAME).build())
+                                .info(Info.builder().brand(BRAND).holder(HOLDER_FULL_NAME).type(PAYMENT_METHOD_TYPE).build())
                                 .onboardingChannel(PAGO_PA_CHANNEL_IO)
                                 .build())
                         .transaction(Transaction.builder()
@@ -1067,7 +1074,7 @@ class BuildTemplateServiceImplTest {
         assertEquals(PSP_BUILDING_NUMBER, transaction.getPsp().getBuildingNumber());
         assertEquals(PSP_PROVINCE, transaction.getPsp().getProvince());
         assertEquals(RRN, transaction.getRrn());
-        assertEquals(BRAND, transaction.getPaymentMethod().getName());
+        assertEquals(PAYMENT_METHOD_NAME, transaction.getPaymentMethod().getName());
         assertEquals(BRAND_ASSET_URL, transaction.getPaymentMethod().getLogo());
         assertEquals(HOLDER_FULL_NAME, transaction.getPaymentMethod().getAccountHolder());
         assertEquals(AUTH_CODE, transaction.getAuthCode());
@@ -1120,7 +1127,7 @@ class BuildTemplateServiceImplTest {
                         .build())
                 .transactionDetails(TransactionDetails.builder()
                         .wallet(WalletItem.builder()
-                                .info(Info.builder().brand(BRAND).holder(HOLDER_FULL_NAME).build())
+                                .info(Info.builder().brand(BRAND).holder(HOLDER_FULL_NAME).type(PAYMENT_METHOD_TYPE).build())
                                 .onboardingChannel(PAGO_PA_CHANNEL_IO)
                                 .build())
                         .transaction(Transaction.builder()
@@ -1162,7 +1169,7 @@ class BuildTemplateServiceImplTest {
         assertEquals(PSP_BUILDING_NUMBER, transaction.getPsp().getBuildingNumber());
         assertEquals(PSP_PROVINCE, transaction.getPsp().getProvince());
         assertEquals(RRN, transaction.getRrn());
-        assertEquals(BRAND, transaction.getPaymentMethod().getName());
+        assertEquals(PAYMENT_METHOD_NAME, transaction.getPaymentMethod().getName());
         assertEquals(BRAND_ASSET_URL, transaction.getPaymentMethod().getLogo());
         assertEquals(HOLDER_FULL_NAME, transaction.getPaymentMethod().getAccountHolder());
         assertEquals(AUTH_CODE, transaction.getAuthCode());
@@ -1215,7 +1222,7 @@ class BuildTemplateServiceImplTest {
                         .build())
                 .transactionDetails(TransactionDetails.builder()
                         .wallet(WalletItem.builder()
-                                .info(Info.builder().brand(BRAND).holder(HOLDER_FULL_NAME).build())
+                                .info(Info.builder().brand(BRAND).holder(HOLDER_FULL_NAME).type(PAYMENT_METHOD_TYPE).build())
                                 .onboardingChannel(PAGO_PA_CHANNEL_IO)
                                 .build())
                         .transaction(Transaction.builder()
@@ -1257,7 +1264,7 @@ class BuildTemplateServiceImplTest {
         assertEquals(PSP_BUILDING_NUMBER, transaction.getPsp().getBuildingNumber());
         assertEquals(PSP_PROVINCE, transaction.getPsp().getProvince());
         assertEquals(RRN, transaction.getRrn());
-        assertEquals(BRAND, transaction.getPaymentMethod().getName());
+        assertEquals(PAYMENT_METHOD_NAME, transaction.getPaymentMethod().getName());
         assertEquals(BRAND_ASSET_URL, transaction.getPaymentMethod().getLogo());
         assertEquals(HOLDER_FULL_NAME, transaction.getPaymentMethod().getAccountHolder());
         assertEquals(AUTH_CODE, transaction.getAuthCode());
@@ -1914,7 +1921,7 @@ class BuildTemplateServiceImplTest {
                         .build())
                 .transactionDetails(TransactionDetails.builder()
                         .wallet(WalletItem.builder()
-                                .info(Info.builder().brand(BRAND).holder(HOLDER_FULL_NAME).build())
+                                .info(Info.builder().brand(BRAND).holder(HOLDER_FULL_NAME).type(PAYMENT_METHOD_TYPE).build())
                                 .onboardingChannel(PAGO_PA_CHANNEL_IO)
                                 .build())
                         .transaction(Transaction.builder()
@@ -2229,7 +2236,7 @@ class BuildTemplateServiceImplTest {
                                     .build())
                             .transactionDetails(TransactionDetails.builder()
                                     .wallet(WalletItem.builder()
-                                            .info(Info.builder().brand(BRAND).holder(HOLDER_FULL_NAME).build())
+                                            .info(Info.builder().brand(BRAND).holder(HOLDER_FULL_NAME).type(PAYMENT_METHOD_TYPE).build())
                                             .onboardingChannel(PAGO_PA_CHANNEL_IO)
                                             .build())
                                     .transaction(Transaction.builder()
@@ -2277,7 +2284,7 @@ class BuildTemplateServiceImplTest {
         assertEquals(PSP_BUILDING_NUMBER, transaction.getPsp().getBuildingNumber());
         assertEquals(PSP_PROVINCE, transaction.getPsp().getProvince());
         assertEquals(RRN, transaction.getRrn());
-        assertEquals(BRAND, transaction.getPaymentMethod().getName());
+        assertEquals(PAYMENT_METHOD_NAME, transaction.getPaymentMethod().getName());
         assertEquals(BRAND_ASSET_URL, transaction.getPaymentMethod().getLogo());
         assertEquals(HOLDER_FULL_NAME, transaction.getPaymentMethod().getAccountHolder());
         assertEquals(AUTH_CODE, transaction.getAuthCode());
@@ -2335,7 +2342,7 @@ class BuildTemplateServiceImplTest {
                         .build())
                 .transactionDetails(TransactionDetails.builder()
                         .wallet(WalletItem.builder()
-                                .info(Info.builder().brand(BRAND).holder(HOLDER_FULL_NAME).build())
+                                .info(Info.builder().brand(BRAND).holder(HOLDER_FULL_NAME).type(PAYMENT_METHOD_TYPE).build())
                                 .onboardingChannel(PAGO_PA_CHANNEL_IO)
                                 .build())
                         .transaction(Transaction.builder()
@@ -2378,7 +2385,7 @@ class BuildTemplateServiceImplTest {
         assertEquals(PSP_BUILDING_NUMBER, transaction.getPsp().getBuildingNumber());
         assertEquals(PSP_PROVINCE, transaction.getPsp().getProvince());
         assertEquals(RRN, transaction.getRrn());
-        assertEquals(BRAND, transaction.getPaymentMethod().getName());
+        assertEquals(PAYMENT_METHOD_NAME, transaction.getPaymentMethod().getName());
         assertEquals(BRAND_ASSET_URL, transaction.getPaymentMethod().getLogo());
         assertEquals(HOLDER_FULL_NAME, transaction.getPaymentMethod().getAccountHolder());
         assertEquals(AUTH_CODE, transaction.getAuthCode());
@@ -2431,7 +2438,7 @@ class BuildTemplateServiceImplTest {
                         .build())
                 .transactionDetails(TransactionDetails.builder()
                         .wallet(WalletItem.builder()
-                                .info(Info.builder().brand(BRAND).holder(HOLDER_FULL_NAME).build())
+                                .info(Info.builder().brand(BRAND).holder(HOLDER_FULL_NAME).type(PAYMENT_METHOD_TYPE).build())
                                 .onboardingChannel(PAGO_PA_CHANNEL_IO)
                                 .build())
                         .transaction(Transaction.builder()
@@ -2474,7 +2481,7 @@ class BuildTemplateServiceImplTest {
         assertEquals(PSP_BUILDING_NUMBER, transaction.getPsp().getBuildingNumber());
         assertEquals(PSP_PROVINCE, transaction.getPsp().getProvince());
         assertEquals(RRN, transaction.getRrn());
-        assertEquals(BRAND, transaction.getPaymentMethod().getName());
+        assertEquals(PAYMENT_METHOD_NAME, transaction.getPaymentMethod().getName());
         assertEquals(BRAND_ASSET_URL, transaction.getPaymentMethod().getLogo());
         assertEquals(HOLDER_FULL_NAME, transaction.getPaymentMethod().getAccountHolder());
         assertEquals(AUTH_CODE, transaction.getAuthCode());
@@ -2510,7 +2517,7 @@ class BuildTemplateServiceImplTest {
         assertEquals(BIZ_EVENT_ID, receiptPdfTemplate.getServiceCustomerId());
 
         it.gov.pagopa.receipt.pdf.generator.model.template.Transaction transaction = receiptPdfTemplate.getTransaction();
-        assertEquals("MYBK", transaction.getPaymentMethod().getName());
+        assertEquals(MYBKPAYMENT_METHOD_NAME, transaction.getPaymentMethod().getName());
         assertEquals("mybank.png", transaction.getPaymentMethod().getLogo());
         assertEquals(null, transaction.getPaymentMethod().getAccountHolder());
         assertTrue(transaction.isProcessedByPagoPA());
