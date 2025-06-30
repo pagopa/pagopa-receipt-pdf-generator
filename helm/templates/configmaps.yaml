@@ -18,7 +18,8 @@ data:
       "MYBK": "MyBank",
       "RBPP": "Paga con Postepay",
       "PPAL": "PayPal (anche in 3 rate)",
-      "SATY": "Satispay"
+      "SATY": "Satispay",
+      "KLRN": "Klarna (anche a rate)"
     }
   brand-logo-map: |
     {
