@@ -125,8 +125,10 @@ public class GenerateReceiptPdf {
         //Map queue bizEventMessage to BizEvent
         List<BizEvent> listOfBizEvent = getBizEventListFromMessage(context, bizEventMessage);
 
-        if(!listOfBizEvent.isEmpty()){
-            String receiptEventReference = ReceiptUtils.getReceiptEventReference(listOfBizEvent.get(0), listOfBizEvent.size() > 1);
+        if (listOfBizEvent.isEmpty()) {
+            return;
+        }
+        String receiptEventReference = ReceiptGeneratorUtils.getReceiptEventReference(listOfBizEvent.get(0));
 
             logger.info("[{}] function called at {} for receipt with bizEvent reference {}",
                     context.getFunctionName(), LocalDateTime.now(), receiptEventReference);

@@ -24,7 +24,7 @@ import it.gov.pagopa.receipt.pdf.generator.service.ReceiptCosmosService;
 import it.gov.pagopa.receipt.pdf.generator.service.impl.ReceiptCosmosServiceImpl;
 import it.gov.pagopa.receipt.pdf.generator.utils.Aes256Utils;
 import it.gov.pagopa.receipt.pdf.generator.utils.ObjectMapperUtils;
-import it.gov.pagopa.receipt.pdf.generator.utils.ReceiptUtils;
+import it.gov.pagopa.receipt.pdf.generator.utils.ReceiptGeneratorUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -99,7 +99,7 @@ public class RetryReviewedPoisonMessages {
 
                         //Find and update Receipt with bizEventId
                         List<BizEvent> listOfBizEvents = ObjectMapperUtils.mapBizEventListString(decodedEventList, new TypeReference<>() {});
-                        String receiptEventReference = ReceiptUtils.getReceiptEventReference(listOfBizEvents.get(0), listOfBizEvents.size() > 1);
+                        String receiptEventReference = ReceiptGeneratorUtils.getReceiptEventReference(listOfBizEvents.get(0));
                         updateReceiptToInserted(context, receiptEventReference);
 
                         //Send decoded BizEvent to queue
