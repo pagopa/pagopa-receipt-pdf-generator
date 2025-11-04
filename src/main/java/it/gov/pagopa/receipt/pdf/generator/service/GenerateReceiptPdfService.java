@@ -6,7 +6,6 @@ import it.gov.pagopa.receipt.pdf.generator.exception.ReceiptGenerationNotToRetry
 import it.gov.pagopa.receipt.pdf.generator.model.PdfGeneration;
 
 import java.nio.file.Path;
-import java.util.List;
 
 public interface GenerateReceiptPdfService {
 
@@ -14,10 +13,10 @@ public interface GenerateReceiptPdfService {
      * Handles conditionally the generation of the PDF's receipts based on the provided bizEvent
      *
      * @param receipt the Receipt that hold the status of the elaboration
-     * @param listOfBizEvents List of Biz-events from queue message
+     * @param bizEvent Biz-event from queue message
      * @return {@link PdfGeneration} object with the result of the PDF generation and store or the relatives error messages
      */
-    PdfGeneration generateReceipts(Receipt receipt, List<BizEvent> listOfBizEvents, Path workingDirPath);
+    PdfGeneration generateReceipts(Receipt receipt, BizEvent bizEvent, Path workingDirPath);
 
     /**
      * Verifies if the PDF generation process succeeded or not, and update the receipt with the result

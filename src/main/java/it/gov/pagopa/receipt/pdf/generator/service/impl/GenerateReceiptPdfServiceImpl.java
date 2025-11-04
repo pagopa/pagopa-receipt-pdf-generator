@@ -70,7 +70,7 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
      * {@inheritDoc}
      */
     @Override
-    public PdfGeneration generateReceipts(Receipt receipt, List<BizEvent> listOfBizEvents, Path workingDirPath) {
+    public PdfGeneration generateReceipts(Receipt receipt, BizEvent bizEvent, Path workingDirPath) {
         PdfGeneration pdfGeneration = new PdfGeneration();
 
         String debtorCF = receipt.getEventData().getDebtorFiscalCode();
@@ -85,7 +85,7 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
                     pdfGeneration.setDebtorMetadata(PdfMetadata.builder().statusCode(ALREADY_CREATED).build());
                     return pdfGeneration;
                 }
-                PdfMetadata generationResult = generateAndSavePDFReceipt(listOfBizEvents, receipt, PAYER_TEMPLATE_SUFFIX, true, workingDirPath);
+                PdfMetadata generationResult = generateAndSavePDFReceipt(bizEvent, receipt, PAYER_TEMPLATE_SUFFIX, true, workingDirPath);
                 pdfGeneration.setDebtorMetadata(generationResult);
                 return pdfGeneration;
             }
@@ -95,7 +95,7 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
                 pdfGeneration.setPayerMetadata(PdfMetadata.builder().statusCode(ALREADY_CREATED).build());
             } else {
 
-                PdfMetadata generationResult = generateAndSavePDFReceipt(listOfBizEvents, receipt, PAYER_TEMPLATE_SUFFIX, false, workingDirPath);
+                PdfMetadata generationResult = generateAndSavePDFReceipt(bizEvent, receipt, PAYER_TEMPLATE_SUFFIX, false, workingDirPath);
                 pdfGeneration.setPayerMetadata(generationResult);
             }
         } else {
@@ -106,7 +106,7 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
         if (receiptAlreadyCreated(receipt.getMdAttach())) {
             pdfGeneration.setDebtorMetadata(PdfMetadata.builder().statusCode(ALREADY_CREATED).build());
         } else if (!"ANONIMO".equals(debtorCF)) {
-            PdfMetadata generationResult = generateAndSavePDFReceipt(listOfBizEvents, receipt, DEBTOR_TEMPLATE_SUFFIX, true, workingDirPath);
+            PdfMetadata generationResult = generateAndSavePDFReceipt(bizEvent, receipt, DEBTOR_TEMPLATE_SUFFIX, true, workingDirPath);
             pdfGeneration.setDebtorMetadata(generationResult);
         }
 
@@ -176,9 +176,9 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
         return result;
     }
 
-    private PdfMetadata generateAndSavePDFReceipt(List<BizEvent> listOfBizEvents, Receipt receipt, String templateSuffix, boolean isGeneratingDebtor, Path workingDirPath) {
+    private PdfMetadata generateAndSavePDFReceipt(BizEvent bizEvent, Receipt receipt, String templateSuffix, boolean isGeneratingDebtor, Path workingDirPath) {
         try {
-            ReceiptPDFTemplate template = buildTemplateService.buildTemplate(listOfBizEvents, isGeneratingDebtor, receipt);
+            ReceiptPDFTemplate template = this.buildTemplateService.buildTemplate(bizEvent, isGeneratingDebtor, receipt);
             String dateFormatted = LocalDate.now().format(DateTimeFormatter.ofPattern("yyMMdd"));
             String blobName = String.format("%s-%s-%s-%s", TEMPLATE_PREFIX, dateFormatted, receipt.getEventId(), templateSuffix);
             PdfEngineResponse pdfEngineResponse = generatePDFReceipt(template, workingDirPath);
@@ -192,14 +192,14 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
     private PdfMetadata saveToBlobStorage(PdfEngineResponse pdfEngineResponse, String blobName) throws SavePDFToBlobException {
         String tempPdfPath = pdfEngineResponse.getTempPdfPath();
 
-        if (new File(tempPdfPath).length() < minFileLength) {
+        if (new File(tempPdfPath).length() < this.minFileLength) {
             throw new SavePDFToBlobException("Minimum file size not reached", ReasonErrorCode.ERROR_BLOB_STORAGE.getCode());
         }
 
         BlobStorageResponse blobStorageResponse;
         //Save to Blob Storage
         try (BufferedInputStream pdfStream = new BufferedInputStream(new FileInputStream(tempPdfPath))) {
-            blobStorageResponse = receiptBlobClient.savePdfToBlobStorage(pdfStream, blobName);
+            blobStorageResponse = this.receiptBlobClient.savePdfToBlobStorage(pdfStream, blobName);
         } catch (Exception e) {
             throw new SavePDFToBlobException("Error saving pdf to blob storage", ReasonErrorCode.ERROR_BLOB_STORAGE.getCode(), e);
         }
@@ -227,7 +227,7 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
         request.setData(parseTemplateDataToString(template));
         request.setApplySignature(false);
 
-        PdfEngineResponse pdfEngineResponse = pdfEngineClient.generatePDF(request, workingDirPath);
+        PdfEngineResponse pdfEngineResponse = this.pdfEngineClient.generatePDF(request, workingDirPath);
 
         if (pdfEngineResponse.getStatusCode() != HttpStatus.SC_OK) {
             String errMsg = String.format("PDF-Engine response KO (%s): %s", pdfEngineResponse.getStatusCode(), pdfEngineResponse.getErrorMessage());

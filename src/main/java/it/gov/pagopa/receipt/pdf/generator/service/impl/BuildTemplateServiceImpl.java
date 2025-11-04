@@ -86,8 +86,7 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
      * {@inheritDoc}
      */
     @Override
-    public ReceiptPDFTemplate buildTemplate(List<BizEvent> listOfBizEvents, boolean isGeneratingDebtor, Receipt receipt) throws TemplateDataMappingException {
-        BizEvent bizEvent = listOfBizEvents.get(0);
+    public ReceiptPDFTemplate buildTemplate(BizEvent bizEvent, boolean isGeneratingDebtor, Receipt receipt) throws TemplateDataMappingException {
         boolean requestedByDebtor = getRequestByDebtor(isGeneratingDebtor, bizEvent);
 
         return ReceiptPDFTemplate.builder()
@@ -115,16 +114,14 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
                                         .build())
                                 .build())
                 .cart(Cart.builder()
-                        .items(getCartItems(listOfBizEvents, receipt))
-                        .amountPartial(getCartAmountPartial(listOfBizEvents))
+                        .items(getCartItems(bizEvent, receipt))
+                        .amountPartial(getItemAmount(bizEvent, true))
                         .build())
                 .build();
     }
 
-    private List<Item> getCartItems(List<BizEvent> listOfBizEvents, Receipt receipt) throws TemplateDataMappingException {
+    private List<Item> getCartItems(BizEvent bizEvent, Receipt receipt) throws TemplateDataMappingException {
         List<Item> cartItems = new ArrayList<>();
-        for (int i = 0; i < listOfBizEvents.size(); i++) {
-            BizEvent bizEvent = listOfBizEvents.get(i);
             cartItems.add(
                     Item.builder()
                             .refNumber(RefNumber.builder()
@@ -140,11 +137,10 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
                                     .name(getPayeeName(bizEvent))
                                     .taxCode(getPayeeTaxCode(bizEvent))
                                     .build())
-                            .subject(getItemSubject(receipt, i))
+                            .subject(getItemSubject(receipt, 0))
                             .amount(getItemAmount(bizEvent, true))
                             .build()
             );
-        }
         return cartItems;
     }
 
