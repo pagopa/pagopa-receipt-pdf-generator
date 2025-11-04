@@ -2,8 +2,6 @@ package it.gov.pagopa.receipt.pdf.generator;
 
 import com.azure.core.http.rest.Response;
 import com.azure.storage.queue.models.SendMessageResult;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.OutputBinding;
 import com.microsoft.azure.functions.annotation.CosmosDBOutput;
@@ -24,22 +22,14 @@ import it.gov.pagopa.receipt.pdf.generator.service.GenerateReceiptPdfService;
 import it.gov.pagopa.receipt.pdf.generator.service.ReceiptCosmosService;
 import it.gov.pagopa.receipt.pdf.generator.service.impl.GenerateReceiptPdfServiceImpl;
 import it.gov.pagopa.receipt.pdf.generator.service.impl.ReceiptCosmosServiceImpl;
-import it.gov.pagopa.receipt.pdf.generator.utils.ObjectMapperUtils;
 import it.gov.pagopa.receipt.pdf.generator.utils.ReceiptGeneratorUtils;
-import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.FileAlreadyExistsException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.List;
 
@@ -51,9 +41,6 @@ public class GenerateReceiptPdf {
     private final Logger logger = LoggerFactory.getLogger(GenerateReceiptPdf.class);
 
     private static final int MAX_NUMBER_RETRY = Integer.parseInt(System.getenv().getOrDefault("COSMOS_RECEIPT_QUEUE_MAX_RETRY", "5"));
-    private static final String WORKING_DIRECTORY_PATH = System.getenv().getOrDefault("WORKING_DIRECTORY_PATH", "");
-
-    private static final String PATTERN_FORMAT = "yyyy.MM.dd.HH.mm.ss";
 
     private final GenerateReceiptPdfService generateReceiptPdfService;
     private final ReceiptCosmosService receiptCosmosService;
@@ -134,7 +121,7 @@ public class GenerateReceiptPdf {
     ) throws BizEventNotValidException, ReceiptNotFoundException, IOException {
 
         //Map queue bizEventMessage to BizEvent
-        List<BizEvent> listOfBizEvent = getBizEventListFromMessage(context, bizEventMessage);
+        List<BizEvent> listOfBizEvent = ReceiptGeneratorUtils.getBizEventListFromMessage(bizEventMessage, context.getFunctionName());
 
         if (listOfBizEvent.isEmpty()) {
             return;
@@ -178,11 +165,11 @@ public class GenerateReceiptPdf {
                 receiptEventReference);
         //Generate and save PDF
         PdfGeneration pdfGeneration;
-        Path workingDirPath = createWorkingDirectory();
+        Path workingDirPath = ReceiptGeneratorUtils.createWorkingDirectory();
         try {
             pdfGeneration = this.generateReceiptPdfService.generateReceipts(receipt, listOfBizEvent.get(0), workingDirPath);
         } finally {
-            deleteTempFolder(workingDirPath);
+            ReceiptGeneratorUtils.deleteTempFolder(workingDirPath, logger);
         }
 
         //Verify PDF generation success
@@ -231,42 +218,5 @@ public class GenerateReceiptPdf {
     private boolean isReceiptInInValidState(Receipt receipt) {
         return receipt.getEventData() == null
                 || (!receipt.getStatus().equals(ReceiptStatusType.INSERTED) && !receipt.getStatus().equals(ReceiptStatusType.RETRY));
-    }
-
-    private List<BizEvent> getBizEventListFromMessage(
-            ExecutionContext context,
-            String bizEventMessage
-    ) throws BizEventNotValidException {
-        try {
-            return ObjectMapperUtils.mapBizEventListString(bizEventMessage, new TypeReference<>() {
-            });
-        } catch (JsonProcessingException e) {
-            String errorMsg = String.format("[%s] Error parsing the message coming from the queue",
-                    context.getFunctionName());
-            throw new BizEventNotValidException(errorMsg, e);
-        }
-    }
-
-    private Path createWorkingDirectory() throws IOException {
-        File workingDirectory = new File(WORKING_DIRECTORY_PATH);
-        if (!workingDirectory.exists()) {
-            try {
-                Files.createDirectory(workingDirectory.toPath());
-            } catch (FileAlreadyExistsException ignored) {
-                // The working directory already exist we don't need to create it
-            }
-        }
-        return Files.createTempDirectory(workingDirectory.toPath(),
-                DateTimeFormatter.ofPattern(PATTERN_FORMAT)
-                        .withZone(ZoneId.systemDefault())
-                        .format(Instant.now()));
-    }
-
-    private void deleteTempFolder(Path workingDirPath) {
-        try {
-            FileUtils.deleteDirectory(workingDirPath.toFile());
-        } catch (IOException e) {
-            logger.warn("Unable to clear working directory: {}", workingDirPath, e);
-        }
     }
 }
