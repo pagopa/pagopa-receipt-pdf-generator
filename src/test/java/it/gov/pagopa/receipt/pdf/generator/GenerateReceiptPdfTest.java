@@ -506,7 +506,9 @@ class GenerateReceiptPdfTest {
                                 .eventStatus(BizEventStatusType.DONE)
                                 .build()
                 ));
-            } catch (JsonProcessingException ignored) {}
+            } catch (JsonProcessingException ignored) {
+                // ignored
+            }
 
             if(numberOfEvents > 1 && i < numberOfEvents-1){
                 listOfBizEvents.append(",");
