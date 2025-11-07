@@ -113,7 +113,7 @@ public class GenerateCartReceiptPdf {
                     name = "CartReceiptDatastore",
                     databaseName = "db",
                     containerName = "cart-for-receipts",
-                    connection = "COSMOS_CART_RECEIPTS_CONN_STRING")
+                    connection = "COSMOS_RECEIPTS_CONN_STRING")
             OutputBinding<CartForReceipt> documentdb,
             final ExecutionContext context
     ) throws BizEventNotValidException, IOException, CartNotFoundException {
