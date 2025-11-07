@@ -83,44 +83,28 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
         }
     }
 
-    // TODO add new field cart.hideFeesAndTotals true if receipt if for a debtor cart notice
-
     /**
      * {@inheritDoc}
      */
     @Override
-    public ReceiptPDFTemplate buildTemplate(BizEvent bizEvent, boolean isGeneratingDebtor, Receipt receipt) throws TemplateDataMappingException {
-        boolean requestedByDebtor = getRequestByDebtor(isGeneratingDebtor, bizEvent);
-
-        return ReceiptPDFTemplate.builder()
-                .serviceCustomerId(getServiceCustomerId(receipt))
-                .transaction(Transaction.builder()
-                        .timestamp(getTimestamp(bizEvent))
-                        .amount(getAmount(receipt))
-                        .psp(getPsp(bizEvent))
-                        .rrn(getRnn(bizEvent))
-                        .paymentMethod(PaymentMethod.builder()
-                                .name(getPaymentMethodName(bizEvent))
-                                .logo(getPaymentMethodLogo(bizEvent))
-                                .accountHolder(getPaymentMethodAccountHolder(bizEvent))
-                                .build())
-                        .authCode(getAuthCode(bizEvent))
-                        .requestedByDebtor(requestedByDebtor)
-                        .processedByPagoPA(getProcessedByPagoPA(bizEvent))
-                        .build())
-                .user(requestedByDebtor ?
-                        null :
-                        User.builder()
-                                .data(UserData.builder()
-                                        .fullName(getUserFullName(bizEvent))
-                                        .taxCode(getUserTaxCode(bizEvent))
-                                        .build())
-                                .build())
-                .cart(Cart.builder()
-                        .items(getCartItems(Collections.singletonList(bizEvent), receipt))
-                        .amountPartial(getItemAmount(bizEvent, true))
-                        .build())
-                .build();
+    public ReceiptPDFTemplate buildTemplate(
+            BizEvent bizEvent,
+            boolean requestedByDebtor,
+            Receipt receipt
+    ) throws TemplateDataMappingException {
+        return commonTemplate(
+                Collections.singletonList(bizEvent),
+                requestedByDebtor,
+                getServiceCustomerId(receipt),
+                getAmount(receipt),
+                Collections.singletonMap(
+                        receipt.getEventId(),
+                        CartInfo.builder()
+                                .debtorFiscalCode(receipt.getEventData().getDebtorFiscalCode())
+                                .subject(getItemSubject(receipt, 0))
+                                .build()
+                )
+        );
     }
 
     /**
@@ -134,15 +118,13 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
             String amount,
             Map<String, CartInfo> cartInfoMap
     ) throws TemplateDataMappingException {
-        BizEvent bizEvent = listOfBizEvents.get(0);
         ReceiptPDFTemplate commonTemplate = commonTemplate(
-                bizEvent,
+                listOfBizEvents,
                 requestedByDebtor,
                 validateCartServiceCustomerId(eventId),
-                requestedByDebtor ? getCartAmount(amount) : amount
+                requestedByDebtor ? getCartAmount(amount) : amount,
+                cartInfoMap
         );
-
-        commonTemplate.setCart(buildCart(listOfBizEvents, cartInfoMap));
 
         // hideFeesAndTotals in case is a cart receipt but requested by one of the debtors
         commonTemplate.getCart().setHideFeesAndTotals(requestedByDebtor);
@@ -151,11 +133,14 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
     }
 
     private ReceiptPDFTemplate commonTemplate(
-            BizEvent bizEvent,
+            List<BizEvent> listOfBizEvents,
             boolean requestedByDebtor,
             String serviceCustomerId,
-            String amount
+            String amount,
+            Map<String, CartInfo> cartInfoMap
     ) throws TemplateDataMappingException {
+        BizEvent bizEvent = listOfBizEvents.get(0);
+
         return ReceiptPDFTemplate.builder()
                 .serviceCustomerId(serviceCustomerId)
                 .transaction(Transaction.builder()
@@ -180,34 +165,8 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
                                         .taxCode(getUserTaxCode(bizEvent))
                                         .build())
                                 .build())
+                .cart(buildCart(listOfBizEvents, cartInfoMap))
                 .build();
-    }
-
-    private List<Item> getCartItems(List<BizEvent> listOfBizEvents, Receipt receipt) throws TemplateDataMappingException {
-        List<Item> cartItems = new ArrayList<>();
-        for (int i = 0; i < listOfBizEvents.size(); i++) {
-            BizEvent bizEvent = listOfBizEvents.get(i);
-            cartItems.add(
-                    Item.builder()
-                            .refNumber(RefNumber.builder()
-                                    .type(getRefNumberType(bizEvent))
-                                    .value(getRefNumberValue(bizEvent))
-                                    .build())
-                            .debtor(DEBTOR_ANONIMO_CF.equals(receipt.getEventData().getDebtorFiscalCode()) ?
-                                                null :Debtor.builder()
-                                    .fullName(getDebtorFullName(bizEvent))
-                                    .taxCode(getDebtorTaxCode(bizEvent))
-                                    .build())
-                            .payee(Payee.builder()
-                                    .name(getPayeeName(bizEvent))
-                                    .taxCode(getPayeeTaxCode(bizEvent))
-                                    .build())
-                            .subject(getItemSubject(receipt, i))
-                            .amount(getItemAmount(bizEvent, true))
-                            .build()
-            );
-        }
-        return cartItems;
     }
 
     private Cart buildCart(List<BizEvent> listOfBizEvents, Map<String, CartInfo> cartInfoMap) throws TemplateDataMappingException {
@@ -240,14 +199,6 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
                 .items(cartItems)
                 .amountPartial(currencyFormat(String.valueOf(amountPartial)))
                 .build();
-    }
-
-    private String getCartAmountPartial(List<BizEvent> listOfBizEvents) throws TemplateDataMappingException {
-        double amountPartial = 0;
-        for (BizEvent bizEvent : listOfBizEvents) {
-            amountPartial = amountPartial + Double.parseDouble(getItemAmount(bizEvent, false));
-        }
-        return currencyFormat(String.valueOf(amountPartial));
     }
 
     private String getServiceCustomerId(Receipt receipt) throws TemplateDataMappingException {
@@ -320,7 +271,7 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
         }
         return null;
     }
-    
+
     private String getPaymentMethodName(BizEvent event) {
         String paymentMethodType = Optional.ofNullable(event.getTransactionDetails())
                 .map(TransactionDetails::getWallet)
@@ -506,7 +457,6 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
         return value;
     }
 
-    // TODO on cart from which biz we take this info? transactionDetails section is equal for all cart biz-event?
     private boolean getProcessedByPagoPA(BizEvent event) {
         if (event.getTransactionDetails() != null) {
             if (event.getTransactionDetails().getTransaction() != null &&
@@ -520,30 +470,6 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
         }
         return false;
     }
-
-    private boolean getRequestByDebtor(boolean isGeneratingDebtor, BizEvent event) {
-        if (isGeneratingDebtor) {
-            String debtorFiscalCode = event.getDebtor().getEntityUniqueIdentifierValue();
-
-            String fiscalCodeFromPayer = event.getPayer() != null ? event.getPayer().getEntityUniqueIdentifierValue() : null;
-            String fiscalCodeFromUser = event.getTransactionDetails() != null && event.getTransactionDetails().getUser() != null ?
-                    event.getTransactionDetails().getUser().getFiscalCode() : null;
-            //Check if payer's and user's fiscal codes exist
-            if (fiscalCodeFromPayer == null && fiscalCodeFromUser == null) {
-                return true;
-            }
-            //Check if payer's fiscal code exists and is different from debtor's
-            if (fiscalCodeFromPayer != null && !fiscalCodeFromPayer.equals(debtorFiscalCode)) {
-                return true;
-            }
-            //Check if user's fiscal code exists and is different from debtor's
-            if (fiscalCodeFromUser != null && !fiscalCodeFromUser.equals(debtorFiscalCode)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     private String currencyFormat(String value) {
         BigDecimal valueToFormat = new BigDecimal(value);
         NumberFormat numberFormat = NumberFormat.getInstance(Locale.ITALY);

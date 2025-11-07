@@ -35,7 +35,6 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
 
 public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService {
 
@@ -85,7 +84,7 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
                     pdfGeneration.setDebtorMetadata(PdfMetadata.builder().statusCode(ALREADY_CREATED).build());
                     return pdfGeneration;
                 }
-                PdfMetadata generationResult = generateAndSavePDFReceipt(bizEvent, receipt, PAYER_TEMPLATE_SUFFIX, true, workingDirPath);
+                PdfMetadata generationResult = generateAndSavePDFReceipt(bizEvent, receipt, PAYER_TEMPLATE_SUFFIX, false, workingDirPath);
                 pdfGeneration.setDebtorMetadata(generationResult);
                 return pdfGeneration;
             }

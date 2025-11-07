@@ -14,15 +14,15 @@ public interface BuildTemplateService {
     /**
      * Maps a bizEvent to the json needed to compile the template
      *
-     * @param bizEvent        Biz-event from queue message
-     * @param partialTemplate boolean that indicates the type of template
-     * @param receipt         Receipt from CosmosDB
+     * @param bizEvent          Biz-event from queue message
+     * @param requestedByDebtor boolean that indicates the target of the template
+     * @param receipt           Receipt from CosmosDB
      * @return {@link ReceiptPDFTemplate} compiled template
      * @throws TemplateDataMappingException when mandatory fields are missing
      */
     ReceiptPDFTemplate buildTemplate(
             BizEvent bizEvent,
-            boolean partialTemplate,
+            boolean requestedByDebtor,
             Receipt receipt
     ) throws TemplateDataMappingException;
 
