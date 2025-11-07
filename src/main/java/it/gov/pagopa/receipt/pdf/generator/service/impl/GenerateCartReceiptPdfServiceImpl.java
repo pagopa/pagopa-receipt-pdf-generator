@@ -9,6 +9,7 @@ import it.gov.pagopa.receipt.pdf.generator.entity.cart.CartForReceipt;
 import it.gov.pagopa.receipt.pdf.generator.entity.cart.CartPayment;
 import it.gov.pagopa.receipt.pdf.generator.entity.cart.Payload;
 import it.gov.pagopa.receipt.pdf.generator.entity.event.BizEvent;
+import it.gov.pagopa.receipt.pdf.generator.entity.receipt.ReasonError;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.ReceiptMetadata;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.enumeration.ReasonErrorCode;
 import it.gov.pagopa.receipt.pdf.generator.exception.CartReceiptGenerationNotToRetryException;
@@ -50,6 +51,7 @@ public class GenerateCartReceiptPdfServiceImpl implements GenerateCartReceiptPdf
     private static final String TEMPLATE_PREFIX = "pagopa-ricevuta-carrello";
     private static final String PAYER_TEMPLATE_SUFFIX = "p";
     private static final String DEBTOR_TEMPLATE_SUFFIX = "d";
+    private static final String ANONIMO = "ANONIMO";
 
     public static final int ALREADY_CREATED = 208;
 
@@ -86,13 +88,9 @@ public class GenerateCartReceiptPdfServiceImpl implements GenerateCartReceiptPdf
             Path workingDirPath
     ) {
         PdfCartGeneration pdfCartGeneration = new PdfCartGeneration();
-
         Payload payload = cartForReceipt.getPayload();
         String payerCF = payload.getPayerFiscalCode();
         List<CartPayment> cart = payload.getCart();
-
-        // TODO biz event list should be filtered by biz id (if not payer)
-        // TODO CartPayment should be filtered by biz id (if not payer)
 
         Map<String, CartInfo> cartInfoMap = cart.stream()
                 .collect(Collectors.toMap(
@@ -127,7 +125,7 @@ public class GenerateCartReceiptPdfServiceImpl implements GenerateCartReceiptPdf
 
         cart.forEach(cartPayment -> {
             String debtorFiscalCode = cartPayment.getDebtorFiscalCode();
-            if ("ANONIMO".equals(debtorFiscalCode) || debtorFiscalCode.equals(payerCF)) {
+            if (ANONIMO.equals(debtorFiscalCode) || debtorFiscalCode.equals(payerCF)) {
                 return;
             }
 
@@ -153,12 +151,71 @@ public class GenerateCartReceiptPdfServiceImpl implements GenerateCartReceiptPdf
     }
 
     @Override
-    public boolean verifyAndUpdateReceipt(
-            CartForReceipt cartForReceipt,
+    public boolean verifyAndUpdateCartReceipt(
+            CartForReceipt cart,
             PdfCartGeneration pdfCartGeneration
     ) throws CartReceiptGenerationNotToRetryException {
-        // TODO
-        return false;
+        boolean result = true;
+        Payload payload = cart.getPayload();
+        PdfMetadata payerMetadata = pdfCartGeneration.getPayerMetadata();
+
+        if (payload.getPayerFiscalCode() != null) {
+            if (payerMetadata == null) {
+                logger.error("Unexpected result for payer pdf cart receipt generation. Cart receipt event id {}", cart.getEventId());
+                result = false;
+            } else if (payerMetadata.getStatusCode() == HttpStatus.SC_OK) {
+                ReceiptMetadata receiptMetadata = buildReceiptMetadata(payerMetadata);
+
+                payload.setMdAttachPayer(receiptMetadata);
+            } else if (payerMetadata.getStatusCode() != ALREADY_CREATED) {
+                ReasonError reasonError = new ReasonError(payerMetadata.getStatusCode(), payerMetadata.getErrorMessage());
+                payload.setReasonErrPayer(reasonError);
+                result = false;
+            }
+        }
+
+        boolean debtortHasNotToRetryError = false;
+        Map<String, PdfMetadata> debtorMetadataMap = pdfCartGeneration.getDebtorMetadataMap();
+        for (CartPayment cartPayment : payload.getCart()) {
+            String debtorFiscalCode = cartPayment.getDebtorFiscalCode();
+            if (idDebtorFiscalCodeValid(debtorFiscalCode, payload)) {
+                continue;
+            }
+            PdfMetadata debtorMetadata = debtorMetadataMap.get(debtorFiscalCode);
+            if (debtorMetadata == null) {
+                logger.error("Unexpected result for debtor of biz event id {} pdf cart receipt generation. Cart receipt id {}",
+                        cart.getEventId(), cartPayment.getBizEventId());
+                result = false;
+            } else if (debtorMetadata.getStatusCode() == HttpStatus.SC_OK) {
+                ReceiptMetadata receiptMetadata = buildReceiptMetadata(debtorMetadata);
+
+                cartPayment.setMdAttach(receiptMetadata);
+            } else if (debtorMetadata.getStatusCode() != ALREADY_CREATED) {
+                if (debtorMetadata.getStatusCode() == ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode()) {
+                    debtortHasNotToRetryError = true;
+                }
+
+                ReasonError reasonError = new ReasonError(debtorMetadata.getStatusCode(), debtorMetadata.getErrorMessage());
+                cartPayment.setReasonErrDebtor(reasonError);
+                result = false;
+            }
+        }
+        if (hasCartReceiptGenerationNotRetriableError(payerMetadata, debtortHasNotToRetryError)) {
+            String errMsg = String.format("Receipt generation fail for at least one debtor and/or payer with status: %s",
+                    ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
+            throw new CartReceiptGenerationNotToRetryException(errMsg);
+        }
+
+        return result;
+    }
+
+    private boolean idDebtorFiscalCodeValid(String debtorFiscalCode, Payload payload) {
+        return ANONIMO.equals(debtorFiscalCode) || debtorFiscalCode.equals(payload.getPayerFiscalCode());
+    }
+
+    private boolean hasCartReceiptGenerationNotRetriableError(PdfMetadata payerMetadata, boolean debtortHasNotToRetryError) {
+        return (payerMetadata != null && payerMetadata.getStatusCode() == ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode())
+                || debtortHasNotToRetryError;
     }
 
     private PdfMetadata generateAndSavePDFReceipt(
@@ -260,5 +317,12 @@ public class GenerateCartReceiptPdfServiceImpl implements GenerateCartReceiptPdf
                 && receiptMetadata.getName() != null
                 && !receiptMetadata.getUrl().isEmpty()
                 && !receiptMetadata.getName().isEmpty();
+    }
+
+    private ReceiptMetadata buildReceiptMetadata(PdfMetadata payerMetadata) {
+        ReceiptMetadata receiptMetadata = new ReceiptMetadata();
+        receiptMetadata.setName(payerMetadata.getDocumentName());
+        receiptMetadata.setUrl(payerMetadata.getDocumentUrl());
+        return receiptMetadata;
     }
 }

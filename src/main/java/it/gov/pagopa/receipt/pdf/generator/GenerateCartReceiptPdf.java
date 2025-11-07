@@ -173,7 +173,7 @@ public class GenerateCartReceiptPdf {
         //Verify PDF generation success
         boolean success;
         try {
-            success = this.generateCartReceiptPdfService.verifyAndUpdateReceipt(cart, pdfCartGeneration);
+            success = this.generateCartReceiptPdfService.verifyAndUpdateCartReceipt(cart, pdfCartGeneration);
             if (success) {
                 cart.setStatus(CartStatusType.GENERATED);
                 cart.setGenerated_at(System.currentTimeMillis());

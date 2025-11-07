@@ -29,7 +29,7 @@ public interface GenerateCartReceiptPdfService {
      * @return true if the process succeeded, otherwise false
      * @throws CartReceiptGenerationNotToRetryException when the cart receipt generation fail with an error that will not be retried
      */
-    boolean verifyAndUpdateReceipt(
+    boolean verifyAndUpdateCartReceipt(
             CartForReceipt cartForReceipt,
             PdfCartGeneration pdfCartGeneration
     ) throws CartReceiptGenerationNotToRetryException;
