@@ -28,7 +28,6 @@ import it.gov.pagopa.receipt.pdf.generator.model.response.BlobStorageResponse;
 import it.gov.pagopa.receipt.pdf.generator.model.response.PdfEngineResponse;
 import it.gov.pagopa.receipt.pdf.generator.model.template.ReceiptPDFTemplate;
 import it.gov.pagopa.receipt.pdf.generator.service.BuildTemplateService;
-import it.gov.pagopa.receipt.pdf.generator.service.GenerateReceiptPdfService;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.AfterEach;
@@ -84,7 +83,7 @@ class GenerateReceiptPdfServiceImplTest {
     @BeforeEach
     void setUp() throws IOException {
         pdfEngineClientMock = mock(PdfEngineClient.class);
-        receiptBlobClientMock= mock(ReceiptBlobClient.class);
+        receiptBlobClientMock = mock(ReceiptBlobClient.class);
         buildTemplateServiceMock = mock(BuildTemplateService.class);
 
         sut = spy(new GenerateReceiptPdfServiceImpl(pdfEngineClientMock, receiptBlobClientMock, buildTemplateServiceMock));
@@ -98,10 +97,10 @@ class GenerateReceiptPdfServiceImplTest {
 
     @AfterEach
     void teardown() throws IOException {
-        if(tempDirectoryDebtor.exists()){
+        if (tempDirectoryDebtor.exists()) {
             FileUtils.deleteDirectory(tempDirectoryDebtor);
         }
-        if(tempDirectoryPayer.exists()){
+        if (tempDirectoryPayer.exists()) {
             FileUtils.deleteDirectory(tempDirectoryPayer);
         }
         assertFalse(tempDirectoryDebtor.exists());
@@ -122,7 +121,7 @@ class GenerateReceiptPdfServiceImplTest {
         doReturn(new ReceiptPDFTemplate())
                 .when(buildTemplateServiceMock).buildTemplate(any(), anyBoolean(), any(Receipt.class));
 
-        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly,Path.of("/tmp"));
+        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly, Path.of("/tmp"));
 
         assertNotNull(pdfGeneration);
         assertTrue(pdfGeneration.isGenerateOnlyDebtor());
@@ -150,7 +149,7 @@ class GenerateReceiptPdfServiceImplTest {
         doReturn(new ReceiptPDFTemplate())
                 .when(buildTemplateServiceMock).buildTemplate(any(), anyBoolean(), any(Receipt.class));
 
-        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly,Path.of("/tmp"));
+        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly, Path.of("/tmp"));
 
         assertNotNull(pdfGeneration);
         assertTrue(pdfGeneration.isGenerateOnlyDebtor());
@@ -180,7 +179,7 @@ class GenerateReceiptPdfServiceImplTest {
         doReturn(new ReceiptPDFTemplate())
                 .when(buildTemplateServiceMock).buildTemplate(any(), anyBoolean(), any(Receipt.class));
 
-        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly,Path.of("/tmp"));
+        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly, Path.of("/tmp"));
 
         assertNotNull(pdfGeneration);
         assertFalse(pdfGeneration.isGenerateOnlyDebtor());
@@ -216,7 +215,7 @@ class GenerateReceiptPdfServiceImplTest {
         doReturn(new ReceiptPDFTemplate())
                 .when(buildTemplateServiceMock).buildTemplate(any(), anyBoolean(), any(Receipt.class));
 
-        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, listOfBizEvents,Path.of("/tmp"));
+        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, listOfBizEvents, Path.of("/tmp"));
 
         assertNotNull(pdfGeneration);
         assertFalse(pdfGeneration.isGenerateOnlyDebtor());
@@ -285,7 +284,7 @@ class GenerateReceiptPdfServiceImplTest {
         doReturn(new ReceiptPDFTemplate())
                 .when(buildTemplateServiceMock).buildTemplate(any(), anyBoolean(), any(Receipt.class));
 
-        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly,Path.of("/tmp"));
+        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly, Path.of("/tmp"));
 
         assertNotNull(pdfGeneration);
         assertFalse(pdfGeneration.isGenerateOnlyDebtor());
@@ -315,7 +314,7 @@ class GenerateReceiptPdfServiceImplTest {
         doReturn(new ReceiptPDFTemplate())
                 .when(buildTemplateServiceMock).buildTemplate(any(), anyBoolean(), any(Receipt.class));
 
-        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly,Path.of("/tmp"));
+        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly, Path.of("/tmp"));
 
         assertNotNull(pdfGeneration);
         assertTrue(pdfGeneration.isGenerateOnlyDebtor());
@@ -339,7 +338,7 @@ class GenerateReceiptPdfServiceImplTest {
         doThrow(new TemplateDataMappingException("error message", ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode()))
                 .when(buildTemplateServiceMock).buildTemplate(any(), anyBoolean(), any(Receipt.class));
 
-        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly,Path.of("/tmp"));
+        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly, Path.of("/tmp"));
 
         assertNotNull(pdfGeneration);
         assertTrue(pdfGeneration.isGenerateOnlyDebtor());
@@ -366,7 +365,7 @@ class GenerateReceiptPdfServiceImplTest {
         doReturn(new ReceiptPDFTemplate())
                 .when(buildTemplateServiceMock).buildTemplate(any(), anyBoolean(), any(Receipt.class));
 
-        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly,Path.of("/tmp"));
+        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly, Path.of("/tmp"));
 
         assertNotNull(pdfGeneration);
         assertTrue(pdfGeneration.isGenerateOnlyDebtor());
@@ -394,7 +393,7 @@ class GenerateReceiptPdfServiceImplTest {
         doReturn(new ReceiptPDFTemplate())
                 .when(buildTemplateServiceMock).buildTemplate(any(), anyBoolean(), any(Receipt.class));
 
-        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly,Path.of("/tmp"));
+        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly, Path.of("/tmp"));
 
         assertNotNull(pdfGeneration);
         assertTrue(pdfGeneration.isGenerateOnlyDebtor());
@@ -824,7 +823,7 @@ class GenerateReceiptPdfServiceImplTest {
                 .when(buildTemplateServiceMock).buildTemplate(any(), anyBoolean(), any(Receipt.class));
 
         sut.setMinFileLength(10);
-        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly,Path.of("/tmp"));
+        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly, Path.of("/tmp"));
 
         assertNotNull(pdfGeneration);
         assertTrue(pdfGeneration.isGenerateOnlyDebtor());
@@ -850,7 +849,7 @@ class GenerateReceiptPdfServiceImplTest {
                 .when(buildTemplateServiceMock).buildTemplate(any(), anyBoolean(), any(Receipt.class));
 
         sut.setMinFileLength(10);
-        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly,Path.of("/tmp"));
+        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly, Path.of("/tmp"));
 
         assertNotNull(pdfGeneration);
         assertFalse(pdfGeneration.isGenerateOnlyDebtor());
@@ -896,6 +895,7 @@ class GenerateReceiptPdfServiceImplTest {
         return getBizEventWithDebtorPayer(null);
 
     }
+
     private BizEvent getBizEventWithDebtorPayer(String payer) {
         if (payer == null) {
             return getBizEvent(null);
@@ -903,6 +903,7 @@ class GenerateReceiptPdfServiceImplTest {
         return getBizEvent(Payer.builder().fullName("John Doe").entityUniqueIdentifierValue(VALID_CF_DEBTOR).build());
 
     }
+
     private BizEvent getBizEvent(Payer payer) {
         return BizEvent.builder()
                 .id(BIZ_EVENT_ID)
@@ -954,6 +955,7 @@ class GenerateReceiptPdfServiceImplTest {
     private Receipt getReceiptWithOnlyDebtor(boolean alreadyCreated) {
         return getReceiptWithDebtorPayer(null, alreadyCreated, false);
     }
+
     private Receipt getReceiptWithDebtorPayer(String payer, boolean debtorAlreadyCreated, boolean payerAlreadyCreated) {
         return getReceipt(getEventData(payer), buildMetadata(debtorAlreadyCreated), buildMetadata(payerAlreadyCreated));
     }

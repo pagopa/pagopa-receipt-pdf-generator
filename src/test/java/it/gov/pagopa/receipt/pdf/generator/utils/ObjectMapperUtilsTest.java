@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
+import it.gov.pagopa.receipt.pdf.generator.entity.event.BizEvent;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -32,5 +33,9 @@ public class ObjectMapperUtilsTest {
 
             return objectMapper.readValue(inputStream, clazz);
         }
+    }
+
+    public static BizEvent getBizEventFromFile(String relativePath) throws IOException {
+        return ObjectMapperUtilsTest.readModelFromFile(relativePath, BizEvent.class);
     }
 }

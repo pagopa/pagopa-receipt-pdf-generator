@@ -128,11 +128,11 @@ public class GenerateCartReceiptPdfServiceImpl implements GenerateCartReceiptPdf
             if (ANONIMO.equals(debtorFiscalCode) || debtorFiscalCode.equals(payerCF)) {
                 return;
             }
+            String bizEventId = cartPayment.getBizEventId();
 
             if (receiptAlreadyCreated(cartPayment.getMdAttach())) {
-                pdfCartGeneration.addDebtorMetadataToMap(debtorFiscalCode, PdfMetadata.builder().statusCode(ALREADY_CREATED).build());
+                pdfCartGeneration.addDebtorMetadataToMap(bizEventId, PdfMetadata.builder().statusCode(ALREADY_CREATED).build());
             } else {
-                String bizEventId = cartPayment.getBizEventId();
 
                 //Generate debtor's partial PDF
                 PdfMetadata generationResult = generateAndSavePDFReceipt(
@@ -143,13 +143,16 @@ public class GenerateCartReceiptPdfServiceImpl implements GenerateCartReceiptPdf
                         Collections.singletonMap(bizEventId, cartInfoMap.get(bizEventId)),
                         workingDirPath
                 );
-                pdfCartGeneration.addDebtorMetadataToMap(debtorFiscalCode, generationResult);
+                pdfCartGeneration.addDebtorMetadataToMap(bizEventId, generationResult);
             }
         });
 
         return pdfCartGeneration;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean verifyAndUpdateCartReceipt(
             CartForReceipt cart,
@@ -181,7 +184,7 @@ public class GenerateCartReceiptPdfServiceImpl implements GenerateCartReceiptPdf
             if (idDebtorFiscalCodeValid(debtorFiscalCode, payload)) {
                 continue;
             }
-            PdfMetadata debtorMetadata = debtorMetadataMap.get(debtorFiscalCode);
+            PdfMetadata debtorMetadata = debtorMetadataMap.get(cartPayment.getBizEventId());
             if (debtorMetadata == null) {
                 logger.error("Unexpected result for debtor of biz event id {} pdf cart receipt generation. Cart receipt id {}",
                         cart.getEventId(), cartPayment.getBizEventId());
@@ -213,7 +216,10 @@ public class GenerateCartReceiptPdfServiceImpl implements GenerateCartReceiptPdf
         return ANONIMO.equals(debtorFiscalCode) || debtorFiscalCode.equals(payload.getPayerFiscalCode());
     }
 
-    private boolean hasCartReceiptGenerationNotRetriableError(PdfMetadata payerMetadata, boolean debtortHasNotToRetryError) {
+    private boolean hasCartReceiptGenerationNotRetriableError(
+            PdfMetadata payerMetadata,
+            boolean debtortHasNotToRetryError
+    ) {
         return (payerMetadata != null && payerMetadata.getStatusCode() == ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode())
                 || debtortHasNotToRetryError;
     }

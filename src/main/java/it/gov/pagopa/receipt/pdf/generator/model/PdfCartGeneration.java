@@ -19,7 +19,6 @@ import java.util.Map;
 @Builder
 public class PdfCartGeneration {
 
-    private boolean payerIsAlsoDebtor; // TODO serve?
     private Map<String, PdfMetadata> debtorMetadataMap;
     private PdfMetadata payerMetadata;
 
