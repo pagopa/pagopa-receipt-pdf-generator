@@ -163,6 +163,54 @@ function createReceipt(id, status) {
 	return receipt
 }
 
+function createCart(id, status) {
+	let cart =
+	{
+        "eventId": id,
+        "id": "id" + id,
+        "version": "1",
+        "payload": {
+            "payerFiscalCode": null,
+            "transactionCreationDate": "2025-11-02T10:14:57.218496702Z",
+            "totalNotice": "2",
+            "totalAmount": "26,48",
+            "mdAttachPayer": null,
+            "idMessagePayer": null,
+            "cart": [
+                {
+                    "bizEventId": "bz1"+id,
+                    "subject": "oggetto 1",
+                    "payeeName": "Ministero delle infrastrutture e dei trasporti",
+                    "debtorFiscalCode": "a44d3ca2-f813-4188-bc24-da028accf981",
+                    "amount": "16.0",
+                    "mdAttach": null,
+                    "idMessageDebtor": null,
+                    "reasonErrDebtor": null
+                },
+                {
+                    "bizEventId": "bz2"+id,
+                    "subject": "oggetto 2",
+                    "payeeName": "Ministero delle infrastrutture e dei trasporti",
+                    "debtorFiscalCode": "a44d3ca2-f813-4188-bc24-da028accf981",
+                    "amount": "10.2",
+                    "mdAttach": null,
+                    "idMessageDebtor": null,
+                    "reasonErrDebtor": null
+                }
+            ],
+            "reasonErrPayer": null
+        },
+        "status": status,
+        "numRetry": 0,
+        "notificationNumRetry": 0,
+        "reasonErr": null,
+        "inserted_at": 1762421981920,
+        "generated_at": 0,
+        "notified_at": 0
+    }
+	return cart
+}
+
 const getTokenizedBizEvent = (id, numberOfEvents) => {
 	let arr = createEventsForQueue(id, numberOfEvents, null, "310391366991197059", "10391366991197059");
     return encryptText(JSON.stringify(arr));

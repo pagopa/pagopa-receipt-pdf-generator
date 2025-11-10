@@ -7,7 +7,7 @@ const blobServiceClient = BlobServiceClient.fromConnectionString(blob_storage_co
 const containerClient = blobServiceClient.getContainerClient(containerName);
 
 async function receiptPDFExist(blobName) {
-    let blobs = containerClient.listBlobsFlat();
+    let blobs = receiptContainerClient.listBlobsFlat();
     for await (const blob of blobs) {
         if (blob.name === blobName) {
             return true;
