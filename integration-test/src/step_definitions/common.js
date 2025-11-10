@@ -166,8 +166,8 @@ function createReceipt(id, status) {
 function createCart(id, status) {
 	let cart =
 	{
-        "eventId": id,
-        "id": "id" + id,
+        "eventId": "biz_"+id,
+        "id": id,
         "version": "1",
         "payload": {
             "payerFiscalCode": null,

@@ -11,14 +11,14 @@ const cartContainer = client.database(databaseId).container(cartContainerId);
 async function getDocumentByIdFromCartDatastore(id) {
     return await cartContainer.items
         .query({
-            query: "SELECT * from c WHERE c.eventId=@eventId",
-            parameters: [{ name: "@eventId", value: id }]
+            query: "SELECT * from c WHERE c.id=@id",
+            parameters: [{ name: "@id", value: id }]
         })
         .fetchNext();
 }
 
-async function deleteDocumentFromCartsDatastoreByEventId(eventId){
-    let documents = await getDocumentByIdFromCartDatastore(eventId);
+async function deleteDocumentFromCartsDatastoreById(id){
+    let documents = await getDocumentByIdFromCartDatastore(id);
 
     documents?.resources?.forEach(el => {
         deleteDocumentFromCartDatastore(el.id);
@@ -48,5 +48,5 @@ async function deleteDocumentFromCartDatastore(id) {
 
 
 module.exports = {
-    getDocumentByIdFromCartDatastore, deleteDocumentFromCartsDatastoreByEventId, createDocumentInCartDatastore
+    getDocumentByIdFromCartDatastore, deleteDocumentFromCartsDatastoreById, createDocumentInCartDatastore
 }

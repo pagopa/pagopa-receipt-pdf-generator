@@ -5,7 +5,7 @@ const { getDocumentByIdFromReceiptsDatastore, deleteDocumentFromErrorReceiptsDat
 const { putMessageOnPoisonQueue, putMessageOnReceiptQueue } = require("./receipts_queue_client");
 const { receiptPDFExist } = require("./receipts_blob_storage_client");
 const {
-    getDocumentByIdFromCartDatastore, deleteDocumentFromCartsDatastoreByEventId, createDocumentInCartDatastore
+    getDocumentByIdFromCartDatastore, deleteDocumentFromCartsDatastoreById, createDocumentInCartDatastore
 } = require("./cart_datastore_client");
 const { putMessageOnCartReceiptQueue } = require("./cart_queue_client");
 const STANDARD_NOTICE_NUMBER = "310391366991197059"
@@ -159,7 +159,7 @@ When('the error receipt has been properly stored on receipt-message-error datast
 Given('a cart with id {string} and status {string} stored into cart datastore', async function(id, status) {
     this.eventId = id;
     // prior cancellation to avoid dirty cases
-    await deleteDocumentFromCartsDatastoreByEventId(this.eventId);
+    await deleteDocumentFromCartsDatastoreById(this.eventId);
 
     let cartStoreResponse = await createDocumentInCartDatastore(this.eventId, status);
     this.receiptId = this.eventId;
