@@ -1,7 +1,5 @@
 package it.gov.pagopa.receipt.pdf.generator.service.impl;
 
-import it.gov.pagopa.receipt.pdf.generator.client.PdfEngineClient;
-import it.gov.pagopa.receipt.pdf.generator.client.ReceiptBlobClient;
 import it.gov.pagopa.receipt.pdf.generator.entity.cart.CartForReceipt;
 import it.gov.pagopa.receipt.pdf.generator.entity.cart.CartPayment;
 import it.gov.pagopa.receipt.pdf.generator.entity.cart.Payload;
@@ -9,27 +7,25 @@ import it.gov.pagopa.receipt.pdf.generator.entity.event.BizEvent;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.ReceiptMetadata;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.enumeration.ReasonErrorCode;
 import it.gov.pagopa.receipt.pdf.generator.exception.CartReceiptGenerationNotToRetryException;
+import it.gov.pagopa.receipt.pdf.generator.exception.GeneratePDFException;
+import it.gov.pagopa.receipt.pdf.generator.exception.SavePDFToBlobException;
 import it.gov.pagopa.receipt.pdf.generator.exception.TemplateDataMappingException;
 import it.gov.pagopa.receipt.pdf.generator.model.PdfCartGeneration;
 import it.gov.pagopa.receipt.pdf.generator.model.PdfMetadata;
-import it.gov.pagopa.receipt.pdf.generator.model.response.BlobStorageResponse;
 import it.gov.pagopa.receipt.pdf.generator.model.response.PdfEngineResponse;
 import it.gov.pagopa.receipt.pdf.generator.model.template.ReceiptPDFTemplate;
 import it.gov.pagopa.receipt.pdf.generator.service.BuildTemplateService;
+import it.gov.pagopa.receipt.pdf.generator.service.PdfEngineService;
+import it.gov.pagopa.receipt.pdf.generator.service.ReceiptBlobStorageService;
 import lombok.SneakyThrows;
-import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -74,44 +70,24 @@ class GenerateCartReceiptPdfServiceImplTest {
     private static final String PAYER_FISCAL_CODE = "payerFiscalCode";
     private static final String DEBTOR_FISCAL_CODE = "debtorFiscalCode";
 
-    private static File outputPdf;
-    private static File tempDirectory;
-
     @Mock
-    private PdfEngineClient pdfEngineClientMock;
+    private PdfEngineService pdfEngineServiceMock;
     @Mock
-    private ReceiptBlobClient receiptBlobClientMock;
+    private ReceiptBlobStorageService receiptBlobStorageMock;
     @Mock
     private BuildTemplateService buildTemplateServiceMock;
     @InjectMocks
     private GenerateCartReceiptPdfServiceImpl sut;
-
-    @BeforeEach
-    void setUp() throws IOException {
-        sut.setMinFileLength(0);
-        Path basePath = Path.of("src/test/resources");
-        tempDirectory = Files.createTempDirectory(basePath, "temp").toFile();
-        outputPdf = File.createTempFile("output", ".tmp", tempDirectory);
-    }
-
-    @AfterEach
-    void teardown() throws IOException {
-        if (tempDirectory.exists()) {
-            FileUtils.deleteDirectory(tempDirectory);
-        }
-        assertFalse(tempDirectory.exists());
-        assertFalse(outputPdf.exists());
-    }
 
     @Test
     @SneakyThrows
     void generateCartReceiptsPayerNullSuccess() {
         doReturn(new ReceiptPDFTemplate())
                 .when(buildTemplateServiceMock).buildCartTemplate(anyList(), anyBoolean(), anyString(), anyString(), anyMap());
-        doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdf.getPath()))
-                .when(pdfEngineClientMock).generatePDF(any(), any());
-        doReturn(getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.CREATED.value()))
-                .when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
+        doReturn(getPdfEngineResponse())
+                .when(pdfEngineServiceMock).generatePDFReceipt(any(), any());
+        doReturn(getBlobStorageResponse())
+                .when(receiptBlobStorageMock).saveToBlobStorage(any(), anyString());
 
         int totalNotice = 2;
         List<BizEvent> bizEventList = getBizEventList(totalNotice);
@@ -136,8 +112,8 @@ class GenerateCartReceiptPdfServiceImplTest {
         assertNull(result.getPayerMetadata());
 
         verify(buildTemplateServiceMock, times(totalNotice)).buildCartTemplate(anyList(), anyBoolean(), anyString(), anyString(), anyMap());
-        verify(pdfEngineClientMock, times(totalNotice)).generatePDF(any(), any());
-        verify(receiptBlobClientMock, times(totalNotice)).savePdfToBlobStorage(any(), any());
+        verify(pdfEngineServiceMock, times(totalNotice)).generatePDFReceipt(any(), any());
+        verify(receiptBlobStorageMock, times(totalNotice)).saveToBlobStorage(any(), any());
     }
 
     @Test
@@ -145,10 +121,10 @@ class GenerateCartReceiptPdfServiceImplTest {
     void generateCartReceiptsSameDebtorPayerSuccess() {
         doReturn(new ReceiptPDFTemplate())
                 .when(buildTemplateServiceMock).buildCartTemplate(anyList(), anyBoolean(), anyString(), anyString(), anyMap());
-        doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdf.getPath()))
-                .when(pdfEngineClientMock).generatePDF(any(), any());
-        doReturn(getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.CREATED.value()))
-                .when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
+        doReturn(getPdfEngineResponse())
+                .when(pdfEngineServiceMock).generatePDFReceipt(any(), any());
+        doReturn(getBlobStorageResponse())
+                .when(receiptBlobStorageMock).saveToBlobStorage(any(), anyString());
 
         int totalNotice = 2;
         List<BizEvent> bizEventList = getBizEventList(totalNotice);
@@ -170,8 +146,8 @@ class GenerateCartReceiptPdfServiceImplTest {
         assertEquals(HttpStatus.SC_OK, result.getPayerMetadata().getStatusCode());
 
         verify(buildTemplateServiceMock).buildCartTemplate(anyList(), anyBoolean(), anyString(), anyString(), anyMap());
-        verify(pdfEngineClientMock).generatePDF(any(), any());
-        verify(receiptBlobClientMock).savePdfToBlobStorage(any(), any());
+        verify(pdfEngineServiceMock).generatePDFReceipt(any(), any());
+        verify(receiptBlobStorageMock).saveToBlobStorage(any(), any());
     }
 
     @Test
@@ -179,10 +155,10 @@ class GenerateCartReceiptPdfServiceImplTest {
     void generateCartReceiptsDifferentDebtorPayerSuccess() {
         doReturn(new ReceiptPDFTemplate())
                 .when(buildTemplateServiceMock).buildCartTemplate(anyList(), anyBoolean(), anyString(), anyString(), anyMap());
-        doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdf.getPath()))
-                .when(pdfEngineClientMock).generatePDF(any(), any());
-        doReturn(getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.CREATED.value()))
-                .when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
+        doReturn(getPdfEngineResponse())
+                .when(pdfEngineServiceMock).generatePDFReceipt(any(), any());
+        doReturn(getBlobStorageResponse())
+                .when(receiptBlobStorageMock).saveToBlobStorage(any(), anyString());
 
         int totalNotice = 2;
         List<BizEvent> bizEventList = getBizEventList(totalNotice);
@@ -212,10 +188,10 @@ class GenerateCartReceiptPdfServiceImplTest {
 
         verify(buildTemplateServiceMock, times(totalNotice + 1))
                 .buildCartTemplate(anyList(), anyBoolean(), anyString(), anyString(), anyMap());
-        verify(pdfEngineClientMock, times(totalNotice + 1))
-                .generatePDF(any(), any());
-        verify(receiptBlobClientMock, times(totalNotice + 1))
-                .savePdfToBlobStorage(any(), any());
+        verify(pdfEngineServiceMock, times(totalNotice + 1))
+                .generatePDFReceipt(any(), any());
+        verify(receiptBlobStorageMock, times(totalNotice + 1))
+                .saveToBlobStorage(any(), any());
     }
 
     @Test
@@ -223,10 +199,10 @@ class GenerateCartReceiptPdfServiceImplTest {
     void generateCartReceiptsDifferentDebtorPayerAndDebtorAnonimoSuccess() {
         doReturn(new ReceiptPDFTemplate())
                 .when(buildTemplateServiceMock).buildCartTemplate(anyList(), anyBoolean(), anyString(), anyString(), anyMap());
-        doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdf.getPath()))
-                .when(pdfEngineClientMock).generatePDF(any(), any());
-        doReturn(getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.CREATED.value()))
-                .when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
+        doReturn(getPdfEngineResponse())
+                .when(pdfEngineServiceMock).generatePDFReceipt(any(), any());
+        doReturn(getBlobStorageResponse())
+                .when(receiptBlobStorageMock).saveToBlobStorage(any(), anyString());
 
         int totalNotice = 2;
         List<BizEvent> bizEventList = getBizEventList(totalNotice);
@@ -248,8 +224,8 @@ class GenerateCartReceiptPdfServiceImplTest {
         assertEquals(HttpStatus.SC_OK, result.getPayerMetadata().getStatusCode());
 
         verify(buildTemplateServiceMock).buildCartTemplate(anyList(), anyBoolean(), anyString(), anyString(), anyMap());
-        verify(pdfEngineClientMock).generatePDF(any(), any());
-        verify(receiptBlobClientMock).savePdfToBlobStorage(any(), any());
+        verify(pdfEngineServiceMock).generatePDFReceipt(any(), any());
+        verify(receiptBlobStorageMock).saveToBlobStorage(any(), any());
     }
 
     @Test
@@ -280,8 +256,8 @@ class GenerateCartReceiptPdfServiceImplTest {
         assertNull(result.getPayerMetadata());
 
         verify(buildTemplateServiceMock, never()).buildCartTemplate(anyList(), anyBoolean(), anyString(), anyString(), anyMap());
-        verify(pdfEngineClientMock, never()).generatePDF(any(), any());
-        verify(receiptBlobClientMock, never()).savePdfToBlobStorage(any(), any());
+        verify(pdfEngineServiceMock, never()).generatePDFReceipt(any(), any());
+        verify(receiptBlobStorageMock, never()).saveToBlobStorage(any(), any());
     }
 
     @Test
@@ -309,8 +285,8 @@ class GenerateCartReceiptPdfServiceImplTest {
         assertEquals(ALREADY_CREATED, result.getPayerMetadata().getStatusCode());
 
         verify(buildTemplateServiceMock, never()).buildCartTemplate(anyList(), anyBoolean(), anyString(), anyString(), anyMap());
-        verify(pdfEngineClientMock, never()).generatePDF(any(), any());
-        verify(receiptBlobClientMock, never()).savePdfToBlobStorage(any(), any());
+        verify(pdfEngineServiceMock, never()).generatePDFReceipt(any(), any());
+        verify(receiptBlobStorageMock, never()).saveToBlobStorage(any(), any());
     }
 
     @Test
@@ -318,10 +294,10 @@ class GenerateCartReceiptPdfServiceImplTest {
     void generateCartReceiptsDifferentDebtorPayerAndPayerReceiptAlreadyCreatedSuccess() {
         doReturn(new ReceiptPDFTemplate())
                 .when(buildTemplateServiceMock).buildCartTemplate(anyList(), anyBoolean(), anyString(), anyString(), anyMap());
-        doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdf.getPath()))
-                .when(pdfEngineClientMock).generatePDF(any(), any());
-        doReturn(getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.CREATED.value()))
-                .when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
+        doReturn(getPdfEngineResponse())
+                .when(pdfEngineServiceMock).generatePDFReceipt(any(), any());
+        doReturn(getBlobStorageResponse())
+                .when(receiptBlobStorageMock).saveToBlobStorage(any(), anyString());
 
         int totalNotice = 2;
         List<BizEvent> bizEventList = getBizEventList(totalNotice);
@@ -352,8 +328,8 @@ class GenerateCartReceiptPdfServiceImplTest {
         assertEquals(ALREADY_CREATED, result.getPayerMetadata().getStatusCode());
 
         verify(buildTemplateServiceMock, times(totalNotice)).buildCartTemplate(anyList(), anyBoolean(), anyString(), anyString(), anyMap());
-        verify(pdfEngineClientMock, times(totalNotice)).generatePDF(any(), any());
-        verify(receiptBlobClientMock, times(totalNotice)).savePdfToBlobStorage(any(), any());
+        verify(pdfEngineServiceMock, times(totalNotice)).generatePDFReceipt(any(), any());
+        verify(receiptBlobStorageMock, times(totalNotice)).saveToBlobStorage(any(), any());
     }
 
     @Test
@@ -361,12 +337,11 @@ class GenerateCartReceiptPdfServiceImplTest {
     void generateCartReceiptsPayerNullFailPDFEngineCallReturn500() {
         doReturn(new ReceiptPDFTemplate())
                 .when(buildTemplateServiceMock).buildCartTemplate(anyList(), anyBoolean(), anyString(), anyString(), anyMap());
-        doReturn(
-                getPdfEngineResponse(HttpStatus.SC_INTERNAL_SERVER_ERROR, ""),
-                getPdfEngineResponse(HttpStatus.SC_OK, outputPdf.getPath())
-        ).when(pdfEngineClientMock).generatePDF(any(), any());
-        doReturn(getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.CREATED.value()))
-                .when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
+        doThrow(new GeneratePDFException(ERROR_MESSAGE, HttpStatus.SC_INTERNAL_SERVER_ERROR))
+                .doReturn(getPdfEngineResponse())
+                .when(pdfEngineServiceMock).generatePDFReceipt(any(), any());
+        doReturn(getBlobStorageResponse())
+                .when(receiptBlobStorageMock).saveToBlobStorage(any(), anyString());
 
         int totalNotice = 2;
         List<BizEvent> bizEventList = getBizEventList(totalNotice);
@@ -400,8 +375,8 @@ class GenerateCartReceiptPdfServiceImplTest {
         assertNull(result.getPayerMetadata());
 
         verify(buildTemplateServiceMock, times(totalNotice)).buildCartTemplate(anyList(), anyBoolean(), anyString(), anyString(), anyMap());
-        verify(pdfEngineClientMock, times(totalNotice)).generatePDF(any(), any());
-        verify(receiptBlobClientMock, times(1)).savePdfToBlobStorage(any(), any());
+        verify(pdfEngineServiceMock, times(totalNotice)).generatePDFReceipt(any(), any());
+        verify(receiptBlobStorageMock, times(1)).saveToBlobStorage(any(), any());
     }
 
     @Test
@@ -410,10 +385,10 @@ class GenerateCartReceiptPdfServiceImplTest {
         doThrow(new TemplateDataMappingException("error message", ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode()))
                 .doReturn(new ReceiptPDFTemplate())
                 .when(buildTemplateServiceMock).buildCartTemplate(anyList(), anyBoolean(), anyString(), anyString(), anyMap());
-        doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdf.getPath()))
-                .when(pdfEngineClientMock).generatePDF(any(), any());
-        doReturn(getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.CREATED.value()))
-                .when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
+        doReturn(getPdfEngineResponse())
+                .when(pdfEngineServiceMock).generatePDFReceipt(any(), any());
+        doReturn(getBlobStorageResponse())
+                .when(receiptBlobStorageMock).saveToBlobStorage(any(), anyString());
 
         int totalNotice = 2;
         List<BizEvent> bizEventList = getBizEventList(totalNotice);
@@ -447,8 +422,8 @@ class GenerateCartReceiptPdfServiceImplTest {
         assertNull(result.getPayerMetadata());
 
         verify(buildTemplateServiceMock, times(totalNotice)).buildCartTemplate(anyList(), anyBoolean(), anyString(), anyString(), anyMap());
-        verify(pdfEngineClientMock, times(1)).generatePDF(any(), any());
-        verify(receiptBlobClientMock, times(1)).savePdfToBlobStorage(any(), any());
+        verify(pdfEngineServiceMock, times(1)).generatePDFReceipt(any(), any());
+        verify(receiptBlobStorageMock, times(1)).saveToBlobStorage(any(), any());
     }
 
     @Test
@@ -456,11 +431,11 @@ class GenerateCartReceiptPdfServiceImplTest {
     void generateCartReceiptsPayerNullFailSaveToBlobStorageThrowsException() {
         doReturn(new ReceiptPDFTemplate())
                 .when(buildTemplateServiceMock).buildCartTemplate(anyList(), anyBoolean(), anyString(), anyString(), anyMap());
-        doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdf.getPath()))
-                .when(pdfEngineClientMock).generatePDF(any(), any());
-        doThrow(RuntimeException.class)
-                .doReturn(getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.CREATED.value()))
-                .when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
+        doReturn(getPdfEngineResponse())
+                .when(pdfEngineServiceMock).generatePDFReceipt(any(), any());
+        doThrow(new SavePDFToBlobException(ERROR_MESSAGE, ReasonErrorCode.ERROR_BLOB_STORAGE.getCode()))
+                .doReturn(getBlobStorageResponse())
+                .when(receiptBlobStorageMock).saveToBlobStorage(any(), anyString());
 
         int totalNotice = 2;
         List<BizEvent> bizEventList = getBizEventList(totalNotice);
@@ -494,56 +469,8 @@ class GenerateCartReceiptPdfServiceImplTest {
         assertNull(result.getPayerMetadata());
 
         verify(buildTemplateServiceMock, times(totalNotice)).buildCartTemplate(anyList(), anyBoolean(), anyString(), anyString(), anyMap());
-        verify(pdfEngineClientMock, times(totalNotice)).generatePDF(any(), any());
-        verify(receiptBlobClientMock, times(totalNotice)).savePdfToBlobStorage(any(), any());
-    }
-
-    @Test
-    @SneakyThrows
-    void generateCartReceiptsPayerNullFailSaveToBlobStorageReturn500() {
-        doReturn(new ReceiptPDFTemplate())
-                .when(buildTemplateServiceMock).buildCartTemplate(anyList(), anyBoolean(), anyString(), anyString(), anyMap());
-        doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdf.getPath()))
-                .when(pdfEngineClientMock).generatePDF(any(), any());
-        doReturn(
-                getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.INTERNAL_SERVER_ERROR.value()),
-                getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.CREATED.value())
-        ).when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
-
-        int totalNotice = 2;
-        List<BizEvent> bizEventList = getBizEventList(totalNotice);
-        CartForReceipt cartForReceipt = buildCartForReceiptWithoutMetadata(
-                null,
-                DEBTOR_FISCAL_CODE,
-                totalNotice
-        );
-
-        PdfCartGeneration result =
-                assertDoesNotThrow(() -> sut.generateCartReceipts(cartForReceipt, bizEventList, WORKING_DIR_PATH));
-
-        assertNotNull(result);
-        assertNotNull(result.getDebtorMetadataMap());
-        assertEquals(2, result.getDebtorMetadataMap().size());
-        result.getDebtorMetadataMap().forEach((key, debtorMetadata) -> {
-            if (key.equals(BIZ_EVENT_ID + 0)) {
-                assertNotNull(debtorMetadata.getErrorMessage());
-                assertNull(debtorMetadata.getDocumentName());
-                assertNull(debtorMetadata.getDocumentUrl());
-                assertEquals(ReasonErrorCode.ERROR_BLOB_STORAGE.getCode(), debtorMetadata.getStatusCode());
-            } else if (key.equals(BIZ_EVENT_ID + 1)) {
-                assertNull(debtorMetadata.getErrorMessage());
-                assertNotNull(debtorMetadata.getDocumentName());
-                assertNotNull(debtorMetadata.getDocumentUrl());
-                assertEquals(HttpStatus.SC_OK, debtorMetadata.getStatusCode());
-            } else {
-                fail();
-            }
-        });
-        assertNull(result.getPayerMetadata());
-
-        verify(buildTemplateServiceMock, times(totalNotice)).buildCartTemplate(anyList(), anyBoolean(), anyString(), anyString(), anyMap());
-        verify(pdfEngineClientMock, times(totalNotice)).generatePDF(any(), any());
-        verify(receiptBlobClientMock, times(totalNotice)).savePdfToBlobStorage(any(), any());
+        verify(pdfEngineServiceMock, times(totalNotice)).generatePDFReceipt(any(), any());
+        verify(receiptBlobStorageMock, times(totalNotice)).saveToBlobStorage(any(), any());
     }
 
     @Test
@@ -946,23 +873,18 @@ class GenerateCartReceiptPdfServiceImplTest {
         });
     }
 
-    private BlobStorageResponse getBlobStorageResponse(int status) {
-        BlobStorageResponse blobStorageResponse = new BlobStorageResponse();
-        blobStorageResponse.setStatusCode(status);
-        if (status == com.microsoft.azure.functions.HttpStatus.CREATED.value()) {
-            blobStorageResponse.setDocumentName("document");
-            blobStorageResponse.setDocumentUrl("url");
-        }
-        return blobStorageResponse;
+    private PdfMetadata getBlobStorageResponse() {
+        return PdfMetadata.builder()
+                .statusCode(HttpStatus.SC_OK)
+                .documentName("document name")
+                .documentUrl("document url")
+                .build();
     }
 
-    private PdfEngineResponse getPdfEngineResponse(int status, String pdfPath) {
+    private PdfEngineResponse getPdfEngineResponse() {
         PdfEngineResponse pdfEngineResponse = new PdfEngineResponse();
-        pdfEngineResponse.setTempPdfPath(pdfPath);
-        if (status != HttpStatus.SC_OK) {
-            pdfEngineResponse.setErrorMessage("error");
-        }
-        pdfEngineResponse.setStatusCode(status);
+        pdfEngineResponse.setTempPdfPath("pdfPath");
+        pdfEngineResponse.setStatusCode(HttpStatus.SC_OK);
         return pdfEngineResponse;
     }
 

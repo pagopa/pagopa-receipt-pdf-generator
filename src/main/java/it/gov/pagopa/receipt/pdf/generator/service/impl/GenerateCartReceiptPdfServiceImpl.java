@@ -1,10 +1,5 @@
 package it.gov.pagopa.receipt.pdf.generator.service.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import it.gov.pagopa.receipt.pdf.generator.client.PdfEngineClient;
-import it.gov.pagopa.receipt.pdf.generator.client.ReceiptBlobClient;
-import it.gov.pagopa.receipt.pdf.generator.client.impl.PdfEngineClientImpl;
-import it.gov.pagopa.receipt.pdf.generator.client.impl.ReceiptBlobClientImpl;
 import it.gov.pagopa.receipt.pdf.generator.entity.cart.CartForReceipt;
 import it.gov.pagopa.receipt.pdf.generator.entity.cart.CartPayment;
 import it.gov.pagopa.receipt.pdf.generator.entity.cart.Payload;
@@ -13,28 +8,20 @@ import it.gov.pagopa.receipt.pdf.generator.entity.receipt.ReasonError;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.ReceiptMetadata;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.enumeration.ReasonErrorCode;
 import it.gov.pagopa.receipt.pdf.generator.exception.CartReceiptGenerationNotToRetryException;
-import it.gov.pagopa.receipt.pdf.generator.exception.GeneratePDFException;
 import it.gov.pagopa.receipt.pdf.generator.exception.PDFReceiptGenerationException;
-import it.gov.pagopa.receipt.pdf.generator.exception.SavePDFToBlobException;
 import it.gov.pagopa.receipt.pdf.generator.model.CartInfo;
 import it.gov.pagopa.receipt.pdf.generator.model.PdfCartGeneration;
 import it.gov.pagopa.receipt.pdf.generator.model.PdfMetadata;
-import it.gov.pagopa.receipt.pdf.generator.model.request.PdfEngineRequest;
-import it.gov.pagopa.receipt.pdf.generator.model.response.BlobStorageResponse;
 import it.gov.pagopa.receipt.pdf.generator.model.response.PdfEngineResponse;
 import it.gov.pagopa.receipt.pdf.generator.model.template.ReceiptPDFTemplate;
 import it.gov.pagopa.receipt.pdf.generator.service.BuildTemplateService;
 import it.gov.pagopa.receipt.pdf.generator.service.GenerateCartReceiptPdfService;
-import it.gov.pagopa.receipt.pdf.generator.utils.ObjectMapperUtils;
-import lombok.Setter;
+import it.gov.pagopa.receipt.pdf.generator.service.PdfEngineService;
+import it.gov.pagopa.receipt.pdf.generator.service.ReceiptBlobStorageService;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.net.URL;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -43,6 +30,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static it.gov.pagopa.receipt.pdf.generator.utils.ReceiptGeneratorUtils.receiptAlreadyCreated;
 
 public class GenerateCartReceiptPdfServiceImpl implements GenerateCartReceiptPdfService {
 
@@ -55,26 +44,23 @@ public class GenerateCartReceiptPdfServiceImpl implements GenerateCartReceiptPdf
 
     public static final int ALREADY_CREATED = 208;
 
-    private final PdfEngineClient pdfEngineClient;
-    private final ReceiptBlobClient receiptBlobClient;
+    private final PdfEngineService pdfEngineService;
+    private final ReceiptBlobStorageService receiptBlobStorageService;
     private final BuildTemplateService buildTemplateService;
-    @Setter
-    private long minFileLength = Long.parseLong(
-            System.getenv().getOrDefault("MIN_PDF_LENGTH", "10000"));
 
     public GenerateCartReceiptPdfServiceImpl() {
-        this.pdfEngineClient = PdfEngineClientImpl.getInstance();
-        this.receiptBlobClient = ReceiptBlobClientImpl.getInstance();
+        this.pdfEngineService = new PdfEngineServiceImpl();
+        this.receiptBlobStorageService = new ReceiptBlobStorageServiceImpl();
         this.buildTemplateService = new BuildTemplateServiceImpl();
     }
 
     GenerateCartReceiptPdfServiceImpl(
-            PdfEngineClient pdfEngineClient,
-            ReceiptBlobClient receiptBlobClient,
+            PdfEngineService pdfEngineService,
+            ReceiptBlobStorageService receiptBlobStorageService,
             BuildTemplateService buildTemplateService
     ) {
-        this.pdfEngineClient = pdfEngineClient;
-        this.receiptBlobClient = receiptBlobClient;
+        this.pdfEngineService = pdfEngineService;
+        this.receiptBlobStorageService = receiptBlobStorageService;
         this.buildTemplateService = buildTemplateService;
     }
 
@@ -92,19 +78,9 @@ public class GenerateCartReceiptPdfServiceImpl implements GenerateCartReceiptPdf
         String payerCF = payload.getPayerFiscalCode();
         List<CartPayment> cart = payload.getCart();
 
-        Map<String, CartInfo> cartInfoMap = cart.stream()
-                .collect(Collectors.toMap(
-                        CartPayment::getBizEventId,
-                        cp -> CartInfo.builder()
-                                .debtorFiscalCode(cp.getDebtorFiscalCode())
-                                .subject(cp.getSubject())
-                                .build()
-                ));
-        Map<String, BizEvent> bizEventMap = listOfBizEvents.stream()
-                .collect(Collectors.toMap(
-                        BizEvent::getId,
-                        Function.identity()
-                ));
+        // group data for easy access during generation
+        Map<String, CartInfo> cartInfoMap = groupCartInfoByBizEventId(cart);
+        Map<String, BizEvent> bizEventMap = mapBizEventListById(listOfBizEvents);
 
         if (payerCF != null) {
             if (receiptAlreadyCreated(payload.getMdAttachPayer())) {
@@ -212,18 +188,6 @@ public class GenerateCartReceiptPdfServiceImpl implements GenerateCartReceiptPdf
         return result;
     }
 
-    private boolean isDebtorFiscalCodeInvalid(String debtorFiscalCode, Payload payload) {
-        return ANONIMO.equals(debtorFiscalCode) || debtorFiscalCode.equals(payload.getPayerFiscalCode());
-    }
-
-    private boolean hasCartReceiptGenerationNotRetriableError(
-            PdfMetadata payerMetadata,
-            boolean debtorHasNotToRetryError
-    ) {
-        return (payerMetadata != null && payerMetadata.getStatusCode() == ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode())
-                || debtorHasNotToRetryError;
-    }
-
     private PdfMetadata generateAndSavePDFReceipt(
             List<BizEvent> listOfBizEvents,
             boolean requestedByDebtor,
@@ -241,8 +205,8 @@ public class GenerateCartReceiptPdfServiceImpl implements GenerateCartReceiptPdf
                     cartInfoMap
             );
             String blobName = buildBlobName(requestedByDebtor, eventId);
-            PdfEngineResponse pdfEngineResponse = generatePDFReceipt(template, workingDirPath);
-            return saveToBlobStorage(pdfEngineResponse, blobName);
+            PdfEngineResponse pdfEngineResponse = this.pdfEngineService.generatePDFReceipt(template, workingDirPath);
+            return this.receiptBlobStorageService.saveToBlobStorage(pdfEngineResponse, blobName);
         } catch (PDFReceiptGenerationException e) {
             logger.error("An error occurred when generating or saving the PDF cart receipt with eventId {}", eventId, e);
             return PdfMetadata.builder().statusCode(e.getStatusCode()).errorMessage(e.getMessage()).build();
@@ -255,74 +219,16 @@ public class GenerateCartReceiptPdfServiceImpl implements GenerateCartReceiptPdf
         return String.format("%s-%s-%s-%s", TEMPLATE_PREFIX, dateFormatted, eventId, templateSuffix);
     }
 
-    private PdfMetadata saveToBlobStorage(
-            PdfEngineResponse pdfEngineResponse,
-            String blobName
-    ) throws SavePDFToBlobException {
-        String tempPdfPath = pdfEngineResponse.getTempPdfPath();
-
-        if (new File(tempPdfPath).length() < minFileLength) {
-            throw new SavePDFToBlobException("Minimum file size not reached", ReasonErrorCode.ERROR_BLOB_STORAGE.getCode());
-        }
-
-        BlobStorageResponse blobStorageResponse;
-        //Save to Blob Storage
-        try (BufferedInputStream pdfStream = new BufferedInputStream(new FileInputStream(tempPdfPath))) {
-            blobStorageResponse = this.receiptBlobClient.savePdfToBlobStorage(pdfStream, blobName);
-        } catch (Exception e) {
-            throw new SavePDFToBlobException("Error saving pdf to blob storage", ReasonErrorCode.ERROR_BLOB_STORAGE.getCode(), e);
-        }
-
-        if (blobStorageResponse.getStatusCode() != com.microsoft.azure.functions.HttpStatus.CREATED.value()) {
-            String errMsg = String.format("Error saving pdf to blob storage, storage responded with status %s",
-                    blobStorageResponse.getStatusCode());
-            throw new SavePDFToBlobException(errMsg, ReasonErrorCode.ERROR_BLOB_STORAGE.getCode());
-        }
-
-        //Update PDF metadata
-        return PdfMetadata.builder()
-                .documentName(blobStorageResponse.getDocumentName())
-                .documentUrl(blobStorageResponse.getDocumentUrl())
-                .statusCode(HttpStatus.SC_OK)
-                .build();
+    private boolean isDebtorFiscalCodeInvalid(String debtorFiscalCode, Payload payload) {
+        return ANONIMO.equals(debtorFiscalCode) || debtorFiscalCode.equals(payload.getPayerFiscalCode());
     }
 
-    private PdfEngineResponse generatePDFReceipt(
-            ReceiptPDFTemplate template,
-            Path workingDirPath
-    ) throws PDFReceiptGenerationException {
-        PdfEngineRequest request = new PdfEngineRequest();
-
-        URL templateStream = GenerateCartReceiptPdfServiceImpl.class.getClassLoader().getResource("template.zip");
-        //Build the request
-        request.setTemplate(templateStream);
-        request.setData(parseTemplateDataToString(template));
-        request.setApplySignature(false);
-
-        PdfEngineResponse pdfEngineResponse = this.pdfEngineClient.generatePDF(request, workingDirPath);
-
-        if (pdfEngineResponse.getStatusCode() != HttpStatus.SC_OK) {
-            String errMsg = String.format("PDF-Engine response KO (%s): %s", pdfEngineResponse.getStatusCode(), pdfEngineResponse.getErrorMessage());
-            throw new GeneratePDFException(errMsg, pdfEngineResponse.getStatusCode());
-        }
-
-        return pdfEngineResponse;
-    }
-
-    private String parseTemplateDataToString(ReceiptPDFTemplate template) throws GeneratePDFException {
-        try {
-            return ObjectMapperUtils.writeValueAsString(template);
-        } catch (JsonProcessingException e) {
-            throw new GeneratePDFException("Error preparing input data for receipt PDF template", ReasonErrorCode.ERROR_PDF_ENGINE.getCode(), e);
-        }
-    }
-
-    private boolean receiptAlreadyCreated(ReceiptMetadata receiptMetadata) {
-        return receiptMetadata != null
-                && receiptMetadata.getUrl() != null
-                && receiptMetadata.getName() != null
-                && !receiptMetadata.getUrl().isEmpty()
-                && !receiptMetadata.getName().isEmpty();
+    private boolean hasCartReceiptGenerationNotRetriableError(
+            PdfMetadata payerMetadata,
+            boolean debtorHasNotToRetryError
+    ) {
+        return (payerMetadata != null && payerMetadata.getStatusCode() == ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode())
+                || debtorHasNotToRetryError;
     }
 
     private ReceiptMetadata buildReceiptMetadata(PdfMetadata payerMetadata) {
@@ -330,5 +236,24 @@ public class GenerateCartReceiptPdfServiceImpl implements GenerateCartReceiptPdf
         receiptMetadata.setName(payerMetadata.getDocumentName());
         receiptMetadata.setUrl(payerMetadata.getDocumentUrl());
         return receiptMetadata;
+    }
+
+    private Map<String, BizEvent> mapBizEventListById(List<BizEvent> listOfBizEvents) {
+        return listOfBizEvents.stream()
+                .collect(Collectors.toMap(
+                        BizEvent::getId,
+                        Function.identity()
+                ));
+    }
+
+    private Map<String, CartInfo> groupCartInfoByBizEventId(List<CartPayment> cart) {
+        return cart.stream()
+                .collect(Collectors.toMap(
+                        CartPayment::getBizEventId,
+                        cp -> CartInfo.builder()
+                                .debtorFiscalCode(cp.getDebtorFiscalCode())
+                                .subject(cp.getSubject())
+                                .build()
+                ));
     }
 }
