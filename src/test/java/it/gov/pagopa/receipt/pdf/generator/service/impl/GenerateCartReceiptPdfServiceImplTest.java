@@ -8,8 +8,10 @@ import it.gov.pagopa.receipt.pdf.generator.entity.cart.Payload;
 import it.gov.pagopa.receipt.pdf.generator.entity.event.BizEvent;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.ReceiptMetadata;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.enumeration.ReasonErrorCode;
+import it.gov.pagopa.receipt.pdf.generator.exception.CartReceiptGenerationNotToRetryException;
 import it.gov.pagopa.receipt.pdf.generator.exception.TemplateDataMappingException;
 import it.gov.pagopa.receipt.pdf.generator.model.PdfCartGeneration;
+import it.gov.pagopa.receipt.pdf.generator.model.PdfMetadata;
 import it.gov.pagopa.receipt.pdf.generator.model.response.BlobStorageResponse;
 import it.gov.pagopa.receipt.pdf.generator.model.response.PdfEngineResponse;
 import it.gov.pagopa.receipt.pdf.generator.model.template.ReceiptPDFTemplate;
@@ -30,7 +32,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static it.gov.pagopa.receipt.pdf.generator.service.impl.GenerateReceiptPdfServiceImpl.ALREADY_CREATED;
 import static it.gov.pagopa.receipt.pdf.generator.utils.ObjectMapperUtilsTest.getBizEventFromFile;
@@ -39,6 +43,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -54,8 +60,6 @@ import static org.mockito.Mockito.verify;
 @ExtendWith(MockitoExtension.class)
 class GenerateCartReceiptPdfServiceImplTest {
 
-    private static final String VALID_CF_DEBTOR = "JHNDOE00A01F205N";
-    private static final String VALID_CF_PAYER = "PLMGHN00A01F406L";
     private static final String BIZ_EVENT_ID = "062-a330-4210-9c67-465b7d641aVS";
     private static final String DEBTOR_DOCUMENT_NAME = "debtorDocumentName";
     private static final String DEBTOR_DOCUMENT_URL = "debtorDocumentUrl";
@@ -70,10 +74,8 @@ class GenerateCartReceiptPdfServiceImplTest {
     private static final String PAYER_FISCAL_CODE = "payerFiscalCode";
     private static final String DEBTOR_FISCAL_CODE = "debtorFiscalCode";
 
-    private static File outputPdfDebtor;
-    private static File tempDirectoryDebtor;
-    private static File outputPdfPayer;
-    private static File tempDirectoryPayer;
+    private static File outputPdf;
+    private static File tempDirectory;
 
     @Mock
     private PdfEngineClient pdfEngineClientMock;
@@ -88,24 +90,17 @@ class GenerateCartReceiptPdfServiceImplTest {
     void setUp() throws IOException {
         sut.setMinFileLength(0);
         Path basePath = Path.of("src/test/resources");
-        tempDirectoryDebtor = Files.createTempDirectory(basePath, "tempDebtor").toFile();
-        outputPdfDebtor = File.createTempFile("outputDebtor", ".tmp", tempDirectoryDebtor);
-        tempDirectoryPayer = Files.createTempDirectory(basePath, "tempPayer").toFile();
-        outputPdfPayer = File.createTempFile("outputPayer", ".tmp", tempDirectoryPayer);
+        tempDirectory = Files.createTempDirectory(basePath, "temp").toFile();
+        outputPdf = File.createTempFile("output", ".tmp", tempDirectory);
     }
 
     @AfterEach
     void teardown() throws IOException {
-        if (tempDirectoryDebtor.exists()) {
-            FileUtils.deleteDirectory(tempDirectoryDebtor);
+        if (tempDirectory.exists()) {
+            FileUtils.deleteDirectory(tempDirectory);
         }
-        if (tempDirectoryPayer.exists()) {
-            FileUtils.deleteDirectory(tempDirectoryPayer);
-        }
-        assertFalse(tempDirectoryDebtor.exists());
-        assertFalse(outputPdfDebtor.exists());
-        assertFalse(tempDirectoryPayer.exists());
-        assertFalse(outputPdfPayer.exists());
+        assertFalse(tempDirectory.exists());
+        assertFalse(outputPdf.exists());
     }
 
     @Test
@@ -113,19 +108,17 @@ class GenerateCartReceiptPdfServiceImplTest {
     void generateCartReceiptsPayerNullSuccess() {
         doReturn(new ReceiptPDFTemplate())
                 .when(buildTemplateServiceMock).buildCartTemplate(anyList(), anyBoolean(), anyString(), anyString(), anyMap());
-        doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdfDebtor.getPath()))
+        doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdf.getPath()))
                 .when(pdfEngineClientMock).generatePDF(any(), any());
         doReturn(getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.CREATED.value()))
                 .when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
 
         int totalNotice = 2;
         List<BizEvent> bizEventList = getBizEventList(totalNotice);
-        CartForReceipt cartForReceipt = getCartForReceipt(
+        CartForReceipt cartForReceipt = buildCartForReceiptWithoutMetadata(
                 null,
                 DEBTOR_FISCAL_CODE,
-                totalNotice,
-                false,
-                false
+                totalNotice
         );
 
         PdfCartGeneration result =
@@ -152,19 +145,17 @@ class GenerateCartReceiptPdfServiceImplTest {
     void generateCartReceiptsSameDebtorPayerSuccess() {
         doReturn(new ReceiptPDFTemplate())
                 .when(buildTemplateServiceMock).buildCartTemplate(anyList(), anyBoolean(), anyString(), anyString(), anyMap());
-        doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdfDebtor.getPath()))
+        doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdf.getPath()))
                 .when(pdfEngineClientMock).generatePDF(any(), any());
         doReturn(getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.CREATED.value()))
                 .when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
 
         int totalNotice = 2;
         List<BizEvent> bizEventList = getBizEventList(totalNotice);
-        CartForReceipt cartForReceipt = getCartForReceipt(
+        CartForReceipt cartForReceipt = buildCartForReceiptWithoutMetadata(
                 PAYER_FISCAL_CODE,
                 PAYER_FISCAL_CODE,
-                totalNotice,
-                false,
-                false
+                totalNotice
         );
 
         PdfCartGeneration result =
@@ -188,19 +179,17 @@ class GenerateCartReceiptPdfServiceImplTest {
     void generateCartReceiptsDifferentDebtorPayerSuccess() {
         doReturn(new ReceiptPDFTemplate())
                 .when(buildTemplateServiceMock).buildCartTemplate(anyList(), anyBoolean(), anyString(), anyString(), anyMap());
-        doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdfDebtor.getPath()))
+        doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdf.getPath()))
                 .when(pdfEngineClientMock).generatePDF(any(), any());
         doReturn(getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.CREATED.value()))
                 .when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
 
         int totalNotice = 2;
         List<BizEvent> bizEventList = getBizEventList(totalNotice);
-        CartForReceipt cartForReceipt = getCartForReceipt(
+        CartForReceipt cartForReceipt = buildCartForReceiptWithoutMetadata(
                 PAYER_FISCAL_CODE,
                 DEBTOR_FISCAL_CODE,
-                totalNotice,
-                false,
-                false
+                totalNotice
         );
 
         PdfCartGeneration result =
@@ -234,19 +223,17 @@ class GenerateCartReceiptPdfServiceImplTest {
     void generateCartReceiptsDifferentDebtorPayerAndDebtorAnonimoSuccess() {
         doReturn(new ReceiptPDFTemplate())
                 .when(buildTemplateServiceMock).buildCartTemplate(anyList(), anyBoolean(), anyString(), anyString(), anyMap());
-        doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdfDebtor.getPath()))
+        doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdf.getPath()))
                 .when(pdfEngineClientMock).generatePDF(any(), any());
         doReturn(getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.CREATED.value()))
                 .when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
 
         int totalNotice = 2;
         List<BizEvent> bizEventList = getBizEventList(totalNotice);
-        CartForReceipt cartForReceipt = getCartForReceipt(
+        CartForReceipt cartForReceipt = buildCartForReceiptWithoutMetadata(
                 PAYER_FISCAL_CODE,
                 "ANONIMO",
-                totalNotice,
-                false,
-                false
+                totalNotice
         );
 
         PdfCartGeneration result =
@@ -270,7 +257,7 @@ class GenerateCartReceiptPdfServiceImplTest {
     void generateCartReceiptsPayerNullAndDebtorReceiptAlreadyCreatedSuccess() {
         int totalNotice = 2;
         List<BizEvent> bizEventList = getBizEventList(totalNotice);
-        CartForReceipt cartForReceipt = getCartForReceipt(
+        CartForReceipt cartForReceipt = buildCartForReceipt(
                 null,
                 DEBTOR_FISCAL_CODE,
                 totalNotice,
@@ -302,7 +289,7 @@ class GenerateCartReceiptPdfServiceImplTest {
     void generateCartReceiptsSameDebtorPayerAndPayerReceiptAlreadyCreatedSuccess() {
         int totalNotice = 2;
         List<BizEvent> bizEventList = getBizEventList(totalNotice);
-        CartForReceipt cartForReceipt = getCartForReceipt(
+        CartForReceipt cartForReceipt = buildCartForReceipt(
                 PAYER_FISCAL_CODE,
                 PAYER_FISCAL_CODE,
                 totalNotice,
@@ -331,14 +318,14 @@ class GenerateCartReceiptPdfServiceImplTest {
     void generateCartReceiptsDifferentDebtorPayerAndPayerReceiptAlreadyCreatedSuccess() {
         doReturn(new ReceiptPDFTemplate())
                 .when(buildTemplateServiceMock).buildCartTemplate(anyList(), anyBoolean(), anyString(), anyString(), anyMap());
-        doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdfDebtor.getPath()))
+        doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdf.getPath()))
                 .when(pdfEngineClientMock).generatePDF(any(), any());
         doReturn(getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.CREATED.value()))
                 .when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
 
         int totalNotice = 2;
         List<BizEvent> bizEventList = getBizEventList(totalNotice);
-        CartForReceipt cartForReceipt = getCartForReceipt(
+        CartForReceipt cartForReceipt = buildCartForReceipt(
                 PAYER_FISCAL_CODE,
                 DEBTOR_FISCAL_CODE,
                 totalNotice,
@@ -376,19 +363,17 @@ class GenerateCartReceiptPdfServiceImplTest {
                 .when(buildTemplateServiceMock).buildCartTemplate(anyList(), anyBoolean(), anyString(), anyString(), anyMap());
         doReturn(
                 getPdfEngineResponse(HttpStatus.SC_INTERNAL_SERVER_ERROR, ""),
-                getPdfEngineResponse(HttpStatus.SC_OK, outputPdfDebtor.getPath())
+                getPdfEngineResponse(HttpStatus.SC_OK, outputPdf.getPath())
         ).when(pdfEngineClientMock).generatePDF(any(), any());
         doReturn(getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.CREATED.value()))
                 .when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
 
         int totalNotice = 2;
         List<BizEvent> bizEventList = getBizEventList(totalNotice);
-        CartForReceipt cartForReceipt = getCartForReceipt(
+        CartForReceipt cartForReceipt = buildCartForReceiptWithoutMetadata(
                 null,
                 DEBTOR_FISCAL_CODE,
-                totalNotice,
-                false,
-                false
+                totalNotice
         );
 
         PdfCartGeneration result =
@@ -425,19 +410,17 @@ class GenerateCartReceiptPdfServiceImplTest {
         doThrow(new TemplateDataMappingException("error message", ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode()))
                 .doReturn(new ReceiptPDFTemplate())
                 .when(buildTemplateServiceMock).buildCartTemplate(anyList(), anyBoolean(), anyString(), anyString(), anyMap());
-        doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdfDebtor.getPath()))
+        doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdf.getPath()))
                 .when(pdfEngineClientMock).generatePDF(any(), any());
         doReturn(getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.CREATED.value()))
                 .when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
 
         int totalNotice = 2;
         List<BizEvent> bizEventList = getBizEventList(totalNotice);
-        CartForReceipt cartForReceipt = getCartForReceipt(
+        CartForReceipt cartForReceipt = buildCartForReceiptWithoutMetadata(
                 null,
                 DEBTOR_FISCAL_CODE,
-                totalNotice,
-                false,
-                false
+                totalNotice
         );
 
         PdfCartGeneration result =
@@ -473,7 +456,7 @@ class GenerateCartReceiptPdfServiceImplTest {
     void generateCartReceiptsPayerNullFailSaveToBlobStorageThrowsException() {
         doReturn(new ReceiptPDFTemplate())
                 .when(buildTemplateServiceMock).buildCartTemplate(anyList(), anyBoolean(), anyString(), anyString(), anyMap());
-        doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdfDebtor.getPath()))
+        doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdf.getPath()))
                 .when(pdfEngineClientMock).generatePDF(any(), any());
         doThrow(RuntimeException.class)
                 .doReturn(getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.CREATED.value()))
@@ -481,12 +464,10 @@ class GenerateCartReceiptPdfServiceImplTest {
 
         int totalNotice = 2;
         List<BizEvent> bizEventList = getBizEventList(totalNotice);
-        CartForReceipt cartForReceipt = getCartForReceipt(
+        CartForReceipt cartForReceipt = buildCartForReceiptWithoutMetadata(
                 null,
                 DEBTOR_FISCAL_CODE,
-                totalNotice,
-                false,
-                false
+                totalNotice
         );
 
         PdfCartGeneration result =
@@ -522,7 +503,7 @@ class GenerateCartReceiptPdfServiceImplTest {
     void generateCartReceiptsPayerNullFailSaveToBlobStorageReturn500() {
         doReturn(new ReceiptPDFTemplate())
                 .when(buildTemplateServiceMock).buildCartTemplate(anyList(), anyBoolean(), anyString(), anyString(), anyMap());
-        doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdfDebtor.getPath()))
+        doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdf.getPath()))
                 .when(pdfEngineClientMock).generatePDF(any(), any());
         doReturn(
                 getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.INTERNAL_SERVER_ERROR.value()),
@@ -531,12 +512,10 @@ class GenerateCartReceiptPdfServiceImplTest {
 
         int totalNotice = 2;
         List<BizEvent> bizEventList = getBizEventList(totalNotice);
-        CartForReceipt cartForReceipt = getCartForReceipt(
+        CartForReceipt cartForReceipt = buildCartForReceiptWithoutMetadata(
                 null,
                 DEBTOR_FISCAL_CODE,
-                totalNotice,
-                false,
-                false
+                totalNotice
         );
 
         PdfCartGeneration result =
@@ -567,6 +546,406 @@ class GenerateCartReceiptPdfServiceImplTest {
         verify(receiptBlobClientMock, times(totalNotice)).savePdfToBlobStorage(any(), any());
     }
 
+    @Test
+    void verifySameDebtorPayerSuccess() {
+        int totalNotice = 2;
+        CartForReceipt cart = buildCartForReceiptWithoutMetadata(PAYER_FISCAL_CODE, PAYER_FISCAL_CODE, totalNotice);
+        PdfCartGeneration pdfCartGeneration = PdfCartGeneration.builder()
+                .payerMetadata(
+                        PdfMetadata.builder()
+                                .statusCode(HttpStatus.SC_OK)
+                                .documentName(PAYER_DOCUMENT_NAME)
+                                .documentUrl(PAYER_DOCUMENT_URL)
+                                .build())
+                .build();
+
+        Boolean result = assertDoesNotThrow(() -> sut.verifyAndUpdateCartReceipt(cart, pdfCartGeneration));
+
+        assertTrue(result);
+        assertNotNull(cart.getPayload());
+        assertNotNull(cart.getPayload().getMdAttachPayer());
+        assertEquals(PAYER_DOCUMENT_NAME, cart.getPayload().getMdAttachPayer().getName());
+        assertEquals(PAYER_DOCUMENT_URL, cart.getPayload().getMdAttachPayer().getUrl());
+        assertNull(cart.getPayload().getReasonErrPayer());
+        assertNotNull(cart.getPayload().getCart());
+        assertEquals(totalNotice, cart.getPayload().getCart().size());
+        cart.getPayload().getCart().forEach(cartPayment -> {
+            assertNull(cartPayment.getReasonErrDebtor());
+            assertNull(cartPayment.getMdAttach());
+        });
+    }
+
+    @Test
+    void verifyPayerNullSuccess() {
+        int totalNotice = 2;
+        CartForReceipt cart = buildCartForReceiptWithoutMetadata(null, DEBTOR_FISCAL_CODE, totalNotice);
+        PdfCartGeneration pdfCartGeneration = PdfCartGeneration.builder()
+                .debtorMetadataMap(buildDebtorMetadataMap(totalNotice, HttpStatus.SC_OK))
+                .build();
+
+        Boolean result = assertDoesNotThrow(() -> sut.verifyAndUpdateCartReceipt(cart, pdfCartGeneration));
+
+        assertTrue(result);
+        assertNotNull(cart.getPayload());
+        assertNull(cart.getPayload().getMdAttachPayer());
+        assertNull(cart.getPayload().getReasonErrPayer());
+        assertNotNull(cart.getPayload().getCart());
+        assertEquals(totalNotice, cart.getPayload().getCart().size());
+        cart.getPayload().getCart().forEach(cartPayment -> {
+            if (cartPayment.getBizEventId().equals(BIZ_EVENT_ID + 0)) {
+                assertNotNull(cartPayment.getMdAttach());
+                assertEquals(DEBTOR_DOCUMENT_NAME + 0, cartPayment.getMdAttach().getName());
+                assertEquals(DEBTOR_DOCUMENT_URL + 0, cartPayment.getMdAttach().getUrl());
+                assertNull(cartPayment.getReasonErrDebtor());
+            } else if (cartPayment.getBizEventId().equals(BIZ_EVENT_ID + 1)) {
+                assertNotNull(cartPayment.getMdAttach());
+                assertEquals(DEBTOR_DOCUMENT_NAME + 1, cartPayment.getMdAttach().getName());
+                assertEquals(DEBTOR_DOCUMENT_URL + 1, cartPayment.getMdAttach().getUrl());
+                assertNull(cartPayment.getReasonErrDebtor());
+            } else {
+                fail();
+            }
+        });
+    }
+
+    @Test
+    void verifyDifferentDebtorPayerSuccess() {
+        int totalNotice = 2;
+        CartForReceipt cart = buildCartForReceiptWithoutMetadata(PAYER_FISCAL_CODE, DEBTOR_FISCAL_CODE, totalNotice);
+        PdfCartGeneration pdfCartGeneration = PdfCartGeneration.builder()
+                .debtorMetadataMap(buildDebtorMetadataMap(totalNotice, HttpStatus.SC_OK))
+                .payerMetadata(
+                        PdfMetadata.builder()
+                                .statusCode(HttpStatus.SC_OK)
+                                .documentName(PAYER_DOCUMENT_NAME)
+                                .documentUrl(PAYER_DOCUMENT_URL)
+                                .build())
+                .build();
+
+        Boolean result = assertDoesNotThrow(() -> sut.verifyAndUpdateCartReceipt(cart, pdfCartGeneration));
+
+        assertTrue(result);
+        assertNotNull(cart.getPayload());
+        assertNotNull(cart.getPayload().getMdAttachPayer());
+        assertEquals(PAYER_DOCUMENT_NAME, cart.getPayload().getMdAttachPayer().getName());
+        assertEquals(PAYER_DOCUMENT_URL, cart.getPayload().getMdAttachPayer().getUrl());
+        assertNull(cart.getPayload().getReasonErrPayer());
+        assertEquals(totalNotice, cart.getPayload().getCart().size());
+        cart.getPayload().getCart().forEach(cartPayment -> {
+            if (cartPayment.getBizEventId().equals(BIZ_EVENT_ID + 0)) {
+                assertNotNull(cartPayment.getMdAttach());
+                assertEquals(DEBTOR_DOCUMENT_NAME + 0, cartPayment.getMdAttach().getName());
+                assertEquals(DEBTOR_DOCUMENT_URL + 0, cartPayment.getMdAttach().getUrl());
+                assertNull(cartPayment.getReasonErrDebtor());
+            } else if (cartPayment.getBizEventId().equals(BIZ_EVENT_ID + 1)) {
+                assertNotNull(cartPayment.getMdAttach());
+                assertEquals(DEBTOR_DOCUMENT_NAME + 1, cartPayment.getMdAttach().getName());
+                assertEquals(DEBTOR_DOCUMENT_URL + 1, cartPayment.getMdAttach().getUrl());
+                assertNull(cartPayment.getReasonErrDebtor());
+            } else {
+                fail();
+            }
+        });
+    }
+
+    @Test
+    void verifySameDebtorPayerFailPayerMetadataNull() {
+        int totalNotice = 2;
+        CartForReceipt cart = buildCartForReceiptWithoutMetadata(PAYER_FISCAL_CODE, PAYER_FISCAL_CODE, totalNotice);
+        PdfCartGeneration pdfCartGeneration = PdfCartGeneration.builder()
+                .payerMetadata(null)
+                .build();
+
+        Boolean result = assertDoesNotThrow(() -> sut.verifyAndUpdateCartReceipt(cart, pdfCartGeneration));
+
+        assertFalse(result);
+        assertNotNull(cart.getPayload());
+        assertNull(cart.getPayload().getMdAttachPayer());
+        assertNull(cart.getPayload().getReasonErrPayer());
+        assertEquals(totalNotice, cart.getPayload().getCart().size());
+        cart.getPayload().getCart().forEach(cartPayment -> {
+            assertNull(cartPayment.getMdAttach());
+            assertNull(cartPayment.getReasonErrDebtor());
+        });
+    }
+
+    @Test
+    void verifySameDebtorPayerSuccessPayerAlreadyCreated() {
+        int totalNotice = 2;
+        CartForReceipt cart = buildCartForReceipt(
+                PAYER_FISCAL_CODE,
+                PAYER_FISCAL_CODE,
+                totalNotice,
+                false,
+                true
+        );
+        PdfCartGeneration pdfCartGeneration = PdfCartGeneration.builder()
+                .payerMetadata(
+                        PdfMetadata.builder()
+                                .statusCode(ALREADY_CREATED)
+                                .build())
+                .build();
+
+        Boolean result = assertDoesNotThrow(() -> sut.verifyAndUpdateCartReceipt(cart, pdfCartGeneration));
+
+        assertTrue(result);
+        assertNotNull(cart.getPayload());
+        assertNotNull(cart.getPayload().getMdAttachPayer());
+        assertEquals(RECEIPT_METADATA_ORIGINAL_NAME, cart.getPayload().getMdAttachPayer().getName());
+        assertEquals(RECEIPT_METADATA_ORIGINAL_URL, cart.getPayload().getMdAttachPayer().getUrl());
+        assertNull(cart.getPayload().getReasonErrPayer());
+        assertEquals(totalNotice, cart.getPayload().getCart().size());
+        cart.getPayload().getCart().forEach(cartPayment -> {
+            assertNull(cartPayment.getMdAttach());
+            assertNull(cartPayment.getReasonErrDebtor());
+        });
+    }
+
+    @Test
+    void verifySameDebtorPayerFailReceiptGenerationInError() {
+        int totalNotice = 2;
+        CartForReceipt cart = buildCartForReceiptWithoutMetadata(PAYER_FISCAL_CODE, PAYER_FISCAL_CODE, totalNotice);
+        PdfCartGeneration pdfCartGeneration = PdfCartGeneration.builder()
+                .payerMetadata(
+                        PdfMetadata.builder()
+                                .statusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR)
+                                .errorMessage(ERROR_MESSAGE)
+                                .build())
+                .build();
+
+        Boolean result = assertDoesNotThrow(() -> sut.verifyAndUpdateCartReceipt(cart, pdfCartGeneration));
+
+        assertFalse(result);
+        assertNotNull(cart.getPayload());
+        assertNull(cart.getPayload().getMdAttachPayer());
+        assertNotNull(cart.getPayload().getReasonErrPayer());
+        assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, cart.getPayload().getReasonErrPayer().getCode());
+        assertEquals(ERROR_MESSAGE, cart.getPayload().getReasonErrPayer().getMessage());
+        assertEquals(totalNotice, cart.getPayload().getCart().size());
+        cart.getPayload().getCart().forEach(cartPayment -> {
+            assertNull(cartPayment.getMdAttach());
+            assertNull(cartPayment.getReasonErrDebtor());
+        });
+    }
+
+    @Test
+    void verifySameDebtorPayerFailThrowsReceiptGenerationNotToRetryException() {
+        int totalNotice = 2;
+        CartForReceipt cart = buildCartForReceiptWithoutMetadata(PAYER_FISCAL_CODE, PAYER_FISCAL_CODE, totalNotice);
+        PdfCartGeneration pdfCartGeneration = PdfCartGeneration.builder()
+                .payerMetadata(
+                        PdfMetadata.builder()
+                                .statusCode(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode())
+                                .errorMessage(ERROR_MESSAGE)
+                                .build())
+                .build();
+
+        CartReceiptGenerationNotToRetryException e = assertThrows(
+                CartReceiptGenerationNotToRetryException.class,
+                () -> sut.verifyAndUpdateCartReceipt(cart, pdfCartGeneration)
+        );
+
+        assertNotNull(e);
+        assertNotNull(cart.getPayload());
+        assertNull(cart.getPayload().getMdAttachPayer());
+        assertNotNull(cart.getPayload().getReasonErrPayer());
+        assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), cart.getPayload().getReasonErrPayer().getCode());
+        assertEquals(ERROR_MESSAGE, cart.getPayload().getReasonErrPayer().getMessage());
+        assertEquals(totalNotice, cart.getPayload().getCart().size());
+        cart.getPayload().getCart().forEach(cartPayment -> {
+            assertNull(cartPayment.getMdAttach());
+            assertNull(cartPayment.getReasonErrDebtor());
+        });
+    }
+
+    @Test
+    void verifyDifferentDebtorPayerFailDebtorMetadataNull() {
+        int totalNotice = 2;
+        CartForReceipt cart = buildCartForReceiptWithoutMetadata(
+                PAYER_FISCAL_CODE,
+                DEBTOR_FISCAL_CODE,
+                totalNotice
+        );
+        Map<String, PdfMetadata> debtorMetadataMap = new HashMap<>();
+        debtorMetadataMap.put(BIZ_EVENT_ID + 0, buildDebtorPdfMetadata(HttpStatus.SC_OK, 0));
+        debtorMetadataMap.put(BIZ_EVENT_ID + 1, null);
+        PdfCartGeneration pdfCartGeneration = PdfCartGeneration.builder()
+                .debtorMetadataMap(debtorMetadataMap)
+                .payerMetadata(
+                        PdfMetadata.builder()
+                                .statusCode(HttpStatus.SC_OK)
+                                .documentName(PAYER_DOCUMENT_NAME)
+                                .documentUrl(PAYER_DOCUMENT_URL)
+                                .build())
+                .build();
+
+        Boolean result = assertDoesNotThrow(() -> sut.verifyAndUpdateCartReceipt(cart, pdfCartGeneration));
+
+        assertFalse(result);
+        assertNotNull(cart.getPayload());
+        assertNotNull(cart.getPayload().getMdAttachPayer());
+        assertEquals(PAYER_DOCUMENT_NAME, cart.getPayload().getMdAttachPayer().getName());
+        assertEquals(PAYER_DOCUMENT_URL, cart.getPayload().getMdAttachPayer().getUrl());
+        assertNull(cart.getPayload().getReasonErrPayer());
+        assertEquals(totalNotice, cart.getPayload().getCart().size());
+        cart.getPayload().getCart().forEach(cartPayment -> {
+            if (cartPayment.getBizEventId().equals(BIZ_EVENT_ID + 0)) {
+                assertNotNull(cartPayment.getMdAttach());
+                assertEquals(DEBTOR_DOCUMENT_NAME + 0, cartPayment.getMdAttach().getName());
+                assertEquals(DEBTOR_DOCUMENT_URL + 0, cartPayment.getMdAttach().getUrl());
+                assertNull(cartPayment.getReasonErrDebtor());
+            } else if (cartPayment.getBizEventId().equals(BIZ_EVENT_ID + 1)) {
+                assertNull(cartPayment.getMdAttach());
+                assertNull(cartPayment.getReasonErrDebtor());
+            } else {
+                fail();
+            }
+        });
+    }
+
+    @Test
+    void verifyDifferentDebtorPayerSuccessDebtorAlreadyGenerated() {
+        int totalNotice = 2;
+        CartForReceipt cart = buildCartForReceipt(
+                PAYER_FISCAL_CODE,
+                DEBTOR_FISCAL_CODE,
+                totalNotice,
+                true,
+                false
+        );
+        PdfCartGeneration pdfCartGeneration = PdfCartGeneration.builder()
+                .debtorMetadataMap(buildDebtorMetadataMap(totalNotice, ALREADY_CREATED))
+                .payerMetadata(
+                        PdfMetadata.builder()
+                                .statusCode(HttpStatus.SC_OK)
+                                .documentName(PAYER_DOCUMENT_NAME)
+                                .documentUrl(PAYER_DOCUMENT_URL)
+                                .build())
+                .build();
+
+        Boolean result = assertDoesNotThrow(() -> sut.verifyAndUpdateCartReceipt(cart, pdfCartGeneration));
+
+        assertTrue(result);
+        assertNotNull(cart.getPayload());
+        assertNotNull(cart.getPayload().getMdAttachPayer());
+        assertEquals(PAYER_DOCUMENT_NAME, cart.getPayload().getMdAttachPayer().getName());
+        assertEquals(PAYER_DOCUMENT_URL, cart.getPayload().getMdAttachPayer().getUrl());
+        assertNull(cart.getPayload().getReasonErrPayer());
+        assertEquals(totalNotice, cart.getPayload().getCart().size());
+        cart.getPayload().getCart().forEach(cartPayment -> {
+            if (cartPayment.getBizEventId().equals(BIZ_EVENT_ID + 0)) {
+                assertNotNull(cartPayment.getMdAttach());
+                assertEquals(RECEIPT_METADATA_ORIGINAL_NAME + 0, cartPayment.getMdAttach().getName());
+                assertEquals(RECEIPT_METADATA_ORIGINAL_URL + 0, cartPayment.getMdAttach().getUrl());
+                assertNull(cartPayment.getReasonErrDebtor());
+            } else if (cartPayment.getBizEventId().equals(BIZ_EVENT_ID + 1)) {
+                assertNotNull(cartPayment.getMdAttach());
+                assertEquals(RECEIPT_METADATA_ORIGINAL_NAME + 1, cartPayment.getMdAttach().getName());
+                assertEquals(RECEIPT_METADATA_ORIGINAL_URL + 1, cartPayment.getMdAttach().getUrl());
+                assertNull(cartPayment.getReasonErrDebtor());
+            } else {
+                fail();
+            }
+        });
+    }
+
+    @Test
+    void verifyDifferentDebtorPayerFailDebtorGenerationError() {
+        int totalNotice = 2;
+        CartForReceipt cart = buildCartForReceiptWithoutMetadata(
+                PAYER_FISCAL_CODE,
+                DEBTOR_FISCAL_CODE,
+                totalNotice
+        );
+        Map<String, PdfMetadata> debtorMetadataMap = new HashMap<>();
+        debtorMetadataMap.put(BIZ_EVENT_ID + 0, buildDebtorPdfMetadata(HttpStatus.SC_OK, 0));
+        debtorMetadataMap.put(BIZ_EVENT_ID + 1, buildDebtorPdfMetadata(HttpStatus.SC_INTERNAL_SERVER_ERROR, 1));
+        PdfCartGeneration pdfCartGeneration = PdfCartGeneration.builder()
+                .debtorMetadataMap(debtorMetadataMap)
+                .payerMetadata(
+                        PdfMetadata.builder()
+                                .statusCode(HttpStatus.SC_OK)
+                                .documentName(PAYER_DOCUMENT_NAME)
+                                .documentUrl(PAYER_DOCUMENT_URL)
+                                .build())
+                .build();
+
+        Boolean result = assertDoesNotThrow(() -> sut.verifyAndUpdateCartReceipt(cart, pdfCartGeneration));
+
+        assertFalse(result);
+        assertNotNull(cart.getPayload());
+        assertNotNull(cart.getPayload().getMdAttachPayer());
+        assertEquals(PAYER_DOCUMENT_NAME, cart.getPayload().getMdAttachPayer().getName());
+        assertEquals(PAYER_DOCUMENT_URL, cart.getPayload().getMdAttachPayer().getUrl());
+        assertNull(cart.getPayload().getReasonErrPayer());
+        assertEquals(totalNotice, cart.getPayload().getCart().size());
+        cart.getPayload().getCart().forEach(cartPayment -> {
+            if (cartPayment.getBizEventId().equals(BIZ_EVENT_ID + 0)) {
+                assertNotNull(cartPayment.getMdAttach());
+                assertEquals(DEBTOR_DOCUMENT_NAME + 0, cartPayment.getMdAttach().getName());
+                assertEquals(DEBTOR_DOCUMENT_URL + 0, cartPayment.getMdAttach().getUrl());
+                assertNull(cartPayment.getReasonErrDebtor());
+            } else if (cartPayment.getBizEventId().equals(BIZ_EVENT_ID + 1)) {
+                assertNull(cartPayment.getMdAttach());
+                assertNotNull(cartPayment.getReasonErrDebtor());
+                assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, cartPayment.getReasonErrDebtor().getCode());
+                assertEquals(ERROR_MESSAGE + 1, cartPayment.getReasonErrDebtor().getMessage());
+            } else {
+                fail();
+            }
+        });
+    }
+
+    @Test
+    void verifyDifferentDebtorPayerFailThrowsReceiptGenerationNotToRetryException() {
+        int totalNotice = 2;
+        CartForReceipt cart = buildCartForReceiptWithoutMetadata(
+                PAYER_FISCAL_CODE,
+                DEBTOR_FISCAL_CODE,
+                totalNotice
+        );
+        Map<String, PdfMetadata> debtorMetadataMap = new HashMap<>();
+        debtorMetadataMap.put(BIZ_EVENT_ID + 0, buildDebtorPdfMetadata(HttpStatus.SC_OK, 0));
+        debtorMetadataMap.put(BIZ_EVENT_ID + 1, buildDebtorPdfMetadata(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), 1));
+        PdfCartGeneration pdfCartGeneration = PdfCartGeneration.builder()
+                .debtorMetadataMap(debtorMetadataMap)
+                .payerMetadata(
+                        PdfMetadata.builder()
+                                .statusCode(HttpStatus.SC_OK)
+                                .documentName(PAYER_DOCUMENT_NAME)
+                                .documentUrl(PAYER_DOCUMENT_URL)
+                                .build())
+                .build();
+
+        CartReceiptGenerationNotToRetryException e = assertThrows(
+                CartReceiptGenerationNotToRetryException.class,
+                () -> sut.verifyAndUpdateCartReceipt(cart, pdfCartGeneration)
+        );
+
+        assertNotNull(e);
+        assertNotNull(cart.getPayload());
+        assertNotNull(cart.getPayload().getMdAttachPayer());
+        assertEquals(PAYER_DOCUMENT_NAME, cart.getPayload().getMdAttachPayer().getName());
+        assertEquals(PAYER_DOCUMENT_URL, cart.getPayload().getMdAttachPayer().getUrl());
+        assertNull(cart.getPayload().getReasonErrPayer());
+        assertEquals(totalNotice, cart.getPayload().getCart().size());
+        cart.getPayload().getCart().forEach(cartPayment -> {
+            if (cartPayment.getBizEventId().equals(BIZ_EVENT_ID + 0)) {
+                assertNotNull(cartPayment.getMdAttach());
+                assertEquals(DEBTOR_DOCUMENT_NAME + 0, cartPayment.getMdAttach().getName());
+                assertEquals(DEBTOR_DOCUMENT_URL + 0, cartPayment.getMdAttach().getUrl());
+                assertNull(cartPayment.getReasonErrDebtor());
+            } else if (cartPayment.getBizEventId().equals(BIZ_EVENT_ID + 1)) {
+                assertNull(cartPayment.getMdAttach());
+                assertNotNull(cartPayment.getReasonErrDebtor());
+                assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), cartPayment.getReasonErrDebtor().getCode());
+                assertEquals(ERROR_MESSAGE + 1, cartPayment.getReasonErrDebtor().getMessage());
+            } else {
+                fail();
+            }
+        });
+    }
+
     private BlobStorageResponse getBlobStorageResponse(int status) {
         BlobStorageResponse blobStorageResponse = new BlobStorageResponse();
         blobStorageResponse.setStatusCode(status);
@@ -587,7 +966,21 @@ class GenerateCartReceiptPdfServiceImplTest {
         return pdfEngineResponse;
     }
 
-    private CartForReceipt getCartForReceipt(
+    private CartForReceipt buildCartForReceiptWithoutMetadata(
+            String payerFiscalCode,
+            String debtorFiscalCode,
+            int totalNotice
+    ) {
+        return buildCartForReceipt(
+                payerFiscalCode,
+                debtorFiscalCode,
+                totalNotice,
+                false,
+                false
+        );
+    }
+
+    private CartForReceipt buildCartForReceipt(
             String payerFiscalCode,
             String debtorFiscalCode,
             int totalNotice,
@@ -602,7 +995,7 @@ class GenerateCartReceiptPdfServiceImplTest {
                     .debtorFiscalCode(debtorFiscalCode)
                     .subject(SUBJECT + i)
                     .amount("10")
-                    .mdAttach(buildMetadata(debtorAlreadyCreated))
+                    .mdAttach(buildMetadata(debtorAlreadyCreated, i))
                     .build());
         }
 
@@ -612,7 +1005,7 @@ class GenerateCartReceiptPdfServiceImplTest {
                         Payload.builder()
                                 .payerFiscalCode(payerFiscalCode)
                                 .totalAmount("100")
-                                .mdAttachPayer(buildMetadata(payerAlreadyCreated))
+                                .mdAttachPayer(buildMetadata(payerAlreadyCreated, null))
                                 .cart(cartPayments)
                                 .build()
                 )
@@ -630,11 +1023,46 @@ class GenerateCartReceiptPdfServiceImplTest {
         return bizEventList;
     }
 
-    private ReceiptMetadata buildMetadata(boolean build) {
+    private Map<String, PdfMetadata> buildDebtorMetadataMap(int totalNotice, int statusCode) {
+        Map<String, PdfMetadata> debtorMetadataMap = new HashMap<>();
+        PdfMetadata pdfMetadata;
+
+        for (int i = 0; i < totalNotice; i++) {
+            String bizEvenId = BIZ_EVENT_ID + i;
+            pdfMetadata = buildDebtorPdfMetadata(statusCode, i);
+            debtorMetadataMap.put(
+                    bizEvenId,
+                    pdfMetadata
+            );
+        }
+        return debtorMetadataMap;
+    }
+
+    private PdfMetadata buildDebtorPdfMetadata(int statusCode, int index) {
+        PdfMetadata pdfMetadata;
+        if (statusCode == ALREADY_CREATED) {
+            pdfMetadata = PdfMetadata.builder().statusCode(ALREADY_CREATED).build();
+        } else if (statusCode == HttpStatus.SC_OK) {
+            pdfMetadata = PdfMetadata.builder()
+                    .statusCode(HttpStatus.SC_OK)
+                    .documentName(DEBTOR_DOCUMENT_NAME + index)
+                    .documentUrl(DEBTOR_DOCUMENT_URL + index)
+                    .build();
+        } else {
+            pdfMetadata = PdfMetadata.builder()
+                    .statusCode(statusCode)
+                    .errorMessage(ERROR_MESSAGE + index)
+                    .build();
+        }
+        return pdfMetadata;
+    }
+
+    private ReceiptMetadata buildMetadata(boolean build, Integer index) {
         if (build) {
+            String suffix = index != null ? String.valueOf(index) : "";
             return ReceiptMetadata.builder()
-                    .name(RECEIPT_METADATA_ORIGINAL_NAME)
-                    .url(RECEIPT_METADATA_ORIGINAL_URL)
+                    .name(RECEIPT_METADATA_ORIGINAL_NAME + suffix)
+                    .url(RECEIPT_METADATA_ORIGINAL_URL + suffix)
                     .build();
         }
         return null;

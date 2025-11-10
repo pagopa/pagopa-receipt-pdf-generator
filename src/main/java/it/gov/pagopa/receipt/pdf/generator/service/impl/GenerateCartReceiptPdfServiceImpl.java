@@ -181,7 +181,7 @@ public class GenerateCartReceiptPdfServiceImpl implements GenerateCartReceiptPdf
         Map<String, PdfMetadata> debtorMetadataMap = pdfCartGeneration.getDebtorMetadataMap();
         for (CartPayment cartPayment : payload.getCart()) {
             String debtorFiscalCode = cartPayment.getDebtorFiscalCode();
-            if (idDebtorFiscalCodeValid(debtorFiscalCode, payload)) {
+            if (isDebtorFiscalCodeInvalid(debtorFiscalCode, payload)) {
                 continue;
             }
             PdfMetadata debtorMetadata = debtorMetadataMap.get(cartPayment.getBizEventId());
@@ -212,16 +212,16 @@ public class GenerateCartReceiptPdfServiceImpl implements GenerateCartReceiptPdf
         return result;
     }
 
-    private boolean idDebtorFiscalCodeValid(String debtorFiscalCode, Payload payload) {
+    private boolean isDebtorFiscalCodeInvalid(String debtorFiscalCode, Payload payload) {
         return ANONIMO.equals(debtorFiscalCode) || debtorFiscalCode.equals(payload.getPayerFiscalCode());
     }
 
     private boolean hasCartReceiptGenerationNotRetriableError(
             PdfMetadata payerMetadata,
-            boolean debtortHasNotToRetryError
+            boolean debtorHasNotToRetryError
     ) {
         return (payerMetadata != null && payerMetadata.getStatusCode() == ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode())
-                || debtortHasNotToRetryError;
+                || debtorHasNotToRetryError;
     }
 
     private PdfMetadata generateAndSavePDFReceipt(
