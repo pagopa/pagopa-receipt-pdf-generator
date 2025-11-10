@@ -203,7 +203,7 @@ class ManageReceiptPoisonQueueTest {
         ReceiptQueueClientImpl queueMock = mock(ReceiptQueueClientImpl.class);
 
         ReceiptCosmosService receiptCosmosService = mock(ReceiptCosmosService.class);
-        when(receiptCosmosService.getReceipt(ID_TRANSACTION)).thenReturn(VALID_MULTIPLE_ITEM_RECEIPT);
+        when(receiptCosmosService.getReceipt(BIZ_EVENT_ID)).thenReturn(VALID_MULTIPLE_ITEM_RECEIPT);
 
         function = spy(new ManageReceiptPoisonQueue(receiptCosmosService, queueMock));
 
