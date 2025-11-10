@@ -64,7 +64,6 @@ public class CartReceiptsCosmosClientImpl implements CartReceiptsCosmosClient {
         } else {
             throw new CartNotFoundException("Document not found in the defined container");
         }
-
     }
 
     /**
@@ -76,5 +75,4 @@ public class CartReceiptsCosmosClientImpl implements CartReceiptsCosmosClient {
         CosmosContainer cosmosContainer = cosmosDatabase.getContainer(cartForReceiptContainerName);
         return cosmosContainer.upsertItem(receipt);
     }
-
 }
