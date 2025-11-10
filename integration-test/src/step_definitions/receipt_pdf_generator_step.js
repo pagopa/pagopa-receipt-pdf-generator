@@ -4,6 +4,10 @@ const { sleep, createEventsForQueue, createEventsForPoisonQueue, createErrorRece
 const { getDocumentByIdFromReceiptsDatastore, deleteDocumentFromErrorReceiptsDatastoreByBizEventId, deleteDocumentFromReceiptsDatastore, createDocumentInReceiptsDatastore, createDocumentInErrorReceiptsDatastore, deleteDocumentFromErrorReceiptsDatastore, getDocumentByBizEventIdFromErrorReceiptsDatastore } = require("./receipts_datastore_client");
 const { putMessageOnPoisonQueue, putMessageOnReceiptQueue } = require("./receipts_queue_client");
 const { receiptPDFExist } = require("./receipts_blob_storage_client");
+const {
+    getDocumentByIdFromCartDatastore, deleteDocumentFromCartsDatastoreByEventId, createDocumentInCartDatastore
+} = require("./cart_datastore_client");
+const { putMessageOnCartReceiptQueue } = require("./cart_queue_client");
 const STANDARD_NOTICE_NUMBER = "310391366991197059"
 const WISP_NOTICE_NUMBER = "348391366991197059"
 const IUV = "10391366991197059"
@@ -150,4 +154,26 @@ When('the error receipt has been properly stored on receipt-message-error datast
     // boundary time spent by azure function to process event
     await sleep(time);
     this.responseToCheck = await getDocumentByBizEventIdFromErrorReceiptsDatastore(this.errorReceiptId);
+});
+
+Given('a cart with id {string} and status {string} stored into cart datastore', async function(id, status) {
+    this.eventId = id;
+    // prior cancellation to avoid dirty cases
+    await deleteDocumentFromCartsDatastoreByEventId(this.eventId);
+
+    let cartStoreResponse = await createDocumentInCartDatastore(this.eventId, status);
+    this.receiptId = this.eventId;
+    assert.strictEqual(cartStoreResponse.statusCode, 201);
+});
+
+Given('a random biz event with id {string} enqueued on cart queue', async function(id) {
+    assert.strictEqual(this.eventId, id);
+    let listOfEvents = createEventsForQueue(this.eventId, null, null, STANDARD_NOTICE_NUMBER, IUV);
+    await putMessageOnReceiptQueue(listOfEvents);
+});
+
+Then('the cart datastore returns the cart', async function() {
+    assert.notStrictEqual(this.responseToCheck.resources.length, 0);
+    this.receiptId = this.responseToCheck.resources[0].id;
+    assert.strictEqual(this.responseToCheck.resources.length, 1);
 });

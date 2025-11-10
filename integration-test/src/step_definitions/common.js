@@ -227,5 +227,5 @@ const createErrorReceipt = (id, numberOfEvents) => {
 }
 
 module.exports = {
-	sleep, createReceipt, createEventsForPoisonQueue, createEventsForQueue, createErrorReceipt
+	sleep, createReceipt, createEventsForPoisonQueue, createEventsForQueue, createErrorReceipt, createCart
 }
