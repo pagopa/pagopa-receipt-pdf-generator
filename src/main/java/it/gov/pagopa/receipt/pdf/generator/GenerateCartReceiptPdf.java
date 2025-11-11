@@ -214,12 +214,10 @@ public class GenerateCartReceiptPdf {
     }
 
     private boolean allFiscalCodesAreNull(CartForReceipt cart) {
-        List<String> debtorFiscalCodes = cart.getPayload().getCart().stream()
-                .map(CartPayment::getDebtorFiscalCode)
-                .filter(Objects::isNull)
-                .toList();
+        boolean allDebtorFiscalCodeAreNull = cart.getPayload().getCart().stream()
+                .allMatch(cartPayment -> cartPayment.getDebtorFiscalCode() == null);
 
-        return debtorFiscalCodes.isEmpty() && cart.getPayload().getPayerFiscalCode() == null;
+        return allDebtorFiscalCodeAreNull && cart.getPayload().getPayerFiscalCode() == null;
     }
 
     private boolean isCartReceiptInInValidState(CartForReceipt cartForReceipt) {
