@@ -109,7 +109,6 @@ microservice-chart:
     COSMOS_RECEIPT_DB_NAME: "db"
     COSMOS_RECEIPT_CONTAINER_NAME: "receipts"
     CART_FOR_RECEIPT_CONTAINER_NAME: "cart-for-receipts"
-    CART_FOR_RECEIPT_MESSAGE_ERROR_CONTAINER_NAME: "receipts-message-errors"
     BLOB_STORAGE_ACCOUNT_ENDPOINT: "https://pagopadweureceiptsfnsa.blob.core.windows.net/"
     BLOB_STORAGE_CONTAINER_NAME: "pagopa-d-weu-receipts-azure-blob-receipt-st-attach"
     WORKING_DIRECTORY_PATH: "/temp"

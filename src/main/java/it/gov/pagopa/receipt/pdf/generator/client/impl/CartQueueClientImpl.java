@@ -21,8 +21,8 @@ public class CartQueueClientImpl implements CartQueueClient {
     private final QueueClient cartQueueClient;
 
     private CartQueueClientImpl() {
-        String cartQueueConnString = System.getenv("RECEIPT_QUEUE_CONN_STRING");
-        String cartQueueTopic = System.getenv("CART_QUEUE_TOPIC");
+        String cartQueueConnString = System.getenv("RECEIPTS_STORAGE_CONN_STRING");
+        String cartQueueTopic = System.getenv("CART_RECEIPT_QUEUE_TOPIC");
 
         this.cartQueueClient = new QueueClientBuilder()
                 .connectionString(cartQueueConnString)
