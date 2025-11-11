@@ -75,14 +75,14 @@ public class ManageReceiptPoisonQueue {
             String errorMessage,
             @CosmosDBOutput(
                     name = "ReceiptDatastore",
-                    databaseName = "db",
-                    containerName = "receipts",
+                    databaseName = "COSMOS_RECEIPT_DB_NAME",
+                    containerName = "CART_FOR_RECEIPT_CONTAINER_NAME",
                     connection = "COSMOS_RECEIPTS_CONN_STRING")
             OutputBinding<Receipt> receiptsOutputBinding,
             @CosmosDBOutput(
                     name = "ReceiptMessageErrorsDatastore",
-                    databaseName = "db",
-                    containerName = "receipts-message-errors",
+                    databaseName = "COSMOS_RECEIPT_DB_NAME",
+                    containerName = "CART_FOR_RECEIPT_MESSAGE_ERROR_CONTAINER_NAME",
                     connection = "COSMOS_RECEIPTS_CONN_STRING")
             OutputBinding<ReceiptError> receiptErrorOutputBinding,
             final ExecutionContext context) {

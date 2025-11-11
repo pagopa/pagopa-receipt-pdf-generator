@@ -113,8 +113,8 @@ public class GenerateReceiptPdf {
             String bizEventMessage,
             @CosmosDBOutput(
                     name = "ReceiptDatastore",
-                    databaseName = "db",
-                    containerName = "receipts",
+                    databaseName = "COSMOS_RECEIPT_DB_NAME",
+                    containerName = "COSMOS_RECEIPT_CONTAINER_NAME",
                     connection = "COSMOS_RECEIPTS_CONN_STRING")
             OutputBinding<Receipt> documentdb,
             final ExecutionContext context

@@ -109,8 +109,8 @@ public class GenerateCartReceiptPdf {
             String bizEventMessage,
             @CosmosDBOutput(
                     name = "CartReceiptDatastore",
-                    databaseName = "db",
-                    containerName = "cart-for-receipts",
+                    databaseName = "COSMOS_RECEIPT_DB_NAME",
+                    containerName = "CART_FOR_RECEIPT_CONTAINER_NAME",
                     connection = "COSMOS_RECEIPTS_CONN_STRING")
             OutputBinding<CartForReceipt> documentdb,
             final ExecutionContext context

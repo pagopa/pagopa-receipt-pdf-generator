@@ -67,8 +67,8 @@ public class RetryReviewedPoisonMessages {
     public void processRetryReviewedPoisonMessages(
             @CosmosDBTrigger(
                     name = "ReceiptErrorDatastore",
-                    databaseName = "db",
-                    containerName = "receipts-message-errors",
+                    databaseName = "COSMOS_RECEIPT_DB_NAME",
+                    containerName = "CART_FOR_RECEIPT_MESSAGE_ERROR_CONTAINER_NAME",
                     leaseContainerName = "receipts-message-errors-leases",
                     leaseContainerPrefix = "materialized",
                     createLeaseContainerIfNotExists = true,
@@ -77,8 +77,8 @@ public class RetryReviewedPoisonMessages {
             List<ReceiptError> items,
             @CosmosDBOutput(
                     name = "ReceiptMessageErrorsDatastoreOutput",
-                    databaseName = "db",
-                    containerName = "receipts-message-errors",
+                    databaseName = "COSMOS_RECEIPT_DB_NAME",
+                    containerName = "CART_FOR_RECEIPT_MESSAGE_ERROR_CONTAINER_NAME",
                     connection = "COSMOS_RECEIPTS_CONN_STRING")
             OutputBinding<List<ReceiptError>> documentdb,
             final ExecutionContext context) {
