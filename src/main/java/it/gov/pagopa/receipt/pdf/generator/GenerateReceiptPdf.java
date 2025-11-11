@@ -179,7 +179,7 @@ public class GenerateReceiptPdf {
             if (success) {
                 receipt.setStatus(ReceiptStatusType.GENERATED);
                 receipt.setGenerated_at(System.currentTimeMillis());
-                logger.debug("[{}] Receipt with id {} being saved with status {}",
+                logger.info("[{}] Receipt with id {} being saved with status {}",
                         context.getFunctionName(),
                         receipt.getEventId(),
                         receipt.getStatus());

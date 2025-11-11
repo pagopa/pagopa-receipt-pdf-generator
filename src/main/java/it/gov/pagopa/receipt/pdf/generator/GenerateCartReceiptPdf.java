@@ -229,7 +229,7 @@ public class GenerateCartReceiptPdf {
         if (success) {
             cart.setStatus(CartStatusType.GENERATED);
             cart.setGenerated_at(System.currentTimeMillis());
-            logger.debug("[{}] Cart receipt with id {} being saved with status {}",
+            logger.info("[{}] Cart receipt with event id {} being saved with status {}",
                     context.getFunctionName(),
                     cart.getEventId(),
                     cart.getStatus());
