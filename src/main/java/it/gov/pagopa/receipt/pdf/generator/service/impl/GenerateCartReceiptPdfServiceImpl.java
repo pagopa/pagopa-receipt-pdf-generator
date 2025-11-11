@@ -134,58 +134,69 @@ public class GenerateCartReceiptPdfServiceImpl implements GenerateCartReceiptPdf
             CartForReceipt cart,
             PdfCartGeneration pdfCartGeneration
     ) throws CartReceiptGenerationNotToRetryException {
-        boolean result = true;
+        boolean overallSuccess = true;
         Payload payload = cart.getPayload();
         PdfMetadata payerMetadata = pdfCartGeneration.getPayerMetadata();
 
-        if (payload.getPayerFiscalCode() != null) {
-            if (payerMetadata == null) {
-                logger.error("Unexpected result for payer pdf cart receipt generation. Cart receipt event id {}", cart.getEventId());
-                result = false;
-            } else if (payerMetadata.getStatusCode() == HttpStatus.SC_OK) {
-                ReceiptMetadata receiptMetadata = buildReceiptMetadata(payerMetadata);
-
-                payload.setMdAttachPayer(receiptMetadata);
-            } else if (payerMetadata.getStatusCode() != ALREADY_CREATED) {
-                ReasonError reasonError = new ReasonError(payerMetadata.getStatusCode(), payerMetadata.getErrorMessage());
-                payload.setReasonErrPayer(reasonError);
-                result = false;
-            }
+        if (payload.getPayerFiscalCode() != null && !processPayerMetadata(payerMetadata, payload, cart.getEventId())) {
+            overallSuccess = false;
         }
 
-        boolean debtortHasNotToRetryError = false;
+        boolean debtorHasNotToRetryError = false;
         Map<String, PdfMetadata> debtorMetadataMap = pdfCartGeneration.getDebtorMetadataMap();
         for (CartPayment cartPayment : payload.getCart()) {
             String debtorFiscalCode = cartPayment.getDebtorFiscalCode();
-            if (isDebtorFiscalCodeInvalid(debtorFiscalCode, payload)) {
+
+            if (isDebtorFiscalCodeToIgnore(debtorFiscalCode, payload)) {
                 continue;
             }
+
             PdfMetadata debtorMetadata = debtorMetadataMap.get(cartPayment.getBizEventId());
             if (debtorMetadata == null) {
                 logger.error("Unexpected result for debtor of biz event id {} pdf cart receipt generation. Cart receipt id {}",
                         cart.getEventId(), cartPayment.getBizEventId());
-                result = false;
+                overallSuccess = false;
             } else if (debtorMetadata.getStatusCode() == HttpStatus.SC_OK) {
-                ReceiptMetadata receiptMetadata = buildReceiptMetadata(debtorMetadata);
-
-                cartPayment.setMdAttach(receiptMetadata);
+                cartPayment.setMdAttach(buildReceiptMetadata(debtorMetadata));
             } else if (debtorMetadata.getStatusCode() != ALREADY_CREATED) {
                 if (debtorMetadata.getStatusCode() == ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode()) {
-                    debtortHasNotToRetryError = true;
+                    debtorHasNotToRetryError = true;
                 }
-
-                ReasonError reasonError = new ReasonError(debtorMetadata.getStatusCode(), debtorMetadata.getErrorMessage());
-                cartPayment.setReasonErrDebtor(reasonError);
-                result = false;
+                cartPayment.setReasonErrDebtor(new ReasonError(debtorMetadata.getStatusCode(), debtorMetadata.getErrorMessage()));
+                overallSuccess = false;
             }
         }
-        if (hasCartReceiptGenerationNotRetriableError(payerMetadata, debtortHasNotToRetryError)) {
+
+        boolean payerHasNotToRetryError =
+                payerMetadata != null
+                        && payerMetadata.getStatusCode() == ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode();
+
+        if (payerHasNotToRetryError || debtorHasNotToRetryError) {
             String errMsg = String.format("Receipt generation fail for at least one debtor and/or payer with status: %s",
                     ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
             throw new CartReceiptGenerationNotToRetryException(errMsg);
         }
 
-        return result;
+        return overallSuccess;
+    }
+
+    private boolean processPayerMetadata(PdfMetadata payerMetadata, Payload payload, String eventId) {
+        if (payerMetadata == null) {
+            logger.error("Unexpected result for payer pdf cart receipt generation. Cart receipt event id {}", eventId);
+            return false;
+        }
+
+        if (payerMetadata.getStatusCode() == HttpStatus.SC_OK) {
+            payload.setMdAttachPayer(buildReceiptMetadata(payerMetadata));
+            return true;
+        }
+
+        if (payerMetadata.getStatusCode() != ALREADY_CREATED) {
+            ReasonError reasonError = new ReasonError(payerMetadata.getStatusCode(), payerMetadata.getErrorMessage());
+            payload.setReasonErrPayer(reasonError);
+            return false;
+        }
+        return true;
     }
 
     private PdfMetadata generateAndSavePDFReceipt(
@@ -219,16 +230,8 @@ public class GenerateCartReceiptPdfServiceImpl implements GenerateCartReceiptPdf
         return String.format("%s-%s-%s-%s", TEMPLATE_PREFIX, dateFormatted, eventId, templateSuffix);
     }
 
-    private boolean isDebtorFiscalCodeInvalid(String debtorFiscalCode, Payload payload) {
+    private boolean isDebtorFiscalCodeToIgnore(String debtorFiscalCode, Payload payload) {
         return ANONIMO.equals(debtorFiscalCode) || debtorFiscalCode.equals(payload.getPayerFiscalCode());
-    }
-
-    private boolean hasCartReceiptGenerationNotRetriableError(
-            PdfMetadata payerMetadata,
-            boolean debtorHasNotToRetryError
-    ) {
-        return (payerMetadata != null && payerMetadata.getStatusCode() == ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode())
-                || debtorHasNotToRetryError;
     }
 
     private ReceiptMetadata buildReceiptMetadata(PdfMetadata payerMetadata) {
