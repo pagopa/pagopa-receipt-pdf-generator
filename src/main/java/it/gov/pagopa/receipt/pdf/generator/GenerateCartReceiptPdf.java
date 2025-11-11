@@ -10,7 +10,6 @@ import com.microsoft.azure.functions.annotation.QueueTrigger;
 import it.gov.pagopa.receipt.pdf.generator.client.CartQueueClient;
 import it.gov.pagopa.receipt.pdf.generator.client.impl.CartQueueClientImpl;
 import it.gov.pagopa.receipt.pdf.generator.entity.cart.CartForReceipt;
-import it.gov.pagopa.receipt.pdf.generator.entity.cart.CartPayment;
 import it.gov.pagopa.receipt.pdf.generator.entity.cart.CartStatusType;
 import it.gov.pagopa.receipt.pdf.generator.entity.event.BizEvent;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.ReasonError;
@@ -34,7 +33,6 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * Azure Functions with Azure Queue trigger.
@@ -140,6 +138,24 @@ public class GenerateCartReceiptPdf {
                     cart.getEventId(),
                     cart.getStatus(),
                     cart.getPayload() == null);
+            return;
+        }
+
+        int totalNotice = Integer.parseInt(cart.getPayload().getTotalNotice());
+        if (
+                totalNotice != listOfBizEvent.size()
+                || totalNotice != cart.getPayload().getCart().size()
+        ) {
+            String errorMessage = String.format(
+                    "Error processing cart receipt with id %s : exè",
+                    cartReceiptEventReference
+            );
+            cart.setStatus(CartStatusType.FAILED);
+            //Update the cart's status and error message
+            ReasonError reasonError = new ReasonError(HttpStatus.SC_INTERNAL_SERVER_ERROR, errorMessage);
+            cart.setReasonErr(reasonError);
+            logger.error("[{}] Error generating PDF: {}", context.getFunctionName(), errorMessage);
+            documentdb.setValue(cart);
             return;
         }
 
