@@ -215,7 +215,7 @@ public class GenerateCartReceiptPdfServiceImpl implements GenerateCartReceiptPdf
                     amount,
                     cartInfoMap
             );
-            String blobName = buildBlobName(requestedByDebtor, eventId);
+            String blobName = buildBlobName(requestedByDebtor, eventId, listOfBizEvents);
             PdfEngineResponse pdfEngineResponse = this.pdfEngineService.generatePDFReceipt(template, workingDirPath);
             return this.receiptBlobStorageService.saveToBlobStorage(pdfEngineResponse, blobName);
         } catch (PDFReceiptGenerationException e) {
@@ -224,10 +224,11 @@ public class GenerateCartReceiptPdfServiceImpl implements GenerateCartReceiptPdf
         }
     }
 
-    private String buildBlobName(boolean requestedByDebtor, String eventId) {
+    private String buildBlobName(boolean requestedByDebtor, String eventId, List<BizEvent> listOfBizEvents) {
         String dateFormatted = LocalDate.now().format(DateTimeFormatter.ofPattern("yyMMdd"));
+        String id = requestedByDebtor ? listOfBizEvents.get(0).getId() : eventId;
         String templateSuffix = requestedByDebtor ? DEBTOR_TEMPLATE_SUFFIX : PAYER_TEMPLATE_SUFFIX;
-        return String.format("%s-%s-%s-%s", TEMPLATE_PREFIX, dateFormatted, eventId, templateSuffix);
+        return String.format("%s-%s-%s-%s", TEMPLATE_PREFIX, dateFormatted, id, templateSuffix);
     }
 
     private boolean isDebtorFiscalCodeToIgnore(String debtorFiscalCode, Payload payload) {
