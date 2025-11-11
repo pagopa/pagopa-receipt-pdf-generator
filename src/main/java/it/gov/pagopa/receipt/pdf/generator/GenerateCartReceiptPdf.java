@@ -10,7 +10,9 @@ import com.microsoft.azure.functions.annotation.QueueTrigger;
 import it.gov.pagopa.receipt.pdf.generator.client.CartQueueClient;
 import it.gov.pagopa.receipt.pdf.generator.client.impl.CartQueueClientImpl;
 import it.gov.pagopa.receipt.pdf.generator.entity.cart.CartForReceipt;
+import it.gov.pagopa.receipt.pdf.generator.entity.cart.CartPayment;
 import it.gov.pagopa.receipt.pdf.generator.entity.cart.CartStatusType;
+import it.gov.pagopa.receipt.pdf.generator.entity.cart.Payload;
 import it.gov.pagopa.receipt.pdf.generator.entity.event.BizEvent;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.ReasonError;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.enumeration.ReceiptStatusType;
@@ -124,52 +126,14 @@ public class GenerateCartReceiptPdf {
         }
         String cartReceiptEventReference = ReceiptGeneratorUtils.getCartReceiptEventReference(listOfBizEvent.get(0));
 
-        logger.info("[{}] function called at {} for cart receipt with bizEvent reference {}",
+        logger.info("[{}] function called at {} for cart receipt with cart reference {}",
                 context.getFunctionName(), LocalDateTime.now(), cartReceiptEventReference);
 
         //Retrieve cart's data from CosmosDB
         CartForReceipt cart = this.cartReceiptCosmosService.getCartForReceipt(cartReceiptEventReference);
 
         //Verify cart status
-        if (isCartReceiptInInValidState(cart)) {
-            logger.info("[{}] Cart receipt with id {} is discarded from generation because it is not in INSERTED " +
-                            "or RETRY (status: {}) or have null payload (payload is null: {})",
-                    context.getFunctionName(),
-                    cart.getEventId(),
-                    cart.getStatus(),
-                    cart.getPayload() == null);
-            return;
-        }
-
-        int totalNotice = Integer.parseInt(cart.getPayload().getTotalNotice());
-        if (
-                totalNotice != listOfBizEvent.size()
-                || totalNotice != cart.getPayload().getCart().size()
-        ) {
-            String errorMessage = String.format(
-                    "Error processing cart receipt with id %s : exè",
-                    cartReceiptEventReference
-            );
-            cart.setStatus(CartStatusType.FAILED);
-            //Update the cart's status and error message
-            ReasonError reasonError = new ReasonError(HttpStatus.SC_INTERNAL_SERVER_ERROR, errorMessage);
-            cart.setReasonErr(reasonError);
-            logger.error("[{}] Error generating PDF: {}", context.getFunctionName(), errorMessage);
-            documentdb.setValue(cart);
-            return;
-        }
-
-        if (allFiscalCodesAreNull(cart)) {
-            String errorMessage = String.format(
-                    "Error processing cart receipt with id %s : payer's and debtor's fiscal code are null",
-                    cartReceiptEventReference
-            );
-            cart.setStatus(CartStatusType.FAILED);
-            //Update the cart's status and error message
-            ReasonError reasonError = new ReasonError(HttpStatus.SC_INTERNAL_SERVER_ERROR, errorMessage);
-            cart.setReasonErr(reasonError);
-            logger.error("[{}] Error generating PDF: {}", context.getFunctionName(), errorMessage);
-            documentdb.setValue(cart);
+        if (isCartNotValidForGeneration(documentdb, context, cart, listOfBizEvent, cartReceiptEventReference)) {
             return;
         }
 
@@ -177,48 +141,13 @@ public class GenerateCartReceiptPdf {
                 context.getFunctionName(),
                 cart.getId(),
                 cartReceiptEventReference);
+
         //Generate and save PDF
-        PdfCartGeneration pdfCartGeneration;
-        Path workingDirPath = ReceiptGeneratorUtils.createWorkingDirectory();
-        try {
-            pdfCartGeneration = this.generateCartReceiptPdfService.generateCartReceipts(cart, listOfBizEvent, workingDirPath);
-        } finally {
-            ReceiptGeneratorUtils.deleteTempFolder(workingDirPath, logger);
-        }
+        PdfCartGeneration pdfCartGeneration = generatePdfCart(cart, listOfBizEvent);
 
         //Verify PDF generation success
-        boolean success;
         try {
-            success = this.generateCartReceiptPdfService.verifyAndUpdateCartReceipt(cart, pdfCartGeneration);
-            if (success) {
-                cart.setStatus(CartStatusType.GENERATED);
-                cart.setGenerated_at(System.currentTimeMillis());
-                logger.debug("[{}] Cart receipt with id {} being saved with status {}",
-                        context.getFunctionName(),
-                        cart.getEventId(),
-                        cart.getStatus());
-            } else {
-                CartStatusType cartReceiptStatusType;
-                //Verify if the max number of retry have been passed
-                if (cart.getNumRetry() > MAX_NUMBER_RETRY) {
-                    cartReceiptStatusType = CartStatusType.FAILED;
-                } else {
-                    cartReceiptStatusType = CartStatusType.RETRY;
-                    cart.setNumRetry(cart.getNumRetry() + 1);
-                    //Send decoded BizEvent to queue
-                    Response<SendMessageResult> sendMessageResult =
-                            this.cartQueueClient.sendMessageToQueue(Base64.getMimeEncoder().encodeToString(bizEventMessage.getBytes()));
-                    if (sendMessageResult.getStatusCode() != com.microsoft.azure.functions.HttpStatus.CREATED.value()) {
-                        throw new UnableToQueueException("Unable to queue due to error: " +
-                                sendMessageResult.getStatusCode());
-                    }
-                }
-                cart.setStatus(cartReceiptStatusType);
-                logger.error("[{}] Error generating cart for Receipt {} will be saved with status {}",
-                        context.getFunctionName(),
-                        cart.getId(),
-                        cartReceiptStatusType);
-            }
+            verifyPDFGenerationAndUpdateCartReceipt(bizEventMessage, context, cart, pdfCartGeneration);
         } catch (UnableToQueueException | CartReceiptGenerationNotToRetryException e) {
             cart.setStatus(CartStatusType.FAILED);
             logger.error("[{}] PDF Receipt generation for Cart receipt {} failed. This error will not be retried, the cart will be saved with status {}",
@@ -229,6 +158,119 @@ public class GenerateCartReceiptPdf {
         documentdb.setValue(cart);
     }
 
+    private boolean isCartNotValidForGeneration(
+            OutputBinding<CartForReceipt> documentdb,
+            ExecutionContext context,
+            CartForReceipt cart,
+            List<BizEvent> listOfBizEvent,
+            String cartReceiptEventReference
+    ) {
+        Payload payload = cart.getPayload();
+        if (isCartReceiptInInvalidState(cart)) {
+            logger.info("[{}] Cart receipt with id {} is discarded from generation because it is not in INSERTED " +
+                            "or RETRY (status: {}) or have null payload (payload is null: {})",
+                    context.getFunctionName(),
+                    cart.getEventId(),
+                    cart.getStatus(),
+                    payload == null);
+            return true;
+        }
+
+        if (totalNoticeMismatch(listOfBizEvent, payload)) {
+            String errorMessage = String.format(
+                    "Error processing cart receipt with id %s : the list of biz events size (%s) or the list of carts " +
+                            "size (%s) does not match the total notice %s",
+                    cartReceiptEventReference,
+                    listOfBizEvent.size(),
+                    payload.getCart() != null ? payload.getCart().size() : "no cart item",
+                    payload.getTotalNotice()
+            );
+            cart.setStatus(CartStatusType.FAILED);
+            cart.setReasonErr(new ReasonError(HttpStatus.SC_INTERNAL_SERVER_ERROR, errorMessage));
+            logger.error("[{}] Error generating PDF: {}", context.getFunctionName(), errorMessage);
+            documentdb.setValue(cart);
+            return true;
+        }
+
+        if (allFiscalCodesAreNull(cart)) {
+            String errorMessage = String.format(
+                    "Error processing cart receipt with id %s : payer's and debtor's fiscal code are null",
+                    cartReceiptEventReference
+            );
+            cart.setStatus(CartStatusType.FAILED);
+            cart.setReasonErr(new ReasonError(HttpStatus.SC_INTERNAL_SERVER_ERROR, errorMessage));
+            logger.error("[{}] Error generating PDF: {}", context.getFunctionName(), errorMessage);
+            documentdb.setValue(cart);
+            return true;
+        }
+        return false;
+    }
+
+    private PdfCartGeneration generatePdfCart(
+            CartForReceipt cart,
+            List<BizEvent> listOfBizEvent
+    ) throws IOException {
+        Path workingDirPath = ReceiptGeneratorUtils.createWorkingDirectory();
+        try {
+            return this.generateCartReceiptPdfService.generateCartReceipts(cart, listOfBizEvent, workingDirPath);
+        } finally {
+            ReceiptGeneratorUtils.deleteTempFolder(workingDirPath, logger);
+        }
+    }
+
+    private void verifyPDFGenerationAndUpdateCartReceipt(
+            String bizEventMessage,
+            ExecutionContext context,
+            CartForReceipt cart,
+            PdfCartGeneration pdfCartGeneration
+    ) throws CartReceiptGenerationNotToRetryException, UnableToQueueException {
+        boolean success = this.generateCartReceiptPdfService.verifyAndUpdateCartReceipt(cart, pdfCartGeneration);
+
+        if (success) {
+            cart.setStatus(CartStatusType.GENERATED);
+            cart.setGenerated_at(System.currentTimeMillis());
+            logger.debug("[{}] Cart receipt with id {} being saved with status {}",
+                    context.getFunctionName(),
+                    cart.getEventId(),
+                    cart.getStatus());
+            return;
+        }
+
+        CartStatusType cartReceiptStatusType;
+        //Verify if the max number of retry have been passed
+        if (cart.getNumRetry() > MAX_NUMBER_RETRY) {
+            cartReceiptStatusType = CartStatusType.FAILED;
+        } else {
+            cartReceiptStatusType = CartStatusType.RETRY;
+            cart.setNumRetry(cart.getNumRetry() + 1);
+            //Send decoded BizEvent to queue
+            Response<SendMessageResult> sendMessageResult =
+                    this.cartQueueClient.sendMessageToQueue(Base64.getMimeEncoder().encodeToString(bizEventMessage.getBytes()));
+            if (sendMessageResult.getStatusCode() != com.microsoft.azure.functions.HttpStatus.CREATED.value()) {
+                throw new UnableToQueueException("Unable to queue due to error: " + sendMessageResult.getStatusCode());
+            }
+        }
+        cart.setStatus(cartReceiptStatusType);
+        logger.error("[{}] Error generating cart for Receipt {} will be saved with status {}",
+                context.getFunctionName(),
+                cart.getId(),
+                cartReceiptStatusType);
+    }
+
+    private boolean totalNoticeMismatch(
+            List<BizEvent> listOfBizEvent,
+            Payload payload
+    ) {
+        List<CartPayment> cartPayments = payload.getCart();
+        if (cartPayments == null) {
+            return true;
+        }
+        int totalNotice = payload.getTotalNotice();
+        return totalNotice != listOfBizEvent.size()
+                || totalNotice != cartPayments.size();
+
+    }
+
     private boolean allFiscalCodesAreNull(CartForReceipt cart) {
         boolean allDebtorFiscalCodeAreNull = cart.getPayload().getCart().stream()
                 .allMatch(cartPayment -> cartPayment.getDebtorFiscalCode() == null);
@@ -236,8 +278,11 @@ public class GenerateCartReceiptPdf {
         return allDebtorFiscalCodeAreNull && cart.getPayload().getPayerFiscalCode() == null;
     }
 
-    private boolean isCartReceiptInInValidState(CartForReceipt cartForReceipt) {
+    private boolean isCartReceiptInInvalidState(CartForReceipt cartForReceipt) {
         return cartForReceipt.getPayload() == null
-                || (!cartForReceipt.getStatus().equals(CartStatusType.INSERTED) && !cartForReceipt.getStatus().equals(CartStatusType.RETRY));
+                || cartForReceipt.getPayload().getCart() == null
+                || (!cartForReceipt.getStatus().equals(CartStatusType.INSERTED)
+                && !cartForReceipt.getStatus().equals(CartStatusType.RETRY)
+        );
     }
 }
