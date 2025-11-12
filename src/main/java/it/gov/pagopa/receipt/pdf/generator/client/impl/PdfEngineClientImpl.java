@@ -13,7 +13,6 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.HttpMultipartMode;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
-import org.apache.http.entity.mime.content.InputStreamBody;
 import org.apache.http.entity.mime.content.StringBody;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -84,7 +83,7 @@ public class PdfEngineClientImpl implements PdfEngineClient {
         //Build the multipart request
         MultipartEntityBuilder builder = MultipartEntityBuilder.create();
         builder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
-        builder.addPart(TEMPLATE_KEY, new InputStreamBody(templateStream, ContentType.create("application/zip"), ZIP_FILE_NAME));
+        builder.addBinaryBody(TEMPLATE_KEY, templateStream, ContentType.create("application/zip"), ZIP_FILE_NAME);
         builder.addPart(DATA_KEY, dataBody);
         HttpEntity entity = builder.build();
 
