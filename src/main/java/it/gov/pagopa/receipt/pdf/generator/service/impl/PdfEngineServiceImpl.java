@@ -16,6 +16,8 @@ import org.apache.http.HttpStatus;
 import java.net.URL;
 import java.nio.file.Path;
 
+import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.ZIP_FILE_NAME;
+
 public class PdfEngineServiceImpl implements PdfEngineService {
 
     private final PdfEngineClient pdfEngineClient;
@@ -38,7 +40,7 @@ public class PdfEngineServiceImpl implements PdfEngineService {
     ) throws PDFReceiptGenerationException {
         PdfEngineRequest request = new PdfEngineRequest();
 
-        URL templateStream = GenerateCartReceiptPdfServiceImpl.class.getClassLoader().getResource("template.zip");
+        URL templateStream = GenerateCartReceiptPdfServiceImpl.class.getClassLoader().getResource(ZIP_FILE_NAME);
         //Build the request
         request.setTemplate(templateStream);
         request.setData(parseTemplateDataToString(template));
