@@ -56,7 +56,6 @@ class PdfEngineClientImplTest {
             tempDirectory.deleteOnExit();
         }
 
-        HttpClientBuilder mockBuilder = mock(HttpClientBuilder.class);
         CloseableHttpClient mockClient = mock(CloseableHttpClient.class);
 
         CloseableHttpResponse mockResponse = mock(CloseableHttpResponse.class);
@@ -69,9 +68,8 @@ class PdfEngineClientImplTest {
         when(mockResponse.getEntity()).thenReturn(mockEntity);
 
         when(mockClient.execute(any())).thenReturn(mockResponse);
-        when(mockBuilder.build()).thenReturn(mockClient);
 
-        PdfEngineClientImpl client = new PdfEngineClientImpl(mockBuilder);
+        PdfEngineClientImpl client = new PdfEngineClientImpl(mockClient);
         PdfEngineResponse pdfEngineResponse = client.generatePDF(pdfEngineRequest, tempDirectory.toPath());
 
         File tempPdf = new File(pdfEngineResponse.getTempPdfPath());
@@ -101,7 +99,6 @@ class PdfEngineClientImplTest {
             tempDirectory.deleteOnExit();
         }
 
-        HttpClientBuilder mockBuilder = mock(HttpClientBuilder.class);
         CloseableHttpClient mockClient = mock(CloseableHttpClient.class);
 
         CloseableHttpResponse mockResponse = mock(CloseableHttpResponse.class);
@@ -114,9 +111,8 @@ class PdfEngineClientImplTest {
         when(mockResponse.getEntity()).thenReturn(mockEntity);
 
         when(mockClient.execute(any())).thenReturn(mockResponse);
-        when(mockBuilder.build()).thenReturn(mockClient);
 
-        PdfEngineClientImpl client = new PdfEngineClientImpl(mockBuilder);
+        PdfEngineClientImpl client = new PdfEngineClientImpl(mockClient);
         PdfEngineResponse pdfEngineResponse = client.generatePDF(pdfEngineRequest, tempDirectory.toPath());
 
         Assertions.assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, pdfEngineResponse.getStatusCode());
@@ -143,7 +139,6 @@ class PdfEngineClientImplTest {
             tempDirectory.deleteOnExit();
         }
 
-        HttpClientBuilder mockBuilder = mock(HttpClientBuilder.class);
         CloseableHttpClient mockClient = mock(CloseableHttpClient.class);
 
         CloseableHttpResponse mockResponse = mock(CloseableHttpResponse.class);
@@ -168,9 +163,8 @@ class PdfEngineClientImplTest {
         when(mockResponse.getEntity()).thenReturn(mockEntity);
 
         when(mockClient.execute(any())).thenReturn(mockResponse);
-        when(mockBuilder.build()).thenReturn(mockClient);
 
-        PdfEngineClientImpl client = new PdfEngineClientImpl(mockBuilder);
+        PdfEngineClientImpl client = new PdfEngineClientImpl(mockClient);
         PdfEngineResponse pdfEngineResponse = client.generatePDF(pdfEngineRequest, tempDirectory.toPath());
 
         Assertions.assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, pdfEngineResponse.getStatusCode());
