@@ -193,7 +193,7 @@ class GenerateCartReceiptPdfTest {
 
     @Test
     @SneakyThrows
-    void processGenerateCartReceiptDiscardedCartNPayloadNull() {
+    void processGenerateCartReceiptDiscardedCartPayloadNull() {
         int totalNotice = 2;
 
         doReturn(new CartForReceipt()).when(cartReceiptCosmosServiceMock).getCartForReceipt(ID_TRANSACTION);
@@ -209,6 +209,35 @@ class GenerateCartReceiptPdfTest {
         verify(generateCartReceiptPdfServiceMock, never()).generateCartReceipts(any(), any(), any());
         verify(generateCartReceiptPdfServiceMock, never()).verifyAndUpdateCartReceipt(any(), any());
         verify(cartForReceiptsBindingMock, never()).setValue(any());
+        verify(cartQueueClientMock, never()).sendMessageToQueue(any());
+    }
+
+    @Test
+    @SneakyThrows
+    void processGenerateCartReceiptDiscardedTotalNoticeMismatch() {
+        int totalNotice = 2;
+        CartForReceipt cart = buildCartForReceipt(CF_PAYER, CF_DEBTOR, totalNotice, CartStatusType.INSERTED);
+
+        doReturn(cart).when(cartReceiptCosmosServiceMock).getCartForReceipt(ID_TRANSACTION);
+
+        assertDoesNotThrow(() ->
+                sut.processGenerateCartReceipt(
+                        buildQueueBizEventList(3),
+                        cartForReceiptsBindingMock,
+                        executionContextMock)
+        );
+
+        assertEquals(CartStatusType.FAILED, cart.getStatus());
+        assertEquals(ORIGINAL_GENERATED_AT, cart.getGenerated_at());
+        assertEquals(ID_TRANSACTION, cart.getEventId());
+        assertNotNull(cart.getReasonErr());
+        assertNotNull(cart.getReasonErr().getMessage());
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR.value(), cart.getReasonErr().getCode());
+
+        verify(cartReceiptCosmosServiceMock).getCartForReceipt(anyString());
+        verify(generateCartReceiptPdfServiceMock, never()).generateCartReceipts(any(), any(), any());
+        verify(generateCartReceiptPdfServiceMock, never()).verifyAndUpdateCartReceipt(any(), any());
+        verify(cartForReceiptsBindingMock).setValue(any());
         verify(cartQueueClientMock, never()).sendMessageToQueue(any());
     }
 
@@ -388,6 +417,7 @@ class GenerateCartReceiptPdfTest {
                 .payload(
                         Payload.builder()
                                 .payerFiscalCode(payerFiscalCode)
+                                .totalNotice(totalNotice)
                                 .cart(cartPayments)
                                 .build()
                 )
