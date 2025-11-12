@@ -7,21 +7,30 @@ import it.gov.pagopa.receipt.pdf.generator.entity.receipt.EventData;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.enumeration.ReasonErrorCode;
 import it.gov.pagopa.receipt.pdf.generator.exception.TemplateDataMappingException;
+import it.gov.pagopa.receipt.pdf.generator.model.CartInfo;
 import it.gov.pagopa.receipt.pdf.generator.model.template.ReceiptPDFTemplate;
-import it.gov.pagopa.receipt.pdf.generator.utils.ObjectMapperUtilsTest;
 import it.gov.pagopa.receipt.pdf.generator.utils.TemplateDataField;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
-import java.util.Collections;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static it.gov.pagopa.receipt.pdf.generator.model.enumeration.TemplateDatasource.BIZ_EVENT;
+import static it.gov.pagopa.receipt.pdf.generator.model.enumeration.TemplateDatasource.CART;
+import static it.gov.pagopa.receipt.pdf.generator.model.enumeration.TemplateDatasource.PSP_STATIC_CONFIG;
+import static it.gov.pagopa.receipt.pdf.generator.model.enumeration.TemplateDatasource.RECEIPT;
+import static it.gov.pagopa.receipt.pdf.generator.utils.ObjectMapperUtilsTest.getBizEventFromFile;
 import static org.junit.jupiter.api.Assertions.*;
 import static uk.org.webcompere.systemstubs.SystemStubs.withEnvironmentVariables;
 
@@ -91,8 +100,6 @@ class BuildTemplateServiceImplTest {
     private static final String USER_TAX_CODE = "user tax code";
     public static final String PAGOPA_PA_CHANNEL_ID = "pagopa channel";
     public static final String RECEIPT_ID = "receipt-id";
-    public static final String BIZ_EVENT = "bizEvent";
-    public static final String RECEIPT = "receipt";
 
     public static final String WISP_NOTICE_CODE = "35100000000000";
 
@@ -110,62 +117,70 @@ class BuildTemplateServiceImplTest {
         buildTemplateService = atomicBuildTemplateService.get();
     }
 
-    @Test
-    void mapTemplateAllFieldsSuccessCompleteTemplateAndIOChannel() {
-        List<BizEvent> bizEventList = Collections.singletonList(BizEvent.builder()
-                .id(BIZ_EVENT_ID)
-                .idPaymentManager(BIZ_EVENT_ID)
-                .debtorPosition(DebtorPosition.builder()
-                        .iuv(IUV)
-                        .modelType(MODEL_TYPE_IUV_CODE)
-                        .build())
-                .creditor(Creditor.builder()
-                        .companyName(COMPANY_NAME)
-                        .idPA(ID_PA)
-                        .build())
-                .psp(Psp.builder()
-                        .idPsp(ID_PSP)
-                        .psp(PSP_NAME)
-                        .build())
-                .debtor(Debtor.builder()
-                        .fullName(DEBTOR_FULL_NAME)
-                        .entityUniqueIdentifierValue(DEBTOR_VALID_CF)
-                        .build())
-                .payer(Payer.builder().fullName(PAYER_FULL_NAME).entityUniqueIdentifierValue(PAYER_VALID_CF).build())
-                .paymentInfo(PaymentInfo.builder()
-                        .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS_DST_WINTER)
-                        .paymentToken(PAYMENT_TOKEN)
-                        .amount(AMOUNT_WITHOUT_CENTS)
-                        .fee(FEE_WITH_SINGLE_DIGIT_CENTS)
-                        .remittanceInformation(REMITTANCE_INFORMATION)
-                        .IUR(IUR)
-                        .build())
-                .transactionDetails(TransactionDetails.builder()
-                        .wallet(WalletItem.builder()
-                                .info(Info.builder().brand(BRAND).holder(HOLDER_FULL_NAME).type(PAYMENT_METHOD_TYPE).build())
-                                .onboardingChannel(PAGO_PA_CHANNEL_IO)
-                                .build())
-                        .transaction(Transaction.builder()
-                                .idTransaction(ID_TRANSACTION)
-                                .grandTotal(GRAND_TOTAL_LONG)
-                                .amount(AMOUNT_LONG)
-                                .fee(FEE_LONG)
-                                .rrn(RRN)
-                                .numAut(AUTH_CODE)
-                                .creationDate(DATE_TIME_TIMESTAMP_ZONED_DST_WINTER)
-                                .psp(TransactionPsp.builder()
-                                        .businessName(PSP_NAME)
-                                        .build())
-                                .origin(PAGOPA_PA_CHANNEL_ID)
-                                .build())
-                        .build())
-                .eventStatus(BizEventStatusType.DONE)
-                .build()
-        );
-        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
+    @ParameterizedTest
+    @CsvSource(delimiter = ';', value = {
+            "biz-events/bizEvent_complete_dst_summer.json;" + DATE_TIME_TIMESTAMP_FORMATTED_DST_SUMMER,
+            "biz-events/bizEvent_complete_dst_winter.json;" + DATE_TIME_TIMESTAMP_FORMATTED_DST_WINTER,
+            "biz-events/bizEvent_complete_milliseconds_dst_summer.json;" + DATE_TIME_TIMESTAMP_FORMATTED_DST_SUMMER,
+            "biz-events/bizEvent_complete_milliseconds_dst_winter.json;" + DATE_TIME_TIMESTAMP_FORMATTED_DST_WINTER
+    })
+    void mapTemplateAllFieldsSuccessCompleteTemplateAndIOChannel(
+            String pathToFile,
+            String dateFormatted
+    ) throws IOException {
+        BizEvent bizEvent = getBizEventFromFile(pathToFile);
+        Receipt receipt = buildReceiptWithAmountAndSingleCartListWithOnlyRemittance();
 
         AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
-        assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_DEBTOR, receipt)));
+        assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEvent, GENERATED_BY_DEBTOR, receipt)));
+
+        ReceiptPDFTemplate receiptPdfTemplate = atomicReference.get();
+
+        assertNotNull(receiptPdfTemplate);
+        assertEquals(BIZ_EVENT_ID, receiptPdfTemplate.getServiceCustomerId());
+
+        it.gov.pagopa.receipt.pdf.generator.model.template.Transaction transaction = receiptPdfTemplate.getTransaction();
+        assertEquals(dateFormatted, transaction.getTimestamp());
+        assertEquals(FORMATTED_GRAND_TOTAL, transaction.getAmount());
+        assertEquals(PSP_LOGO, transaction.getPsp().getLogo());
+        assertEquals(FORMATTED_FEE, transaction.getPsp().getFee().getAmount());
+        assertEquals(PSP_NAME, transaction.getPsp().getName());
+        assertEquals(PSP_CITY, transaction.getPsp().getCity());
+        assertEquals(PSP_COMPANY, transaction.getPsp().getCompanyName());
+        assertEquals(PSP_POSTAL_CODE, transaction.getPsp().getPostalCode());
+        assertEquals(PSP_ADDRESS, transaction.getPsp().getAddress());
+        assertEquals(PSP_BUILDING_NUMBER, transaction.getPsp().getBuildingNumber());
+        assertEquals(PSP_PROVINCE, transaction.getPsp().getProvince());
+        assertEquals(RRN, transaction.getRrn());
+        assertEquals(PAYMENT_METHOD_NAME, transaction.getPaymentMethod().getName());
+        assertEquals(BRAND_ASSET_URL, transaction.getPaymentMethod().getLogo());
+        assertEquals(HOLDER_FULL_NAME, transaction.getPaymentMethod().getAccountHolder());
+        assertEquals(AUTH_CODE, transaction.getAuthCode());
+        assertEquals(GENERATED_BY_DEBTOR, transaction.isRequestedByDebtor());
+        assertTrue(transaction.isProcessedByPagoPA());
+
+        assertNull(receiptPdfTemplate.getUser());
+
+        it.gov.pagopa.receipt.pdf.generator.model.template.Cart cart = receiptPdfTemplate.getCart();
+        assertEquals(FORMATTED_AMOUNT, cart.getAmountPartial());
+        assertEquals(FORMATTED_AMOUNT, cart.getItems().get(0).getAmount());
+        assertEquals(DEBTOR_FULL_NAME, cart.getItems().get(0).getDebtor().getFullName());
+        assertEquals(DEBTOR_VALID_CF, cart.getItems().get(0).getDebtor().getTaxCode());
+        assertEquals(REMITTANCE_INFORMATION, cart.getItems().get(0).getSubject());
+        assertEquals(COMPANY_NAME, cart.getItems().get(0).getPayee().getName());
+        assertEquals(ID_PA, cart.getItems().get(0).getPayee().getTaxCode());
+        assertEquals(MODEL_TYPE_IUV_TEXT, cart.getItems().get(0).getRefNumber().getType());
+        assertEquals(IUV, cart.getItems().get(0).getRefNumber().getValue());
+    }
+
+    @Test
+    void mapTemplateAllFieldsSuccessCompleteTemplateAndPagoPaChannelOnChannelId() throws IOException {
+        BizEvent bizEvent = getBizEventFromFile("biz-events/bizEvent_complete_channeOnClientId.json");
+        Receipt receipt = Receipt.builder()
+                .eventId(BIZ_EVENT_ID).eventData(EventData.builder().cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).amount(FORMATTED_GRAND_TOTAL).build()).build();
+
+        AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
+        assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEvent, GENERATED_BY_DEBTOR, receipt)));
 
         ReceiptPDFTemplate receiptPdfTemplate = atomicReference.get();
 
@@ -207,610 +222,12 @@ class BuildTemplateServiceImplTest {
     }
 
     @Test
-    void mapTemplateAllFieldsSuccessCompleteTemplateAndIOChannelAndDateZonedDSTWinter() {
-        List<BizEvent> bizEventList = Collections.singletonList(BizEvent.builder()
-                .id(BIZ_EVENT_ID)
-                .idPaymentManager(BIZ_EVENT_ID)
-                .debtorPosition(DebtorPosition.builder()
-                        .iuv(IUV)
-                        .modelType(MODEL_TYPE_IUV_CODE)
-                        .build())
-                .creditor(Creditor.builder()
-                        .companyName(COMPANY_NAME)
-                        .idPA(ID_PA)
-                        .build())
-                .psp(Psp.builder()
-                        .idPsp(ID_PSP)
-                        .psp(PSP_NAME)
-                        .build())
-                .debtor(Debtor.builder()
-                        .fullName(DEBTOR_FULL_NAME)
-                        .entityUniqueIdentifierValue(DEBTOR_VALID_CF)
-                        .build())
-                .payer(Payer.builder().fullName(PAYER_FULL_NAME).entityUniqueIdentifierValue(PAYER_VALID_CF).build())
-                .paymentInfo(PaymentInfo.builder()
-                        .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS_DST_WINTER)
-                        .paymentToken(PAYMENT_TOKEN)
-                        .amount(AMOUNT_WITHOUT_CENTS)
-                        .fee(FEE_WITH_SINGLE_DIGIT_CENTS)
-                        .remittanceInformation(REMITTANCE_INFORMATION)
-                        .IUR(IUR)
-                        .build())
-                .transactionDetails(TransactionDetails.builder()
-                        .wallet(WalletItem.builder()
-                                .info(Info.builder().brand(BRAND).holder(HOLDER_FULL_NAME).type(PAYMENT_METHOD_TYPE).build())
-                                .onboardingChannel(PAGO_PA_CHANNEL_IO)
-                                .build())
-                        .transaction(Transaction.builder()
-                                .idTransaction(ID_TRANSACTION)
-                                .grandTotal(GRAND_TOTAL_LONG)
-                                .amount(AMOUNT_LONG)
-                                .fee(FEE_LONG)
-                                .rrn(RRN)
-                                .numAut(AUTH_CODE)
-                                .creationDate(DATE_TIME_TIMESTAMP_ZONED_DST_WINTER)
-                                .psp(TransactionPsp.builder()
-                                        .businessName(PSP_NAME)
-                                        .build())
-                                .origin(PAGOPA_PA_CHANNEL_ID)
-                                .build())
-                        .build())
-                .eventStatus(BizEventStatusType.DONE)
-                .build());
-        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
-
-        AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
-        assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_DEBTOR, receipt)));
-
-        ReceiptPDFTemplate receiptPdfTemplate = atomicReference.get();
-
-        assertNotNull(receiptPdfTemplate);
-        assertEquals(BIZ_EVENT_ID, receiptPdfTemplate.getServiceCustomerId());
-
-        it.gov.pagopa.receipt.pdf.generator.model.template.Transaction transaction = receiptPdfTemplate.getTransaction();
-        assertEquals(DATE_TIME_TIMESTAMP_FORMATTED_DST_WINTER, transaction.getTimestamp());
-        assertEquals(FORMATTED_GRAND_TOTAL, transaction.getAmount());
-        assertEquals(PSP_LOGO, transaction.getPsp().getLogo());
-        assertEquals(FORMATTED_FEE, transaction.getPsp().getFee().getAmount());
-        assertEquals(PSP_NAME, transaction.getPsp().getName());
-        assertEquals(PSP_CITY, transaction.getPsp().getCity());
-        assertEquals(PSP_COMPANY, transaction.getPsp().getCompanyName());
-        assertEquals(PSP_POSTAL_CODE, transaction.getPsp().getPostalCode());
-        assertEquals(PSP_ADDRESS, transaction.getPsp().getAddress());
-        assertEquals(PSP_BUILDING_NUMBER, transaction.getPsp().getBuildingNumber());
-        assertEquals(PSP_PROVINCE, transaction.getPsp().getProvince());
-        assertEquals(RRN, transaction.getRrn());
-        assertEquals(PAYMENT_METHOD_NAME, transaction.getPaymentMethod().getName());
-        assertEquals(BRAND_ASSET_URL, transaction.getPaymentMethod().getLogo());
-        assertEquals(HOLDER_FULL_NAME, transaction.getPaymentMethod().getAccountHolder());
-        assertEquals(AUTH_CODE, transaction.getAuthCode());
-        assertEquals(GENERATED_BY_DEBTOR, transaction.isRequestedByDebtor());
-        assertTrue(transaction.isProcessedByPagoPA());
-
-        assertNull(receiptPdfTemplate.getUser());
-
-        it.gov.pagopa.receipt.pdf.generator.model.template.Cart cart = receiptPdfTemplate.getCart();
-        assertEquals(FORMATTED_AMOUNT, cart.getAmountPartial());
-        assertEquals(FORMATTED_AMOUNT, cart.getItems().get(0).getAmount());
-        assertEquals(DEBTOR_FULL_NAME, cart.getItems().get(0).getDebtor().getFullName());
-        assertEquals(DEBTOR_VALID_CF, cart.getItems().get(0).getDebtor().getTaxCode());
-        assertEquals(REMITTANCE_INFORMATION, cart.getItems().get(0).getSubject());
-        assertEquals(COMPANY_NAME, cart.getItems().get(0).getPayee().getName());
-        assertEquals(ID_PA, cart.getItems().get(0).getPayee().getTaxCode());
-        assertEquals(MODEL_TYPE_IUV_TEXT, cart.getItems().get(0).getRefNumber().getType());
-        assertEquals(IUV, cart.getItems().get(0).getRefNumber().getValue());
-    }
-
-    @Test
-    void mapTemplateAllFieldsSuccessCompleteTemplateAndIOChannelAndDateZonedDSTSummer() {
-        List<BizEvent> bizEventList = Collections.singletonList(BizEvent.builder()
-                .id(BIZ_EVENT_ID)
-                .idPaymentManager(BIZ_EVENT_ID)
-                .debtorPosition(DebtorPosition.builder()
-                        .iuv(IUV)
-                        .modelType(MODEL_TYPE_IUV_CODE)
-                        .build())
-                .creditor(Creditor.builder()
-                        .companyName(COMPANY_NAME)
-                        .idPA(ID_PA)
-                        .build())
-                .psp(Psp.builder()
-                        .idPsp(ID_PSP)
-                        .psp(PSP_NAME)
-                        .build())
-                .debtor(Debtor.builder()
-                        .fullName(DEBTOR_FULL_NAME)
-                        .entityUniqueIdentifierValue(DEBTOR_VALID_CF)
-                        .build())
-                .payer(Payer.builder().fullName(PAYER_FULL_NAME).entityUniqueIdentifierValue(PAYER_VALID_CF).build())
-                .paymentInfo(PaymentInfo.builder()
-                        .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS_DST_WINTER)
-                        .paymentToken(PAYMENT_TOKEN)
-                        .amount(AMOUNT_WITHOUT_CENTS)
-                        .fee(FEE_WITH_SINGLE_DIGIT_CENTS)
-                        .remittanceInformation(REMITTANCE_INFORMATION)
-                        .IUR(IUR)
-                        .build())
-                .transactionDetails(TransactionDetails.builder()
-                        .wallet(WalletItem.builder()
-                                .info(Info.builder().brand(BRAND).holder(HOLDER_FULL_NAME).type(PAYMENT_METHOD_TYPE).build())
-                                .onboardingChannel(PAGO_PA_CHANNEL_IO)
-                                .build())
-                        .transaction(Transaction.builder()
-                                .idTransaction(ID_TRANSACTION)
-                                .grandTotal(GRAND_TOTAL_LONG)
-                                .amount(AMOUNT_LONG)
-                                .fee(FEE_LONG)
-                                .rrn(RRN)
-                                .numAut(AUTH_CODE)
-                                .creationDate(DATE_TIME_TIMESTAMP_ZONED_DST_SUMMER)
-                                .psp(TransactionPsp.builder()
-                                        .businessName(PSP_NAME)
-                                        .build())
-                                .origin(PAGOPA_PA_CHANNEL_ID)
-                                .build())
-                        .build())
-                .eventStatus(BizEventStatusType.DONE)
-                .build());
-        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
-
-        AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
-        assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_DEBTOR, receipt)));
-
-        ReceiptPDFTemplate receiptPdfTemplate = atomicReference.get();
-
-        assertNotNull(receiptPdfTemplate);
-        assertEquals(BIZ_EVENT_ID, receiptPdfTemplate.getServiceCustomerId());
-
-        it.gov.pagopa.receipt.pdf.generator.model.template.Transaction transaction = receiptPdfTemplate.getTransaction();
-        assertEquals(DATE_TIME_TIMESTAMP_FORMATTED_DST_SUMMER, transaction.getTimestamp());
-        assertEquals(FORMATTED_GRAND_TOTAL, transaction.getAmount());
-        assertEquals(PSP_LOGO, transaction.getPsp().getLogo());
-        assertEquals(FORMATTED_FEE, transaction.getPsp().getFee().getAmount());
-        assertEquals(PSP_NAME, transaction.getPsp().getName());
-        assertEquals(PSP_CITY, transaction.getPsp().getCity());
-        assertEquals(PSP_COMPANY, transaction.getPsp().getCompanyName());
-        assertEquals(PSP_POSTAL_CODE, transaction.getPsp().getPostalCode());
-        assertEquals(PSP_ADDRESS, transaction.getPsp().getAddress());
-        assertEquals(PSP_BUILDING_NUMBER, transaction.getPsp().getBuildingNumber());
-        assertEquals(PSP_PROVINCE, transaction.getPsp().getProvince());
-        assertEquals(RRN, transaction.getRrn());
-        assertEquals(PAYMENT_METHOD_NAME, transaction.getPaymentMethod().getName());
-        assertEquals(BRAND_ASSET_URL, transaction.getPaymentMethod().getLogo());
-        assertEquals(HOLDER_FULL_NAME, transaction.getPaymentMethod().getAccountHolder());
-        assertEquals(AUTH_CODE, transaction.getAuthCode());
-        assertEquals(GENERATED_BY_DEBTOR, transaction.isRequestedByDebtor());
-        assertTrue(transaction.isProcessedByPagoPA());
-
-        assertNull(receiptPdfTemplate.getUser());
-
-        it.gov.pagopa.receipt.pdf.generator.model.template.Cart cart = receiptPdfTemplate.getCart();
-        assertEquals(FORMATTED_AMOUNT, cart.getAmountPartial());
-        assertEquals(FORMATTED_AMOUNT, cart.getItems().get(0).getAmount());
-        assertEquals(DEBTOR_FULL_NAME, cart.getItems().get(0).getDebtor().getFullName());
-        assertEquals(DEBTOR_VALID_CF, cart.getItems().get(0).getDebtor().getTaxCode());
-        assertEquals(REMITTANCE_INFORMATION, cart.getItems().get(0).getSubject());
-        assertEquals(COMPANY_NAME, cart.getItems().get(0).getPayee().getName());
-        assertEquals(ID_PA, cart.getItems().get(0).getPayee().getTaxCode());
-        assertEquals(MODEL_TYPE_IUV_TEXT, cart.getItems().get(0).getRefNumber().getType());
-        assertEquals(IUV, cart.getItems().get(0).getRefNumber().getValue());
-    }
-
-    @Test
-    void mapTemplateAllFieldsSuccessCompleteTemplateAndIOChannelAndDateZonedWithMillisecondsDSTWinter() {
-        List<BizEvent> bizEventList = Collections.singletonList(BizEvent.builder()
-                .id(BIZ_EVENT_ID)
-                .idPaymentManager(BIZ_EVENT_ID)
-                .debtorPosition(DebtorPosition.builder()
-                        .iuv(IUV)
-                        .modelType(MODEL_TYPE_IUV_CODE)
-                        .build())
-                .creditor(Creditor.builder()
-                        .companyName(COMPANY_NAME)
-                        .idPA(ID_PA)
-                        .build())
-                .psp(Psp.builder()
-                        .idPsp(ID_PSP)
-                        .psp(PSP_NAME)
-                        .build())
-                .debtor(Debtor.builder()
-                        .fullName(DEBTOR_FULL_NAME)
-                        .entityUniqueIdentifierValue(DEBTOR_VALID_CF)
-                        .build())
-                .payer(Payer.builder().fullName(PAYER_FULL_NAME).entityUniqueIdentifierValue(PAYER_VALID_CF).build())
-                .paymentInfo(PaymentInfo.builder()
-                        .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS_DST_WINTER)
-                        .paymentToken(PAYMENT_TOKEN)
-                        .amount(AMOUNT_WITHOUT_CENTS)
-                        .fee(FEE_WITH_SINGLE_DIGIT_CENTS)
-                        .remittanceInformation(REMITTANCE_INFORMATION)
-                        .IUR(IUR)
-                        .build())
-                .transactionDetails(TransactionDetails.builder()
-                        .wallet(WalletItem.builder()
-                                .info(Info.builder().brand(BRAND).holder(HOLDER_FULL_NAME).type(PAYMENT_METHOD_TYPE).build())
-                                .onboardingChannel(PAGO_PA_CHANNEL_IO)
-                                .build())
-                        .transaction(Transaction.builder()
-                                .idTransaction(ID_TRANSACTION)
-                                .grandTotal(GRAND_TOTAL_LONG)
-                                .amount(AMOUNT_LONG)
-                                .fee(FEE_LONG)
-                                .rrn(RRN)
-                                .numAut(AUTH_CODE)
-                                .creationDate(DATE_TIME_TIMESTAMP_ZONED_MILLISECONDS_DST_WINTER)
-                                .psp(TransactionPsp.builder()
-                                        .businessName(PSP_NAME)
-                                        .build())
-                                .origin(PAGOPA_PA_CHANNEL_ID)
-                                .build())
-                        .build())
-                .eventStatus(BizEventStatusType.DONE)
-                .build());
-        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
-
-        AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
-        assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_DEBTOR, receipt)));
-
-        ReceiptPDFTemplate receiptPdfTemplate = atomicReference.get();
-
-        assertNotNull(receiptPdfTemplate);
-        assertEquals(BIZ_EVENT_ID, receiptPdfTemplate.getServiceCustomerId());
-
-        it.gov.pagopa.receipt.pdf.generator.model.template.Transaction transaction = receiptPdfTemplate.getTransaction();
-        assertEquals(DATE_TIME_TIMESTAMP_FORMATTED_DST_WINTER, transaction.getTimestamp());
-        assertEquals(FORMATTED_GRAND_TOTAL, transaction.getAmount());
-        assertEquals(PSP_LOGO, transaction.getPsp().getLogo());
-        assertEquals(FORMATTED_FEE, transaction.getPsp().getFee().getAmount());
-        assertEquals(PSP_NAME, transaction.getPsp().getName());
-        assertEquals(PSP_CITY, transaction.getPsp().getCity());
-        assertEquals(PSP_COMPANY, transaction.getPsp().getCompanyName());
-        assertEquals(PSP_POSTAL_CODE, transaction.getPsp().getPostalCode());
-        assertEquals(PSP_ADDRESS, transaction.getPsp().getAddress());
-        assertEquals(PSP_BUILDING_NUMBER, transaction.getPsp().getBuildingNumber());
-        assertEquals(PSP_PROVINCE, transaction.getPsp().getProvince());
-        assertEquals(RRN, transaction.getRrn());
-        assertEquals(PAYMENT_METHOD_NAME, transaction.getPaymentMethod().getName());
-        assertEquals(BRAND_ASSET_URL, transaction.getPaymentMethod().getLogo());
-        assertEquals(HOLDER_FULL_NAME, transaction.getPaymentMethod().getAccountHolder());
-        assertEquals(AUTH_CODE, transaction.getAuthCode());
-        assertEquals(GENERATED_BY_DEBTOR, transaction.isRequestedByDebtor());
-        assertTrue(transaction.isProcessedByPagoPA());
-
-        assertNull(receiptPdfTemplate.getUser());
-
-        it.gov.pagopa.receipt.pdf.generator.model.template.Cart cart = receiptPdfTemplate.getCart();
-        assertEquals(FORMATTED_AMOUNT, cart.getAmountPartial());
-        assertEquals(FORMATTED_AMOUNT, cart.getItems().get(0).getAmount());
-        assertEquals(DEBTOR_FULL_NAME, cart.getItems().get(0).getDebtor().getFullName());
-        assertEquals(DEBTOR_VALID_CF, cart.getItems().get(0).getDebtor().getTaxCode());
-        assertEquals(REMITTANCE_INFORMATION, cart.getItems().get(0).getSubject());
-        assertEquals(COMPANY_NAME, cart.getItems().get(0).getPayee().getName());
-        assertEquals(ID_PA, cart.getItems().get(0).getPayee().getTaxCode());
-        assertEquals(MODEL_TYPE_IUV_TEXT, cart.getItems().get(0).getRefNumber().getType());
-        assertEquals(IUV, cart.getItems().get(0).getRefNumber().getValue());
-    }
-
-    @Test
-    void mapTemplateAllFieldsSuccessCompleteTemplateAndIOChannelAndDateZonedWithMillisecondsDSTSummer() {
-        List<BizEvent> bizEventList = Collections.singletonList(BizEvent.builder()
-                .id(BIZ_EVENT_ID)
-                .idPaymentManager(BIZ_EVENT_ID)
-                .debtorPosition(DebtorPosition.builder()
-                        .iuv(IUV)
-                        .modelType(MODEL_TYPE_IUV_CODE)
-                        .build())
-                .creditor(Creditor.builder()
-                        .companyName(COMPANY_NAME)
-                        .idPA(ID_PA)
-                        .build())
-                .psp(Psp.builder()
-                        .idPsp(ID_PSP)
-                        .psp(PSP_NAME)
-                        .build())
-                .debtor(Debtor.builder()
-                        .fullName(DEBTOR_FULL_NAME)
-                        .entityUniqueIdentifierValue(DEBTOR_VALID_CF)
-                        .build())
-                .payer(Payer.builder().fullName(PAYER_FULL_NAME).entityUniqueIdentifierValue(PAYER_VALID_CF).build())
-                .paymentInfo(PaymentInfo.builder()
-                        .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS_DST_WINTER)
-                        .paymentToken(PAYMENT_TOKEN)
-                        .amount(AMOUNT_WITHOUT_CENTS)
-                        .fee(FEE_WITH_SINGLE_DIGIT_CENTS)
-                        .remittanceInformation(REMITTANCE_INFORMATION)
-                        .IUR(IUR)
-                        .build())
-                .transactionDetails(TransactionDetails.builder()
-                        .wallet(WalletItem.builder()
-                                .info(Info.builder().brand(BRAND).holder(HOLDER_FULL_NAME).type(PAYMENT_METHOD_TYPE).build())
-                                .onboardingChannel(PAGO_PA_CHANNEL_IO)
-                                .build())
-                        .transaction(Transaction.builder()
-                                .idTransaction(ID_TRANSACTION)
-                                .grandTotal(GRAND_TOTAL_LONG)
-                                .amount(AMOUNT_LONG)
-                                .fee(FEE_LONG)
-                                .rrn(RRN)
-                                .numAut(AUTH_CODE)
-                                .creationDate(DATE_TIME_TIMESTAMP_ZONED_MILLISECONDS_DST_SUMMER)
-                                .psp(TransactionPsp.builder()
-                                        .businessName(PSP_NAME)
-                                        .build())
-                                .origin(PAGOPA_PA_CHANNEL_ID)
-                                .build())
-                        .build())
-                .eventStatus(BizEventStatusType.DONE)
-                .build());
-        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
-
-        AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
-        assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_DEBTOR, receipt)));
-
-        ReceiptPDFTemplate receiptPdfTemplate = atomicReference.get();
-
-        assertNotNull(receiptPdfTemplate);
-        assertEquals(BIZ_EVENT_ID, receiptPdfTemplate.getServiceCustomerId());
-
-        it.gov.pagopa.receipt.pdf.generator.model.template.Transaction transaction = receiptPdfTemplate.getTransaction();
-        assertEquals(DATE_TIME_TIMESTAMP_FORMATTED_DST_SUMMER, transaction.getTimestamp());
-        assertEquals(FORMATTED_GRAND_TOTAL, transaction.getAmount());
-        assertEquals(PSP_LOGO, transaction.getPsp().getLogo());
-        assertEquals(FORMATTED_FEE, transaction.getPsp().getFee().getAmount());
-        assertEquals(PSP_NAME, transaction.getPsp().getName());
-        assertEquals(PSP_CITY, transaction.getPsp().getCity());
-        assertEquals(PSP_COMPANY, transaction.getPsp().getCompanyName());
-        assertEquals(PSP_POSTAL_CODE, transaction.getPsp().getPostalCode());
-        assertEquals(PSP_ADDRESS, transaction.getPsp().getAddress());
-        assertEquals(PSP_BUILDING_NUMBER, transaction.getPsp().getBuildingNumber());
-        assertEquals(PSP_PROVINCE, transaction.getPsp().getProvince());
-        assertEquals(RRN, transaction.getRrn());
-        assertEquals(PAYMENT_METHOD_NAME, transaction.getPaymentMethod().getName());
-        assertEquals(BRAND_ASSET_URL, transaction.getPaymentMethod().getLogo());
-        assertEquals(HOLDER_FULL_NAME, transaction.getPaymentMethod().getAccountHolder());
-        assertEquals(AUTH_CODE, transaction.getAuthCode());
-        assertEquals(GENERATED_BY_DEBTOR, transaction.isRequestedByDebtor());
-        assertTrue(transaction.isProcessedByPagoPA());
-
-        assertNull(receiptPdfTemplate.getUser());
-
-        it.gov.pagopa.receipt.pdf.generator.model.template.Cart cart = receiptPdfTemplate.getCart();
-        assertEquals(FORMATTED_AMOUNT, cart.getAmountPartial());
-        assertEquals(FORMATTED_AMOUNT, cart.getItems().get(0).getAmount());
-        assertEquals(DEBTOR_FULL_NAME, cart.getItems().get(0).getDebtor().getFullName());
-        assertEquals(DEBTOR_VALID_CF, cart.getItems().get(0).getDebtor().getTaxCode());
-        assertEquals(REMITTANCE_INFORMATION, cart.getItems().get(0).getSubject());
-        assertEquals(COMPANY_NAME, cart.getItems().get(0).getPayee().getName());
-        assertEquals(ID_PA, cart.getItems().get(0).getPayee().getTaxCode());
-        assertEquals(MODEL_TYPE_IUV_TEXT, cart.getItems().get(0).getRefNumber().getType());
-        assertEquals(IUV, cart.getItems().get(0).getRefNumber().getValue());
-    }
-
-    @Test
-    void mapTemplateAllFieldsSuccessCompleteTemplateAndPagoPaChannelOnTransactionOrigin() {
-        List<BizEvent> bizEventList = Collections.singletonList(BizEvent.builder()
-                .id(BIZ_EVENT_ID)
-                .idPaymentManager(BIZ_EVENT_ID)
-                .debtorPosition(DebtorPosition.builder()
-                        .iuv(IUV)
-                        .modelType(MODEL_TYPE_IUV_CODE)
-                        .build())
-                .creditor(Creditor.builder()
-                        .companyName(COMPANY_NAME)
-                        .idPA(ID_PA)
-                        .build())
-                .psp(Psp.builder()
-                        .idPsp(ID_PSP)
-                        .psp(PSP_NAME)
-                        .build())
-                .debtor(Debtor.builder()
-                        .fullName(DEBTOR_FULL_NAME)
-                        .entityUniqueIdentifierValue(DEBTOR_VALID_CF)
-                        .build())
-                .payer(Payer.builder().fullName(PAYER_FULL_NAME).entityUniqueIdentifierValue(PAYER_VALID_CF).build())
-                .paymentInfo(PaymentInfo.builder()
-                        .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS_DST_WINTER)
-                        .paymentToken(PAYMENT_TOKEN)
-                        .amount(AMOUNT_WITHOUT_CENTS)
-                        .fee(FEE_WITH_SINGLE_DIGIT_CENTS)
-                        .remittanceInformation(REMITTANCE_INFORMATION)
-                        .IUR(IUR)
-                        .build())
-                .transactionDetails(TransactionDetails.builder()
-                        .wallet(WalletItem.builder()
-                                .info(Info.builder().brand(BRAND).holder(HOLDER_FULL_NAME).type(PAYMENT_METHOD_TYPE).build())
-                                .onboardingChannel(PAGO_PA_CHANNEL_IO_PAY)
-                                .build())
-                        .transaction(Transaction.builder()
-                                .idTransaction(ID_TRANSACTION)
-                                .grandTotal(GRAND_TOTAL_LONG)
-                                .amount(AMOUNT_LONG)
-                                .fee(FEE_LONG)
-                                .rrn(RRN)
-                                .numAut(AUTH_CODE)
-                                .creationDate(DATE_TIME_TIMESTAMP_ZONED_DST_WINTER)
-                                .psp(TransactionPsp.builder()
-                                        .businessName(PSP_NAME)
-                                        .build())
-                                .origin(PAGOPA_PA_CHANNEL_ID)
-                                .build())
-                        .build())
-                .eventStatus(BizEventStatusType.DONE)
-                .build());
-        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
-
-        AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
-        assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_DEBTOR, receipt)));
-
-        ReceiptPDFTemplate receiptPdfTemplate = atomicReference.get();
-
-        assertNotNull(receiptPdfTemplate);
-        assertEquals(BIZ_EVENT_ID, receiptPdfTemplate.getServiceCustomerId());
-
-        it.gov.pagopa.receipt.pdf.generator.model.template.Transaction transaction = receiptPdfTemplate.getTransaction();
-        assertEquals(DATE_TIME_TIMESTAMP_FORMATTED_DST_WINTER, transaction.getTimestamp());
-        assertEquals(FORMATTED_GRAND_TOTAL, transaction.getAmount());
-        assertEquals(PSP_LOGO, transaction.getPsp().getLogo());
-        assertEquals(FORMATTED_FEE, transaction.getPsp().getFee().getAmount());
-        assertEquals(PSP_NAME, transaction.getPsp().getName());
-        assertEquals(PSP_CITY, transaction.getPsp().getCity());
-        assertEquals(PSP_COMPANY, transaction.getPsp().getCompanyName());
-        assertEquals(PSP_POSTAL_CODE, transaction.getPsp().getPostalCode());
-        assertEquals(PSP_ADDRESS, transaction.getPsp().getAddress());
-        assertEquals(PSP_BUILDING_NUMBER, transaction.getPsp().getBuildingNumber());
-        assertEquals(PSP_PROVINCE, transaction.getPsp().getProvince());
-        assertEquals(RRN, transaction.getRrn());
-        assertEquals(PAYMENT_METHOD_NAME, transaction.getPaymentMethod().getName());
-        assertEquals(BRAND_ASSET_URL, transaction.getPaymentMethod().getLogo());
-        assertEquals(HOLDER_FULL_NAME, transaction.getPaymentMethod().getAccountHolder());
-        assertEquals(AUTH_CODE, transaction.getAuthCode());
-        assertEquals(GENERATED_BY_DEBTOR, transaction.isRequestedByDebtor());
-        assertTrue(transaction.isProcessedByPagoPA());
-
-        assertNull(receiptPdfTemplate.getUser());
-
-        it.gov.pagopa.receipt.pdf.generator.model.template.Cart cart = receiptPdfTemplate.getCart();
-        assertEquals(FORMATTED_AMOUNT, cart.getAmountPartial());
-        assertEquals(FORMATTED_AMOUNT, cart.getItems().get(0).getAmount());
-        assertEquals(DEBTOR_FULL_NAME, cart.getItems().get(0).getDebtor().getFullName());
-        assertEquals(DEBTOR_VALID_CF, cart.getItems().get(0).getDebtor().getTaxCode());
-        assertEquals(REMITTANCE_INFORMATION, cart.getItems().get(0).getSubject());
-        assertEquals(COMPANY_NAME, cart.getItems().get(0).getPayee().getName());
-        assertEquals(ID_PA, cart.getItems().get(0).getPayee().getTaxCode());
-        assertEquals(MODEL_TYPE_IUV_TEXT, cart.getItems().get(0).getRefNumber().getType());
-        assertEquals(IUV, cart.getItems().get(0).getRefNumber().getValue());
-    }
-
-    @Test
-    void mapTemplateAllFieldsSuccessCompleteTemplateAndPagoPaChannelOnChannelId() {
-        List<BizEvent> bizEventList = Collections.singletonList(BizEvent.builder()
-                .id(BIZ_EVENT_ID)
-                .idPaymentManager(BIZ_EVENT_ID)
-                .debtorPosition(DebtorPosition.builder()
-                        .iuv(IUV)
-                        .modelType(MODEL_TYPE_IUV_CODE)
-                        .build())
-                .creditor(Creditor.builder()
-                        .companyName(COMPANY_NAME)
-                        .idPA(ID_PA)
-                        .build())
-                .psp(Psp.builder()
-                        .idPsp(ID_PSP)
-                        .psp(PSP_NAME)
-                        .build())
-                .debtor(Debtor.builder()
-                        .fullName(DEBTOR_FULL_NAME)
-                        .entityUniqueIdentifierValue(DEBTOR_VALID_CF)
-                        .build())
-                .payer(Payer.builder().fullName(PAYER_FULL_NAME).entityUniqueIdentifierValue(PAYER_VALID_CF).build())
-                .paymentInfo(PaymentInfo.builder()
-                        .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS_DST_WINTER)
-                        .paymentToken(PAYMENT_TOKEN)
-                        .amount(AMOUNT_WITHOUT_CENTS)
-                        .fee(FEE_WITH_SINGLE_DIGIT_CENTS)
-                        .remittanceInformation(REMITTANCE_INFORMATION)
-                        .IUR(IUR)
-                        .build())
-                .transactionDetails(TransactionDetails.builder()
-                        .wallet(WalletItem.builder()
-                                .info(Info.builder().brand(BRAND).holder(HOLDER_FULL_NAME).type(PAYMENT_METHOD_TYPE).build())
-                                .onboardingChannel(PAGO_PA_CHANNEL_IO_PAY)
-                                .build())
-                        .info(InfoTransaction.builder().clientId(PAGOPA_PA_CHANNEL_ID).build())
-                        .transaction(Transaction.builder()
-                                .idTransaction(ID_TRANSACTION)
-                                .grandTotal(GRAND_TOTAL_LONG)
-                                .amount(AMOUNT_LONG)
-                                .fee(FEE_LONG)
-                                .rrn(RRN)
-                                .numAut(AUTH_CODE)
-                                .creationDate(DATE_TIME_TIMESTAMP_ZONED_DST_WINTER)
-                                .psp(TransactionPsp.builder()
-                                        .businessName(PSP_NAME)
-                                        .build())
-                                .build())
-                        .build())
-                .eventStatus(BizEventStatusType.DONE)
-                .build());
-        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).amount(FORMATTED_GRAND_TOTAL).build()).build();
-
-        AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
-        assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_DEBTOR, receipt)));
-
-        ReceiptPDFTemplate receiptPdfTemplate = atomicReference.get();
-
-        assertNotNull(receiptPdfTemplate);
-        assertEquals(BIZ_EVENT_ID, receiptPdfTemplate.getServiceCustomerId());
-
-        it.gov.pagopa.receipt.pdf.generator.model.template.Transaction transaction = receiptPdfTemplate.getTransaction();
-        assertEquals(DATE_TIME_TIMESTAMP_FORMATTED_DST_WINTER, transaction.getTimestamp());
-        assertEquals(FORMATTED_GRAND_TOTAL, transaction.getAmount());
-        assertEquals(PSP_LOGO, transaction.getPsp().getLogo());
-        assertEquals(FORMATTED_FEE, transaction.getPsp().getFee().getAmount());
-        assertEquals(PSP_NAME, transaction.getPsp().getName());
-        assertEquals(PSP_CITY, transaction.getPsp().getCity());
-        assertEquals(PSP_COMPANY, transaction.getPsp().getCompanyName());
-        assertEquals(PSP_POSTAL_CODE, transaction.getPsp().getPostalCode());
-        assertEquals(PSP_ADDRESS, transaction.getPsp().getAddress());
-        assertEquals(PSP_BUILDING_NUMBER, transaction.getPsp().getBuildingNumber());
-        assertEquals(PSP_PROVINCE, transaction.getPsp().getProvince());
-        assertEquals(RRN, transaction.getRrn());
-        assertEquals(PAYMENT_METHOD_NAME, transaction.getPaymentMethod().getName());
-        assertEquals(BRAND_ASSET_URL, transaction.getPaymentMethod().getLogo());
-        assertEquals(HOLDER_FULL_NAME, transaction.getPaymentMethod().getAccountHolder());
-        assertEquals(AUTH_CODE, transaction.getAuthCode());
-        assertEquals(GENERATED_BY_DEBTOR, transaction.isRequestedByDebtor());
-        assertTrue(transaction.isProcessedByPagoPA());
-
-        assertNull(receiptPdfTemplate.getUser());
-
-        it.gov.pagopa.receipt.pdf.generator.model.template.Cart cart = receiptPdfTemplate.getCart();
-        assertEquals(FORMATTED_AMOUNT, cart.getAmountPartial());
-        assertEquals(FORMATTED_AMOUNT, cart.getItems().get(0).getAmount());
-        assertEquals(DEBTOR_FULL_NAME, cart.getItems().get(0).getDebtor().getFullName());
-        assertEquals(DEBTOR_VALID_CF, cart.getItems().get(0).getDebtor().getTaxCode());
-        assertEquals(REMITTANCE_INFORMATION, cart.getItems().get(0).getSubject());
-        assertEquals(COMPANY_NAME, cart.getItems().get(0).getPayee().getName());
-        assertEquals(ID_PA, cart.getItems().get(0).getPayee().getTaxCode());
-        assertEquals(MODEL_TYPE_IUV_TEXT, cart.getItems().get(0).getRefNumber().getType());
-        assertEquals(IUV, cart.getItems().get(0).getRefNumber().getValue());
-    }
-
-    @Test
-    void mapTemplateAllFieldsSuccessPartialTemplateAndNotPagoPaChannel() {
-        List<BizEvent> bizEventList = Collections.singletonList(BizEvent.builder()
-                .id(BIZ_EVENT_ID)
-                .debtorPosition(DebtorPosition.builder()
-                        .noticeNumber(NOTICE_NUMBER)
-                        .modelType(MODEL_TYPE_NOTICE_CODE)
-                        .build())
-                .creditor(Creditor.builder()
-                        .companyName(COMPANY_NAME)
-                        .idPA(ID_PA)
-                        .build())
-                .psp(Psp.builder()
-                        .idPsp(ID_PSP)
-                        .psp(PSP_NAME)
-                        .build())
-                .debtor(Debtor.builder()
-                        .fullName(DEBTOR_FULL_NAME)
-                        .entityUniqueIdentifierValue(DEBTOR_VALID_CF)
-                        .build())
-                .payer(Payer.builder().fullName(PAYER_FULL_NAME).entityUniqueIdentifierValue(PAYER_VALID_CF).build())
-                .paymentInfo(PaymentInfo.builder()
-                        .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS_DST_WINTER)
-                        .paymentToken(PAYMENT_TOKEN)
-                        .amount(AMOUNT_WITHOUT_CENTS)
-                        .fee(FEE_WITH_SINGLE_DIGIT_CENTS)
-                        .remittanceInformation(REMITTANCE_INFORMATION)
-                        .IUR(IUR)
-                        .build())
-                .eventStatus(BizEventStatusType.DONE)
-                .build());
+    void mapTemplateAllFieldsSuccessPartialTemplateAndNotPagoPaChannel() throws IOException {
+        BizEvent bizEvent = getBizEventFromFile("biz-events/bizEvent_modelType2_withoutTransactionDetails.json");
         Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_AMOUNT).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
 
         AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
-        assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_DEBTOR, receipt)));
+        assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEvent, GENERATED_BY_DEBTOR, receipt)));
 
         ReceiptPDFTemplate receiptPdfTemplate = atomicReference.get();
 
@@ -853,40 +270,12 @@ class BuildTemplateServiceImplTest {
     }
 
     @Test
-    void mapTemplateWithoutTransactionDetailsSuccess() {
-        List<BizEvent> bizEventList = Collections.singletonList(BizEvent.builder()
-                .id(BIZ_EVENT_ID)
-                .debtorPosition(DebtorPosition.builder()
-                        .iuv(IUV)
-                        .modelType(MODEL_TYPE_IUV_CODE)
-                        .build())
-                .creditor(Creditor.builder()
-                        .companyName(COMPANY_NAME)
-                        .idPA(ID_PA)
-                        .build())
-                .psp(Psp.builder()
-                        .idPsp(ID_PSP)
-                        .psp(PSP_NAME)
-                        .build())
-                .debtor(Debtor.builder()
-                        .fullName(DEBTOR_FULL_NAME)
-                        .entityUniqueIdentifierValue(DEBTOR_VALID_CF)
-                        .build())
-                .payer(Payer.builder().fullName(PAYER_FULL_NAME).entityUniqueIdentifierValue(PAYER_VALID_CF).build())
-                .paymentInfo(PaymentInfo.builder()
-                        .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS_DST_WINTER)
-                        .paymentToken(PAYMENT_TOKEN)
-                        .amount(AMOUNT_WITHOUT_CENTS)
-                        .fee(FEE_WITH_SINGLE_DIGIT_CENTS)
-                        .remittanceInformation(REMITTANCE_INFORMATION)
-                        .IUR(IUR)
-                        .build())
-                .eventStatus(BizEventStatusType.DONE)
-                .build());
+    void mapTemplateWithoutTransactionDetailsSuccess() throws IOException {
+        BizEvent bizEvent = getBizEventFromFile("biz-events/bizEvent_modelType1_withoutTransactionDetails.json");
         Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_AMOUNT).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
 
         AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
-        assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_DEBTOR, receipt)));
+        assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEvent, GENERATED_BY_DEBTOR, receipt)));
 
         ReceiptPDFTemplate receiptPdfTemplate = atomicReference.get();
 
@@ -928,39 +317,12 @@ class BuildTemplateServiceImplTest {
     }
 
     @Test
-    void mapTemplateWithoutTransactionDetailsAndPaymentTokenSuccess() {
-        List<BizEvent> bizEventList = Collections.singletonList(BizEvent.builder()
-                .id(BIZ_EVENT_ID)
-                .debtorPosition(DebtorPosition.builder()
-                        .iuv(IUV)
-                        .modelType(MODEL_TYPE_IUV_CODE)
-                        .build())
-                .creditor(Creditor.builder()
-                        .companyName(COMPANY_NAME)
-                        .idPA(ID_PA)
-                        .build())
-                .psp(Psp.builder()
-                        .idPsp(ID_PSP)
-                        .psp(PSP_NAME)
-                        .build())
-                .debtor(Debtor.builder()
-                        .fullName(DEBTOR_FULL_NAME)
-                        .entityUniqueIdentifierValue(DEBTOR_VALID_CF)
-                        .build())
-                .payer(Payer.builder().fullName(PAYER_FULL_NAME).entityUniqueIdentifierValue(PAYER_VALID_CF).build())
-                .paymentInfo(PaymentInfo.builder()
-                        .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS_DST_SUMMER)
-                        .amount(AMOUNT_WITHOUT_CENTS)
-                        .fee(FEE_WITH_SINGLE_DIGIT_CENTS)
-                        .remittanceInformation(REMITTANCE_INFORMATION)
-                        .IUR(IUR)
-                        .build())
-                .eventStatus(BizEventStatusType.DONE)
-                .build());
+    void mapTemplateWithoutTransactionDetailsAndPaymentTokenSuccess() throws IOException {
+        BizEvent bizEvent = getBizEventFromFile("biz-events/bizEvent_modelType1_withoutTransactionDetailsAndPaymentToken.json");
         Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_AMOUNT).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
 
         AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
-        assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_DEBTOR, receipt)));
+        assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEvent, GENERATED_BY_DEBTOR, receipt)));
 
         ReceiptPDFTemplate receiptPdfTemplate = atomicReference.get();
 
@@ -1001,60 +363,13 @@ class BuildTemplateServiceImplTest {
     }
 
     @Test
-    void mapTemplateAllFieldsSuccessDebtorFullNameEmpty() {
-        List<BizEvent> bizEventList = Collections.singletonList(BizEvent.builder()
-                .id(BIZ_EVENT_ID)
-                .idPaymentManager(BIZ_EVENT_ID)
-                .debtorPosition(DebtorPosition.builder()
-                        .iuv(IUV)
-                        .modelType(MODEL_TYPE_IUV_CODE)
-                        .build())
-                .creditor(Creditor.builder()
-                        .companyName(COMPANY_NAME)
-                        .idPA(ID_PA)
-                        .build())
-                .psp(Psp.builder()
-                        .idPsp(ID_PSP)
-                        .psp(PSP_NAME)
-                        .build())
-                .debtor(Debtor.builder()
-                        .fullName(DEBTOR_FULL_NAME_INVALID)
-                        .entityUniqueIdentifierValue(DEBTOR_VALID_CF)
-                        .build())
-                .payer(Payer.builder().fullName(PAYER_FULL_NAME).entityUniqueIdentifierValue(PAYER_VALID_CF).build())
-                .paymentInfo(PaymentInfo.builder()
-                        .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS_DST_WINTER)
-                        .paymentToken(PAYMENT_TOKEN)
-                        .amount(AMOUNT_WITHOUT_CENTS)
-                        .fee(FEE_WITH_SINGLE_DIGIT_CENTS)
-                        .remittanceInformation(REMITTANCE_INFORMATION)
-                        .IUR(IUR)
-                        .build())
-                .transactionDetails(TransactionDetails.builder()
-                        .wallet(WalletItem.builder()
-                                .info(Info.builder().brand(BRAND).holder(HOLDER_FULL_NAME).type(PAYMENT_METHOD_TYPE).build())
-                                .onboardingChannel(PAGO_PA_CHANNEL_IO)
-                                .build())
-                        .transaction(Transaction.builder()
-                                .idTransaction(ID_TRANSACTION)
-                                .grandTotal(GRAND_TOTAL_LONG)
-                                .amount(AMOUNT_LONG)
-                                .fee(FEE_LONG)
-                                .rrn(RRN)
-                                .numAut(AUTH_CODE)
-                                .creationDate(DATE_TIME_TIMESTAMP_ZONED_DST_WINTER)
-                                .psp(TransactionPsp.builder()
-                                        .businessName(PSP_NAME)
-                                        .build())
-                                .origin(PAGOPA_PA_CHANNEL_ID)
-                                .build())
-                        .build())
-                .eventStatus(BizEventStatusType.DONE)
-                .build());
-        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
+    void mapTemplateAllFieldsSuccessDebtorFullNameEmpty() throws IOException {
+        BizEvent bizEvent = getBizEventFromFile("biz-events/bizEvent_complete_dst_winter.json");
+        bizEvent.getDebtor().setFullName(DEBTOR_FULL_NAME_INVALID);
+        Receipt receipt = buildReceiptWithAmountAndSingleCartListWithOnlyRemittance();
 
         AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
-        assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_DEBTOR, receipt)));
+        assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEvent, GENERATED_BY_DEBTOR, receipt)));
 
         ReceiptPDFTemplate receiptPdfTemplate = atomicReference.get();
 
@@ -1096,60 +411,13 @@ class BuildTemplateServiceImplTest {
     }
 
     @Test
-    void mapTemplateAllFieldsSuccessDebtorFullNameWithSpecialChar() {
-        List<BizEvent> bizEventList = Collections.singletonList(BizEvent.builder()
-                .id(BIZ_EVENT_ID)
-                .idPaymentManager(BIZ_EVENT_ID)
-                .debtorPosition(DebtorPosition.builder()
-                        .iuv(IUV)
-                        .modelType(MODEL_TYPE_IUV_CODE)
-                        .build())
-                .creditor(Creditor.builder()
-                        .companyName(COMPANY_NAME)
-                        .idPA(ID_PA)
-                        .build())
-                .psp(Psp.builder()
-                        .idPsp(ID_PSP)
-                        .psp(PSP_NAME)
-                        .build())
-                .debtor(Debtor.builder()
-                        .fullName(DEBTOR_FULL_NAME_SPECIAL_CHAR)
-                        .entityUniqueIdentifierValue(DEBTOR_VALID_CF)
-                        .build())
-                .payer(Payer.builder().fullName(PAYER_FULL_NAME).entityUniqueIdentifierValue(PAYER_VALID_CF).build())
-                .paymentInfo(PaymentInfo.builder()
-                        .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS_DST_WINTER)
-                        .paymentToken(PAYMENT_TOKEN)
-                        .amount(AMOUNT_WITHOUT_CENTS)
-                        .fee(FEE_WITH_SINGLE_DIGIT_CENTS)
-                        .remittanceInformation(REMITTANCE_INFORMATION)
-                        .IUR(IUR)
-                        .build())
-                .transactionDetails(TransactionDetails.builder()
-                        .wallet(WalletItem.builder()
-                                .info(Info.builder().brand(BRAND).holder(HOLDER_FULL_NAME).type(PAYMENT_METHOD_TYPE).build())
-                                .onboardingChannel(PAGO_PA_CHANNEL_IO)
-                                .build())
-                        .transaction(Transaction.builder()
-                                .idTransaction(ID_TRANSACTION)
-                                .grandTotal(GRAND_TOTAL_LONG)
-                                .amount(AMOUNT_LONG)
-                                .fee(FEE_LONG)
-                                .rrn(RRN)
-                                .numAut(AUTH_CODE)
-                                .creationDate(DATE_TIME_TIMESTAMP_ZONED_DST_WINTER)
-                                .psp(TransactionPsp.builder()
-                                        .businessName(PSP_NAME)
-                                        .build())
-                                .origin(PAGOPA_PA_CHANNEL_ID)
-                                .build())
-                        .build())
-                .eventStatus(BizEventStatusType.DONE)
-                .build());
-        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
+    void mapTemplateAllFieldsSuccessDebtorFullNameWithSpecialChar() throws IOException {
+        BizEvent bizEvent = getBizEventFromFile("biz-events/bizEvent_complete_dst_winter.json");
+        bizEvent.getDebtor().setFullName(DEBTOR_FULL_NAME_SPECIAL_CHAR);
+        Receipt receipt = buildReceiptWithAmountAndSingleCartListWithOnlyRemittance();
 
         AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
-        assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_DEBTOR, receipt)));
+        assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEvent, GENERATED_BY_DEBTOR, receipt)));
 
         ReceiptPDFTemplate receiptPdfTemplate = atomicReference.get();
 
@@ -1191,60 +459,13 @@ class BuildTemplateServiceImplTest {
     }
 
     @Test
-    void mapTemplateAllFieldsSuccessDebtorFullNameEqualsFiscalCode() {
-        List<BizEvent> bizEventList = Collections.singletonList(BizEvent.builder()
-                .id(BIZ_EVENT_ID)
-                .idPaymentManager(BIZ_EVENT_ID)
-                .debtorPosition(DebtorPosition.builder()
-                        .iuv(IUV)
-                        .modelType(MODEL_TYPE_IUV_CODE)
-                        .build())
-                .creditor(Creditor.builder()
-                        .companyName(COMPANY_NAME)
-                        .idPA(ID_PA)
-                        .build())
-                .psp(Psp.builder()
-                        .idPsp(ID_PSP)
-                        .psp(PSP_NAME)
-                        .build())
-                .debtor(Debtor.builder()
-                        .fullName(DEBTOR_VALID_CF)
-                        .entityUniqueIdentifierValue(DEBTOR_VALID_CF)
-                        .build())
-                .payer(Payer.builder().fullName(PAYER_FULL_NAME).entityUniqueIdentifierValue(PAYER_VALID_CF).build())
-                .paymentInfo(PaymentInfo.builder()
-                        .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS_DST_WINTER)
-                        .paymentToken(PAYMENT_TOKEN)
-                        .amount(AMOUNT_WITHOUT_CENTS)
-                        .fee(FEE_WITH_SINGLE_DIGIT_CENTS)
-                        .remittanceInformation(REMITTANCE_INFORMATION)
-                        .IUR(IUR)
-                        .build())
-                .transactionDetails(TransactionDetails.builder()
-                        .wallet(WalletItem.builder()
-                                .info(Info.builder().brand(BRAND).holder(HOLDER_FULL_NAME).type(PAYMENT_METHOD_TYPE).build())
-                                .onboardingChannel(PAGO_PA_CHANNEL_IO)
-                                .build())
-                        .transaction(Transaction.builder()
-                                .idTransaction(ID_TRANSACTION)
-                                .grandTotal(GRAND_TOTAL_LONG)
-                                .amount(AMOUNT_LONG)
-                                .fee(FEE_LONG)
-                                .rrn(RRN)
-                                .numAut(AUTH_CODE)
-                                .creationDate(DATE_TIME_TIMESTAMP_ZONED_DST_WINTER)
-                                .psp(TransactionPsp.builder()
-                                        .businessName(PSP_NAME)
-                                        .build())
-                                .origin(PAGOPA_PA_CHANNEL_ID)
-                                .build())
-                        .build())
-                .eventStatus(BizEventStatusType.DONE)
-                .build());
-        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
+    void mapTemplateAllFieldsSuccessDebtorFullNameEqualsFiscalCode() throws IOException {
+        BizEvent bizEvent = getBizEventFromFile("biz-events/bizEvent_complete_dst_winter.json");
+        bizEvent.getDebtor().setFullName(DEBTOR_VALID_CF);
+        Receipt receipt = buildReceiptWithAmountAndSingleCartListWithOnlyRemittance();
 
         AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
-        assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_DEBTOR, receipt)));
+        assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEvent, GENERATED_BY_DEBTOR, receipt)));
 
         ReceiptPDFTemplate receiptPdfTemplate = atomicReference.get();
 
@@ -1287,7 +508,7 @@ class BuildTemplateServiceImplTest {
 
     @Test
     void mapTemplateLeastAmountOfInfoSuccessPayer() {
-        List<BizEvent> bizEventList = Collections.singletonList(BizEvent.builder()
+        BizEvent bizEventList = BizEvent.builder()
                 .id(BIZ_EVENT_ID)
                 .paymentInfo(PaymentInfo.builder()
                         .IUR(IUR)
@@ -1313,14 +534,14 @@ class BuildTemplateServiceImplTest {
                 .creditor(Creditor.builder()
                         .idPA(ID_PA)
                         .build())
-                .build());
-        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
+                .build();
+        Receipt receipt = buildReceiptWithAmountAndSingleCartListWithOnlyRemittance();
         assertDoesNotThrow(() -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, receipt));
     }
 
     @Test
     void mapTemplateLeastAmountOfInfoSuccessDebtor() {
-        List<BizEvent> bizEventList = Collections.singletonList(BizEvent.builder()
+        BizEvent bizEventList = BizEvent.builder()
                 .id(BIZ_EVENT_ID)
                 .paymentInfo(PaymentInfo.builder()
                         .IUR(IUR)
@@ -1342,14 +563,14 @@ class BuildTemplateServiceImplTest {
                 .creditor(Creditor.builder()
                         .idPA(ID_PA)
                         .build())
-                .build());
-        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
+                .build();
+        Receipt receipt = buildReceiptWithAmountAndSingleCartListWithOnlyRemittance();
         assertDoesNotThrow(() -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_DEBTOR, receipt));
     }
 
     @Test
     void mapTemplateSuccessRequestByDebtorTrueWithoutPayerAndUserFiscalCode() {
-        List<BizEvent> bizEventList = Collections.singletonList(BizEvent.builder()
+        BizEvent bizEventList = BizEvent.builder()
                 .id(BIZ_EVENT_ID)
                 .paymentInfo(PaymentInfo.builder()
                         .IUR(IUR)
@@ -1377,9 +598,9 @@ class BuildTemplateServiceImplTest {
                         )
                         .build()
                 )
-                .build());
+                .build();
         AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
-        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
+        Receipt receipt = buildReceiptWithAmountAndSingleCartListWithOnlyRemittance();
         assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_DEBTOR, receipt)));
 
         ReceiptPDFTemplate receiptPDFTemplate = atomicReference.get();
@@ -1388,7 +609,7 @@ class BuildTemplateServiceImplTest {
 
     @Test
     void mapTemplateSuccessRequestByDebtorTrueWithPayerFiscalCodeDifferent() {
-        List<BizEvent> bizEventList = Collections.singletonList(BizEvent.builder()
+        BizEvent bizEventList = BizEvent.builder()
                 .id(BIZ_EVENT_ID)
                 .paymentInfo(PaymentInfo.builder()
                         .IUR(IUR)
@@ -1419,9 +640,9 @@ class BuildTemplateServiceImplTest {
                         )
                         .build()
                 )
-                .build());
+                .build();
         AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
-        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
+        Receipt receipt = buildReceiptWithAmountAndSingleCartListWithOnlyRemittance();
         assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_DEBTOR, receipt)));
 
         ReceiptPDFTemplate receiptPDFTemplate = atomicReference.get();
@@ -1430,7 +651,7 @@ class BuildTemplateServiceImplTest {
 
     @Test
     void mapTemplateSuccessRequestByDebtorTrueWithUserFiscalCodeDifferent() {
-        List<BizEvent> bizEventList = Collections.singletonList(BizEvent.builder()
+        BizEvent bizEventList = BizEvent.builder()
                 .id(BIZ_EVENT_ID)
                 .paymentInfo(PaymentInfo.builder()
                         .IUR(IUR)
@@ -1459,9 +680,9 @@ class BuildTemplateServiceImplTest {
                         .user(User.builder().fiscalCode(PAYER_VALID_CF).build())
                         .build()
                 )
-                .build());
+                .build();
         AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
-        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
+        Receipt receipt = buildReceiptWithAmountAndSingleCartListWithOnlyRemittance();
         assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_DEBTOR, receipt)));
 
         ReceiptPDFTemplate receiptPDFTemplate = atomicReference.get();
@@ -1470,7 +691,7 @@ class BuildTemplateServiceImplTest {
 
     @Test
     void mapTemplateSuccessRequestByDebtorFalseWithPayerAndUserFiscalCodeEqual() {
-        List<BizEvent> bizEventList = Collections.singletonList(BizEvent.builder()
+        BizEvent bizEventList = BizEvent.builder()
                 .id(BIZ_EVENT_ID)
                 .paymentInfo(PaymentInfo.builder()
                         .IUR(IUR)
@@ -1503,10 +724,10 @@ class BuildTemplateServiceImplTest {
                         .user(User.builder().fiscalCode(DEBTOR_VALID_CF).build())
                         .build()
                 )
-                .build());
+                .build();
         AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
-        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
-        assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_DEBTOR, receipt)));
+        Receipt receipt = buildReceiptWithAmountAndSingleCartListWithOnlyRemittance();
+        assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, receipt)));
 
         ReceiptPDFTemplate receiptPDFTemplate = atomicReference.get();
         assertFalse(receiptPDFTemplate.getTransaction().isRequestedByDebtor());
@@ -1514,7 +735,7 @@ class BuildTemplateServiceImplTest {
 
     @Test
     void mapTemplateSuccessRequestByDebtorFalseWhenGeneratedByPayer() {
-        List<BizEvent> bizEventList = Collections.singletonList(BizEvent.builder()
+        BizEvent bizEventList = BizEvent.builder()
                 .id(BIZ_EVENT_ID)
                 .paymentInfo(PaymentInfo.builder()
                         .IUR(IUR)
@@ -1546,9 +767,9 @@ class BuildTemplateServiceImplTest {
                         )
                         .build()
                 )
-                .build());
+                .build();
         AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
-        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
+        Receipt receipt = buildReceiptWithAmountAndSingleCartListWithOnlyRemittance();
         assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, receipt)));
 
         ReceiptPDFTemplate receiptPDFTemplate = atomicReference.get();
@@ -1557,7 +778,7 @@ class BuildTemplateServiceImplTest {
 
     @Test
     void mapTemplateSuccessWithUserNameAndSurname() {
-        List<BizEvent> bizEventList = Collections.singletonList(BizEvent.builder()
+        BizEvent bizEventList = BizEvent.builder()
                 .id(BIZ_EVENT_ID)
                 .paymentInfo(PaymentInfo.builder()
                         .IUR(IUR)
@@ -1592,9 +813,9 @@ class BuildTemplateServiceImplTest {
                                 .build())
                         .build()
                 )
-                .build());
+                .build();
         AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
-        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
+        Receipt receipt = buildReceiptWithAmountAndSingleCartListWithOnlyRemittance();
         assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, receipt)));
 
         ReceiptPDFTemplate receiptPDFTemplate = atomicReference.get();
@@ -1603,7 +824,7 @@ class BuildTemplateServiceImplTest {
 
     @Test
     void mapTemplateSuccessWithUserTaxCodeFromTransaction() {
-        List<BizEvent> bizEventList = Collections.singletonList(BizEvent.builder()
+        BizEvent bizEventList = BizEvent.builder()
                 .id(BIZ_EVENT_ID)
                 .paymentInfo(PaymentInfo.builder()
                         .IUR(IUR)
@@ -1639,7 +860,7 @@ class BuildTemplateServiceImplTest {
                                 .build())
                         .build()
                 )
-                .build());
+                .build();
         AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
         Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).amount(FORMATTED_GRAND_TOTAL).build()).build();
         assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, receipt)));
@@ -1650,56 +871,55 @@ class BuildTemplateServiceImplTest {
 
     @Test
     void mapTemplateNoServiceCustomerIdError() {
-        List<BizEvent> bizEventList = Collections.singletonList(new BizEvent());
-        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().build()));
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(new BizEvent(), GENERATED_BY_PAYER, Receipt.builder().build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, RECEIPT, TemplateDataField.SERVICE_CUSTOMER_ID, RECEIPT, null), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, RECEIPT.getName(), TemplateDataField.SERVICE_CUSTOMER_ID), e.getMessage());
     }
 
     @Test
     void mapTemplateNoTransactionTimestampError() {
-        List<BizEvent> bizEventList = Collections.singletonList(BizEvent.builder().id(BIZ_EVENT_ID).paymentInfo(PaymentInfo.builder().IUR(IUR).build()).build());
-        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).build()));
+        BizEvent bizEventList = BizEvent.builder().id(BIZ_EVENT_ID).paymentInfo(PaymentInfo.builder().IUR(IUR).build()).build();
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, buildReceiptWithAmountAndSingleCartListWithOnlyRemittance()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, BIZ_EVENT, TemplateDataField.TRANSACTION_TIMESTAMP, BIZ_EVENT, BIZ_EVENT_ID), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, BIZ_EVENT.getName(), TemplateDataField.TRANSACTION_TIMESTAMP), e.getMessage());
     }
 
     @Test
     void mapTemplateNoTransactionAmountError() {
-        List<BizEvent> bizEventList = Collections.singletonList(BizEvent.builder()
+        BizEvent bizEventList = BizEvent.builder()
                 .id(BIZ_EVENT_ID)
                 .paymentInfo(PaymentInfo.builder()
                         .IUR(IUR)
                         .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS_DST_WINTER)
                         .build())
-                .build());
+                .build();
         TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().id(RECEIPT_ID).eventId(BIZ_EVENT_ID).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, RECEIPT,TemplateDataField.TRANSACTION_AMOUNT, RECEIPT,RECEIPT_ID), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, RECEIPT.getName(), TemplateDataField.TRANSACTION_AMOUNT), e.getMessage());
     }
 
     @Test
     void mapTemplateNoPspError() {
-        List<BizEvent> bizEventList = Collections.singletonList(BizEvent.builder()
+        BizEvent bizEventList = BizEvent.builder()
                 .id(BIZ_EVENT_ID)
                 .paymentInfo(PaymentInfo.builder()
                         .IUR(IUR)
                         .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS_DST_WINTER)
                         .amount(AMOUNT_WITHOUT_CENTS)
                         .build())
-                .build());
-        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).build()).build()));
+                .build();
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, buildReceiptWithAmountAndSingleCartListWithOnlyRemittance()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, BIZ_EVENT,TemplateDataField.TRANSACTION_PSP, BIZ_EVENT,BIZ_EVENT_ID), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, PSP_STATIC_CONFIG.getName(), TemplateDataField.TRANSACTION_PSP), e.getMessage());
     }
 
     @Test
     void mapTemplateNoPspNameError() {
-        List<BizEvent> bizEventList = Collections.singletonList(BizEvent.builder()
+        BizEvent bizEventList = BizEvent.builder()
                 .id(BIZ_EVENT_ID)
                 .paymentInfo(PaymentInfo.builder()
                         .IUR(IUR)
@@ -1709,16 +929,16 @@ class BuildTemplateServiceImplTest {
                 .psp(Psp.builder()
                         .idPsp("noName")
                         .build())
-                .build());
-        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).build()).build()));
+                .build();
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, buildReceiptWithAmountAndSingleCartListWithOnlyRemittance()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, BIZ_EVENT,TemplateDataField.TRANSACTION_PSP_NAME, BIZ_EVENT, BIZ_EVENT_ID), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, PSP_STATIC_CONFIG.getName(), TemplateDataField.TRANSACTION_PSP_NAME), e.getMessage());
     }
 
     @Test
     void mapTemplateNoPspCompanyNameError() {
-        List<BizEvent> bizEventList = Collections.singletonList(BizEvent.builder()
+        BizEvent bizEventList = BizEvent.builder()
                 .id(BIZ_EVENT_ID)
                 .paymentInfo(PaymentInfo.builder()
                         .IUR(IUR)
@@ -1729,16 +949,16 @@ class BuildTemplateServiceImplTest {
                         .idPsp("noCompanyName")
                         .psp(PSP_NAME)
                         .build())
-                .build());
-        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().id(RECEIPT_ID).eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).build()).build()));
+                .build();
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().id(RECEIPT_ID).eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, BIZ_EVENT,TemplateDataField.TRANSACTION_PSP_COMPANY_NAME, BIZ_EVENT,BIZ_EVENT_ID), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, PSP_STATIC_CONFIG.getName(), TemplateDataField.TRANSACTION_PSP_COMPANY_NAME), e.getMessage());
     }
 
     @Test
     void mapTemplateNoPspAddressError() {
-        List<BizEvent> bizEventList = Collections.singletonList(BizEvent.builder()
+        BizEvent bizEventList = BizEvent.builder()
                 .id(BIZ_EVENT_ID)
                 .paymentInfo(PaymentInfo.builder()
                         .IUR(IUR)
@@ -1749,18 +969,22 @@ class BuildTemplateServiceImplTest {
                         .idPsp("noAddress")
                         .psp(PSP_NAME)
                         .build())
-                .build());
-        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().id(RECEIPT_ID).eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).build()).build()));
+                .build();
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().id(RECEIPT_ID).eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE,
-
-                BIZ_EVENT,TemplateDataField.TRANSACTION_PSP_ADDRESS, BIZ_EVENT, BIZ_EVENT_ID), e.getMessage());
+        assertEquals(
+                String.format(
+                        TemplateDataField.ERROR_MAPPING_MESSAGE,
+                        PSP_STATIC_CONFIG.getName(),
+                        TemplateDataField.TRANSACTION_PSP_ADDRESS),
+                e.getMessage()
+        );
     }
 
     @Test
     void mapTemplateNoPspCityError() {
-        List<BizEvent> bizEventList = Collections.singletonList(BizEvent.builder()
+        BizEvent bizEventList = BizEvent.builder()
                 .id(BIZ_EVENT_ID)
                 .paymentInfo(PaymentInfo.builder()
                         .IUR(IUR)
@@ -1771,16 +995,16 @@ class BuildTemplateServiceImplTest {
                         .idPsp("noCity")
                         .psp(PSP_NAME)
                         .build())
-                .build());
-        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().id(RECEIPT_ID).eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).build()).build()));
+                .build();
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().id(RECEIPT_ID).eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, BIZ_EVENT,TemplateDataField.TRANSACTION_PSP_CITY, BIZ_EVENT, BIZ_EVENT_ID ), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, PSP_STATIC_CONFIG.getName(), TemplateDataField.TRANSACTION_PSP_CITY), e.getMessage());
     }
 
     @Test
     void mapTemplateNoPspProvinceError() {
-        List<BizEvent> bizEventList = Collections.singletonList(BizEvent.builder()
+        BizEvent bizEventList = BizEvent.builder()
                 .id(BIZ_EVENT_ID)
                 .paymentInfo(PaymentInfo.builder()
                         .IUR(IUR)
@@ -1791,16 +1015,16 @@ class BuildTemplateServiceImplTest {
                         .idPsp("noProvince")
                         .psp(PSP_NAME)
                         .build())
-                .build());
-        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).build()).build()));
+                .build();
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, buildReceiptWithAmountAndSingleCartListWithOnlyRemittance()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, BIZ_EVENT,TemplateDataField.TRANSACTION_PSP_PROVINCE, BIZ_EVENT,BIZ_EVENT_ID), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, PSP_STATIC_CONFIG.getName(), TemplateDataField.TRANSACTION_PSP_PROVINCE), e.getMessage());
     }
 
     @Test
     void mapTemplateNoPspBuildingNumberError() {
-        List<BizEvent> bizEventList = Collections.singletonList(BizEvent.builder()
+        BizEvent bizEventList = BizEvent.builder()
                 .id(BIZ_EVENT_ID)
                 .paymentInfo(PaymentInfo.builder()
                         .IUR(IUR)
@@ -1811,16 +1035,16 @@ class BuildTemplateServiceImplTest {
                         .idPsp("noBuildingNumber")
                         .psp(PSP_NAME)
                         .build())
-                .build());
-        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().id(RECEIPT_ID).eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).build()).build()));
+                .build();
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().id(RECEIPT_ID).eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, BIZ_EVENT,TemplateDataField.TRANSACTION_PSP_BUILDING_NUMBER, BIZ_EVENT, BIZ_EVENT_ID), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, PSP_STATIC_CONFIG.getName(), TemplateDataField.TRANSACTION_PSP_BUILDING_NUMBER), e.getMessage());
     }
 
     @Test
     void mapTemplateNoPspPostalCodeError() {
-        List<BizEvent> bizEventList = Collections.singletonList(BizEvent.builder()
+        BizEvent bizEventList = BizEvent.builder()
                 .id(BIZ_EVENT_ID)
                 .paymentInfo(PaymentInfo.builder()
                         .IUR(IUR)
@@ -1831,16 +1055,16 @@ class BuildTemplateServiceImplTest {
                         .idPsp("noPostalCode")
                         .psp(PSP_NAME)
                         .build())
-                .build());
-        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).build()).build()));
+                .build();
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, buildReceiptWithAmountAndSingleCartListWithOnlyRemittance()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, BIZ_EVENT,TemplateDataField.TRANSACTION_PSP_POSTAL_CODE, BIZ_EVENT,BIZ_EVENT_ID), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, PSP_STATIC_CONFIG.getName(), TemplateDataField.TRANSACTION_PSP_POSTAL_CODE), e.getMessage());
     }
 
     @Test
     void mapTemplateNoPspLogoError() {
-        List<BizEvent> bizEventList = Collections.singletonList(BizEvent.builder()
+        BizEvent bizEventList = BizEvent.builder()
                 .id(BIZ_EVENT_ID)
                 .paymentInfo(PaymentInfo.builder()
                         .IUR(IUR)
@@ -1856,16 +1080,16 @@ class BuildTemplateServiceImplTest {
                                 .fee(FEE_LONG)
                                 .build())
                         .build())
-                .build());
-        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().id(RECEIPT_ID).eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).build()).build()));
+                .build();
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().id(RECEIPT_ID).eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, BIZ_EVENT, TemplateDataField.TRANSACTION_PSP_LOGO, BIZ_EVENT,BIZ_EVENT_ID), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, PSP_STATIC_CONFIG.getName(), TemplateDataField.TRANSACTION_PSP_LOGO), e.getMessage());
     }
 
     @Test
     void mapTemplateNoRrnError() {
-        List<BizEvent> bizEventList = Collections.singletonList(BizEvent.builder()
+        BizEvent bizEventList = BizEvent.builder()
                 .id(BIZ_EVENT_ID)
                 .paymentInfo(PaymentInfo.builder()
                         .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS_DST_WINTER)
@@ -1880,17 +1104,16 @@ class BuildTemplateServiceImplTest {
                                 .idTransaction(ID_TRANSACTION)
                                 .build())
                         .build())
-                .build());
-        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).build()).build()));
+                .build();
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, buildReceiptWithAmountAndSingleCartListWithOnlyRemittance()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, BIZ_EVENT,TemplateDataField.TRANSACTION_RRN, BIZ_EVENT,BIZ_EVENT_ID), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, BIZ_EVENT.getName(), TemplateDataField.TRANSACTION_RRN), e.getMessage());
     }
 
     @Test
     void mapTemplateUserDataFullNameBlank() {
-    	
-    	List<BizEvent> bizEventList = Collections.singletonList(BizEvent.builder()
+        BizEvent bizEventList = BizEvent.builder()
                 .id(BIZ_EVENT_ID)
                 .idPaymentManager(BIZ_EVENT_ID)
                 .debtorPosition(DebtorPosition.builder()
@@ -1909,7 +1132,7 @@ class BuildTemplateServiceImplTest {
                         .fullName(DEBTOR_FULL_NAME)
                         .entityUniqueIdentifierValue(DEBTOR_VALID_CF)
                         .build())
-                 // no  User Data Full Name in payer and transactionDetails sections
+                // no  User Data Full Name in payer and transactionDetails sections
                 .payer(Payer.builder().entityUniqueIdentifierValue(PAYER_VALID_CF).build())
                 .paymentInfo(PaymentInfo.builder()
                         .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS_DST_WINTER)
@@ -1939,21 +1162,21 @@ class BuildTemplateServiceImplTest {
                                 .build())
                         .build())
                 .eventStatus(BizEventStatusType.DONE)
-                .build());
-    	
-    	Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
-        
+                .build();
+
+        Receipt receipt = buildReceiptWithAmountAndSingleCartListWithOnlyRemittance();
+
         AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
         assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, receipt)));
 
         ReceiptPDFTemplate receiptPdfTemplate = atomicReference.get();
-        
-        assertEquals("",receiptPdfTemplate.getUser().getData().getFullName());
+
+        assertEquals("", receiptPdfTemplate.getUser().getData().getFullName());
     }
 
     @Test
     void mapTemplateNoUserDataTaxCodeError() {
-        List<BizEvent> bizEventList = Collections.singletonList(BizEvent.builder()
+        BizEvent bizEventList = BizEvent.builder()
                 .id(BIZ_EVENT_ID)
                 .paymentInfo(PaymentInfo.builder()
                         .IUR(IUR)
@@ -1967,16 +1190,16 @@ class BuildTemplateServiceImplTest {
                 .payer(Payer.builder()
                         .fullName(PAYER_FULL_NAME)
                         .build())
-                .build());
-        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).build()).build()));
+                .build();
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, buildReceiptWithAmountAndSingleCartListWithOnlyRemittance()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, BIZ_EVENT,TemplateDataField.USER_DATA_TAX_CODE, BIZ_EVENT,BIZ_EVENT_ID), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, BIZ_EVENT.getName(), TemplateDataField.USER_DATA_TAX_CODE), e.getMessage());
     }
 
     @Test
     void mapTemplateNoCartItemRefNumberTypeError() {
-        List<BizEvent> bizEventList = Collections.singletonList(BizEvent.builder()
+        BizEvent bizEventList = BizEvent.builder()
                 .id(BIZ_EVENT_ID)
                 .paymentInfo(PaymentInfo.builder()
                         .IUR(IUR)
@@ -1991,16 +1214,16 @@ class BuildTemplateServiceImplTest {
                         .fullName(PAYER_FULL_NAME)
                         .entityUniqueIdentifierValue(PAYER_VALID_CF)
                         .build())
-                .build());
-        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).build()).build()));
+                .build();
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, buildReceiptWithAmountAndSingleCartListWithOnlyRemittance()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, BIZ_EVENT,TemplateDataField.CART_ITEM_REF_NUMBER_TYPE, BIZ_EVENT, BIZ_EVENT_ID), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, BIZ_EVENT.getName(), TemplateDataField.CART_ITEM_REF_NUMBER_TYPE), e.getMessage());
     }
 
     @Test
     void mapTemplateNoCartItemRefNumberValueIUVError() {
-        List<BizEvent> bizEventList = Collections.singletonList(BizEvent.builder()
+        BizEvent bizEventList = BizEvent.builder()
                 .id(BIZ_EVENT_ID)
                 .paymentInfo(PaymentInfo.builder()
                         .IUR(IUR)
@@ -2018,16 +1241,16 @@ class BuildTemplateServiceImplTest {
                 .debtorPosition(DebtorPosition.builder()
                         .modelType(MODEL_TYPE_IUV_CODE)
                         .build())
-                .build());
-        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().id(RECEIPT_ID).eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).build()).build()));
+                .build();
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().id(RECEIPT_ID).eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, BIZ_EVENT,TemplateDataField.CART_ITEM_REF_NUMBER_VALUE, BIZ_EVENT, BIZ_EVENT_ID), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, BIZ_EVENT.getName(), TemplateDataField.CART_ITEM_REF_NUMBER_VALUE), e.getMessage());
     }
 
     @Test
     void mapTemplateWrongModelTypeError() {
-        List<BizEvent> bizEventList = Collections.singletonList(BizEvent.builder()
+        BizEvent bizEventList = BizEvent.builder()
                 .id(BIZ_EVENT_ID)
                 .paymentInfo(PaymentInfo.builder()
                         .IUR(IUR)
@@ -2046,16 +1269,16 @@ class BuildTemplateServiceImplTest {
                         .iuv(IUV)
                         .modelType(MODEL_TYPE_NOTICE_CODE)
                         .build())
-                .build());
-        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).build()).build()));
+                .build();
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, buildReceiptWithAmountAndSingleCartListWithOnlyRemittance()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, BIZ_EVENT,TemplateDataField.CART_ITEM_REF_NUMBER_VALUE, BIZ_EVENT,BIZ_EVENT_ID), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, BIZ_EVENT.getName(), TemplateDataField.CART_ITEM_REF_NUMBER_VALUE), e.getMessage());
     }
 
     @Test
     void mapTemplateNoCartItemDebtorTaxCodeValueError() {
-        List<BizEvent> bizEventList = Collections.singletonList(BizEvent.builder()
+        BizEvent bizEventList = BizEvent.builder()
                 .id(BIZ_EVENT_ID)
                 .paymentInfo(PaymentInfo.builder()
                         .IUR(IUR)
@@ -2074,17 +1297,17 @@ class BuildTemplateServiceImplTest {
                         .modelType(MODEL_TYPE_IUV_CODE)
                         .iuv(IUV)
                         .build())
-                .build());
+                .build();
         TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER,
-                Receipt.builder().id(RECEIPT_ID).eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).debtorFiscalCode(DEBTOR_VALID_CF).build()).build()));
+                Receipt.builder().id(RECEIPT_ID).eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).debtorFiscalCode(DEBTOR_VALID_CF).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, BIZ_EVENT,TemplateDataField.CART_ITEM_DEBTOR_TAX_CODE, BIZ_EVENT, BIZ_EVENT_ID), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, BIZ_EVENT.getName(), TemplateDataField.CART_ITEM_DEBTOR_TAX_CODE), e.getMessage());
     }
 
     @Test
     void mapTemplateNoCartItemPayeeTaxCodeValueError() {
-        List<BizEvent> bizEventList = Collections.singletonList(BizEvent.builder()
+        BizEvent bizEventList = BizEvent.builder()
                 .id(BIZ_EVENT_ID)
                 .paymentInfo(PaymentInfo.builder()
                         .IUR(IUR)
@@ -2106,17 +1329,17 @@ class BuildTemplateServiceImplTest {
                 .debtor(Debtor.builder()
                         .entityUniqueIdentifierValue(DEBTOR_VALID_CF)
                         .build())
-                .build());
+                .build();
         TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, Receipt.builder().id(RECEIPT_ID).eventId(BIZ_EVENT_ID).eventData(
-                EventData.builder().amount(FORMATTED_GRAND_TOTAL).debtorFiscalCode(DEBTOR_VALID_CF).build()).build()));
+                EventData.builder().amount(FORMATTED_GRAND_TOTAL).debtorFiscalCode(DEBTOR_VALID_CF).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, BIZ_EVENT,TemplateDataField.CART_ITEM_PAYEE_TAX_CODE, BIZ_EVENT,BIZ_EVENT_ID), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, BIZ_EVENT.getName(), TemplateDataField.CART_ITEM_PAYEE_TAX_CODE), e.getMessage());
     }
 
     @Test
     void mapTemplateNoCartItemAmountValueError() {
-        List<BizEvent> bizEventList = Collections.singletonList(BizEvent.builder()
+        BizEvent bizEventList = BizEvent.builder()
                 .id(BIZ_EVENT_ID)
                 .paymentInfo(PaymentInfo.builder()
                         .IUR(IUR)
@@ -2148,17 +1371,17 @@ class BuildTemplateServiceImplTest {
                         )
                         .build()
                 )
-                .build());
+                .build();
         Receipt receipt = Receipt.builder().id(RECEIPT_ID).eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
         TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, receipt));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, BIZ_EVENT,TemplateDataField.CART_ITEM_AMOUNT, BIZ_EVENT, BIZ_EVENT_ID), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, BIZ_EVENT.getName(), TemplateDataField.CART_ITEM_AMOUNT), e.getMessage());
     }
 
     @Test
     void mapTemplateNoCartItemSubjectError() {
-        List<BizEvent> listOfBizEvents = Collections.singletonList(BizEvent.builder()
+        BizEvent listOfBizEvents = BizEvent.builder()
                 .id(BIZ_EVENT_ID)
                 .paymentInfo(PaymentInfo.builder()
                         .IUR(IUR)
@@ -2190,86 +1413,45 @@ class BuildTemplateServiceImplTest {
                         )
                         .build()
                 )
-                .build());
+                .build();
         TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () ->
                 buildTemplateService.buildTemplate(listOfBizEvents, GENERATED_BY_PAYER, Receipt.builder().id(RECEIPT_ID).eventId(BIZ_EVENT_ID).eventData(
-                EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(Collections.singletonList(CartItem.builder().build()))
-                        .debtorFiscalCode(DEBTOR_VALID_CF).build()).build()));
+                        EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(Collections.singletonList(CartItem.builder().build()))
+                                .debtorFiscalCode(DEBTOR_VALID_CF).build()).build()));
 
         assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
-        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, RECEIPT, TemplateDataField.CART_ITEM_SUBJECT, RECEIPT,RECEIPT_ID), e.getMessage());
+        assertEquals(String.format(TemplateDataField.ERROR_MAPPING_MESSAGE, RECEIPT.getName(), TemplateDataField.CART_ITEM_SUBJECT), e.getMessage());
     }
 
     @Test
-    void mapTemplateAllFieldsSuccessMultipleBizEvents() {
+    void mapCartTemplateForPayerAllFieldsSuccess() throws IOException {
         List<BizEvent> bizEventList = new ArrayList<>();
-        List<CartItem> cartItemList = new ArrayList<>();
+        Map<String, CartInfo> cartInfoMap = new HashMap<>();
         for (int i = 0; i < 5; i++) {
-            bizEventList.add(
-                    BizEvent.builder()
-                            .id(BIZ_EVENT_ID + i)
-                            .idPaymentManager(BIZ_EVENT_ID)
-                            .debtorPosition(DebtorPosition.builder()
-                                    .iuv(IUV+i)
-                                    .modelType(MODEL_TYPE_IUV_CODE)
-                                    .build())
-                            .creditor(Creditor.builder()
-                                    .companyName(COMPANY_NAME)
-                                    .idPA(ID_PA)
-                                    .build())
-                            .psp(Psp.builder()
-                                    .idPsp(ID_PSP)
-                                    .psp(PSP_NAME)
-                                    .build())
-                            .debtor(Debtor.builder()
-                                    .fullName(DEBTOR_FULL_NAME)
-                                    .entityUniqueIdentifierValue(DEBTOR_VALID_CF)
-                                    .build())
-                            .payer(Payer.builder().fullName(PAYER_FULL_NAME).entityUniqueIdentifierValue(PAYER_VALID_CF).build())
-                            .paymentInfo(PaymentInfo.builder()
-                                    .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS_DST_WINTER)
-                                    .paymentToken(PAYMENT_TOKEN)
-                                    .amount(AMOUNT_WITHOUT_CENTS)
-                                    .fee(FEE_WITH_SINGLE_DIGIT_CENTS)
-                                    .remittanceInformation(REMITTANCE_INFORMATION)
-                                    .IUR(IUR)
-                                    .build())
-                            .transactionDetails(TransactionDetails.builder()
-                                    .wallet(WalletItem.builder()
-                                            .info(Info.builder().brand(BRAND).holder(HOLDER_FULL_NAME).type(PAYMENT_METHOD_TYPE).build())
-                                            .onboardingChannel(PAGO_PA_CHANNEL_IO)
-                                            .build())
-                                    .transaction(Transaction.builder()
-                                            .idTransaction(ID_TRANSACTION)
-                                            .grandTotal(GRAND_TOTAL_LONG)
-                                            .amount(AMOUNT_LONG)
-                                            .fee(FEE_LONG)
-                                            .rrn(RRN)
-                                            .numAut(AUTH_CODE)
-                                            .creationDate(DATE_TIME_TIMESTAMP_ZONED_DST_WINTER)
-                                            .psp(TransactionPsp.builder()
-                                                    .businessName(PSP_NAME)
-                                                    .build())
-                                            .origin(PAGOPA_PA_CHANNEL_ID)
-                                            .build())
-                                    .build())
-                            .eventStatus(BizEventStatusType.DONE)
-                            .build()
-            );
-
-            cartItemList.add(
-                    CartItem.builder().subject(REMITTANCE_INFORMATION + i).build()
+            BizEvent bizEvent = getBizEventFromFile("biz-events/bizEvent_complete_dst_winter.json");
+            String bizEvenId = BIZ_EVENT_ID + i;
+            bizEvent.setId(bizEvenId);
+            bizEvent.getDebtorPosition().setIuv(IUV + i);
+            bizEventList.add(bizEvent);
+            cartInfoMap.put(
+                    bizEvenId,
+                    CartInfo.builder().subject(REMITTANCE_INFORMATION + i).build()
             );
         }
-        Receipt receipt = Receipt.builder().eventId(String.valueOf(ID_TRANSACTION)).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(cartItemList).build()).build();
-
         AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
-        assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_DEBTOR, receipt)));
+        assertDoesNotThrow(() -> atomicReference.set(
+                buildTemplateService.buildCartTemplate(
+                        bizEventList,
+                        GENERATED_BY_PAYER,
+                        ID_TRANSACTION,
+                        FORMATTED_GRAND_TOTAL,
+                        cartInfoMap
+                )));
 
         ReceiptPDFTemplate receiptPdfTemplate = atomicReference.get();
 
         assertNotNull(receiptPdfTemplate);
-        assertEquals(String.valueOf(ID_TRANSACTION), receiptPdfTemplate.getServiceCustomerId());
+        assertEquals(ID_TRANSACTION, receiptPdfTemplate.getServiceCustomerId());
 
         it.gov.pagopa.receipt.pdf.generator.model.template.Transaction transaction = receiptPdfTemplate.getTransaction();
         assertEquals(DATE_TIME_TIMESTAMP_FORMATTED_DST_WINTER, transaction.getTimestamp());
@@ -2288,84 +1470,142 @@ class BuildTemplateServiceImplTest {
         assertEquals(BRAND_ASSET_URL, transaction.getPaymentMethod().getLogo());
         assertEquals(HOLDER_FULL_NAME, transaction.getPaymentMethod().getAccountHolder());
         assertEquals(AUTH_CODE, transaction.getAuthCode());
-        assertEquals(GENERATED_BY_DEBTOR, transaction.isRequestedByDebtor());
+        assertFalse(transaction.isRequestedByDebtor());
         assertTrue(transaction.isProcessedByPagoPA());
 
-        assertNull(receiptPdfTemplate.getUser());
+        assertNotNull(receiptPdfTemplate.getUser());
+        assertNotNull(receiptPdfTemplate.getUser().getData());
+        assertEquals(PAYER_VALID_CF, receiptPdfTemplate.getUser().getData().getTaxCode());
+        assertEquals(PAYER_FULL_NAME, receiptPdfTemplate.getUser().getData().getFullName());
 
         it.gov.pagopa.receipt.pdf.generator.model.template.Cart cart = receiptPdfTemplate.getCart();
+        assertFalse(cart.isHideFeesAndTotals());
         String decurrenciedFormattedAmount = FORMATTED_AMOUNT.replace(".", "").replace(",", ".");
-        assertEquals(currencyFormat(String.valueOf(Double.parseDouble(decurrenciedFormattedAmount)*bizEventList.size())), cart.getAmountPartial());
+        assertEquals(currencyFormat(String.valueOf(Double.parseDouble(decurrenciedFormattedAmount) * bizEventList.size())), cart.getAmountPartial());
 
         for (int i = 0; i < bizEventList.size(); i++) {
             assertEquals(FORMATTED_AMOUNT, cart.getItems().get(i).getAmount());
             assertEquals(DEBTOR_FULL_NAME, cart.getItems().get(i).getDebtor().getFullName());
             assertEquals(DEBTOR_VALID_CF, cart.getItems().get(i).getDebtor().getTaxCode());
-            assertEquals(REMITTANCE_INFORMATION+i, cart.getItems().get(i).getSubject());
+            assertEquals(REMITTANCE_INFORMATION + i, cart.getItems().get(i).getSubject());
             assertEquals(COMPANY_NAME, cart.getItems().get(i).getPayee().getName());
             assertEquals(ID_PA, cart.getItems().get(i).getPayee().getTaxCode());
             assertEquals(MODEL_TYPE_IUV_TEXT, cart.getItems().get(i).getRefNumber().getType());
-            assertEquals(IUV+i, cart.getItems().get(i).getRefNumber().getValue());
+            assertEquals(IUV + i, cart.getItems().get(i).getRefNumber().getValue());
         }
     }
 
     @Test
-    void mapTemplateAllFieldsSuccessCompleteTemplateAndIOChannelAndIuvOnWispNoticeCode() {
-        List<BizEvent> bizEventList = Collections.singletonList(BizEvent.builder()
-                .id(BIZ_EVENT_ID)
-                .idPaymentManager(BIZ_EVENT_ID)
-                .debtorPosition(DebtorPosition.builder()
-                        .iuv(IUV)
-                        .noticeNumber(WISP_NOTICE_CODE)
-                        .modelType(MODEL_TYPE_NOTICE_CODE)
-                        .build())
-                .creditor(Creditor.builder()
-                        .companyName(COMPANY_NAME)
-                        .idPA(ID_PA)
-                        .build())
-                .psp(Psp.builder()
-                        .idPsp(ID_PSP)
-                        .psp(PSP_NAME)
-                        .build())
-                .debtor(Debtor.builder()
-                        .fullName(DEBTOR_FULL_NAME)
-                        .entityUniqueIdentifierValue(DEBTOR_VALID_CF)
-                        .build())
-                .payer(Payer.builder().fullName(PAYER_FULL_NAME).entityUniqueIdentifierValue(PAYER_VALID_CF).build())
-                .paymentInfo(PaymentInfo.builder()
-                        .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS_DST_WINTER)
-                        .paymentToken(PAYMENT_TOKEN)
-                        .amount(AMOUNT_WITHOUT_CENTS)
-                        .fee(FEE_WITH_SINGLE_DIGIT_CENTS)
-                        .remittanceInformation(REMITTANCE_INFORMATION)
-                        .IUR(IUR)
-                        .build())
-                .transactionDetails(TransactionDetails.builder()
-                        .wallet(WalletItem.builder()
-                                .info(Info.builder().brand(BRAND).holder(HOLDER_FULL_NAME).type(PAYMENT_METHOD_TYPE).build())
-                                .onboardingChannel(PAGO_PA_CHANNEL_IO)
-                                .build())
-                        .transaction(Transaction.builder()
-                                .idTransaction(ID_TRANSACTION)
-                                .grandTotal(GRAND_TOTAL_LONG)
-                                .amount(AMOUNT_LONG)
-                                .fee(FEE_LONG)
-                                .rrn(RRN)
-                                .numAut(AUTH_CODE)
-                                .creationDate(DATE_TIME_TIMESTAMP_ZONED_DST_WINTER)
-                                .psp(TransactionPsp.builder()
-                                        .businessName(PSP_NAME)
-                                        .build())
-                                .origin(PAGOPA_PA_CHANNEL_ID)
-                                .build())
-                        .build())
-                .eventStatus(BizEventStatusType.DONE)
-                .build()
+    void mapCartTemplateForDebtorAllFieldsSuccess() throws IOException {
+        List<BizEvent> bizEventList = Collections.singletonList(
+                getBizEventFromFile("biz-events/bizEvent_complete_dst_winter.json")
         );
-        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
+        Map<String, CartInfo> cartInfoMap = Collections.singletonMap(
+                BIZ_EVENT_ID,
+                CartInfo.builder().subject(REMITTANCE_INFORMATION).build()
+        );
+        AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
+        assertDoesNotThrow(() -> atomicReference.set(
+                buildTemplateService.buildCartTemplate(
+                        bizEventList,
+                        GENERATED_BY_DEBTOR,
+                        ID_TRANSACTION,
+                        AMOUNT_WITHOUT_CENTS,
+                        cartInfoMap
+                )));
+
+        ReceiptPDFTemplate receiptPdfTemplate = atomicReference.get();
+
+        assertNotNull(receiptPdfTemplate);
+        assertEquals(ID_TRANSACTION, receiptPdfTemplate.getServiceCustomerId());
+
+        it.gov.pagopa.receipt.pdf.generator.model.template.Transaction transaction = receiptPdfTemplate.getTransaction();
+        assertEquals(DATE_TIME_TIMESTAMP_FORMATTED_DST_WINTER, transaction.getTimestamp());
+        assertEquals(FORMATTED_AMOUNT, transaction.getAmount());
+        assertEquals(PSP_LOGO, transaction.getPsp().getLogo());
+        assertEquals(FORMATTED_FEE, transaction.getPsp().getFee().getAmount());
+        assertEquals(PSP_NAME, transaction.getPsp().getName());
+        assertEquals(PSP_CITY, transaction.getPsp().getCity());
+        assertEquals(PSP_COMPANY, transaction.getPsp().getCompanyName());
+        assertEquals(PSP_POSTAL_CODE, transaction.getPsp().getPostalCode());
+        assertEquals(PSP_ADDRESS, transaction.getPsp().getAddress());
+        assertEquals(PSP_BUILDING_NUMBER, transaction.getPsp().getBuildingNumber());
+        assertEquals(PSP_PROVINCE, transaction.getPsp().getProvince());
+        assertEquals(RRN, transaction.getRrn());
+        assertEquals(PAYMENT_METHOD_NAME, transaction.getPaymentMethod().getName());
+        assertEquals(BRAND_ASSET_URL, transaction.getPaymentMethod().getLogo());
+        assertEquals(HOLDER_FULL_NAME, transaction.getPaymentMethod().getAccountHolder());
+        assertEquals(AUTH_CODE, transaction.getAuthCode());
+        assertTrue(transaction.isRequestedByDebtor());
+        assertTrue(transaction.isProcessedByPagoPA());
+
+        assertNull(receiptPdfTemplate.getUser());
+
+        it.gov.pagopa.receipt.pdf.generator.model.template.Cart cart = receiptPdfTemplate.getCart();
+        assertTrue(cart.isHideFeesAndTotals());
+        String decurrenciedFormattedAmount = FORMATTED_AMOUNT.replace(".", "").replace(",", ".");
+        assertEquals(currencyFormat(String.valueOf(Double.parseDouble(decurrenciedFormattedAmount) * bizEventList.size())), cart.getAmountPartial());
+
+        for (int i = 0; i < bizEventList.size(); i++) {
+            assertEquals(FORMATTED_AMOUNT, cart.getItems().get(i).getAmount());
+            assertEquals(DEBTOR_FULL_NAME, cart.getItems().get(i).getDebtor().getFullName());
+            assertEquals(DEBTOR_VALID_CF, cart.getItems().get(i).getDebtor().getTaxCode());
+            assertEquals(REMITTANCE_INFORMATION, cart.getItems().get(i).getSubject());
+            assertEquals(COMPANY_NAME, cart.getItems().get(i).getPayee().getName());
+            assertEquals(ID_PA, cart.getItems().get(i).getPayee().getTaxCode());
+            assertEquals(MODEL_TYPE_IUV_TEXT, cart.getItems().get(i).getRefNumber().getType());
+            assertEquals(IUV, cart.getItems().get(i).getRefNumber().getValue());
+        }
+    }
+
+    @Test
+    void mapCartTemplateFailForCustomerIdNull() {
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () ->
+                buildTemplateService.buildCartTemplate(
+                        Collections.emptyList(),
+                        GENERATED_BY_DEBTOR,
+                        null,
+                        AMOUNT_WITHOUT_CENTS,
+                        Collections.emptyMap()
+                ));
+
+        assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
+        assertEquals(
+                String.format(
+                        TemplateDataField.ERROR_MAPPING_MESSAGE,
+                        CART.getName(),
+                        TemplateDataField.SERVICE_CUSTOMER_ID),
+                e.getMessage());
+
+    }
+
+    @Test
+    void mapCartTemplateFailForAmountNull() {
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () ->
+                buildTemplateService.buildCartTemplate(
+                        Collections.emptyList(),
+                        GENERATED_BY_DEBTOR,
+                        ID_TRANSACTION,
+                        null,
+                        Collections.emptyMap()
+                ));
+
+        assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
+        assertEquals(
+                String.format(
+                        TemplateDataField.ERROR_MAPPING_MESSAGE,
+                        CART.getName(),
+                        TemplateDataField.TRANSACTION_AMOUNT),
+                e.getMessage());
+    }
+
+    @Test
+    void mapTemplateAllFieldsSuccessCompleteTemplateAndIOChannelAndIuvOnWispNoticeCode() throws IOException {
+        BizEvent bizEvent = getBizEventFromFile("biz-events/bizEvent_modelType2_WISP.json");
+        Receipt receipt = buildReceiptWithAmountAndSingleCartListWithOnlyRemittance();
 
         AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
-        assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_DEBTOR, receipt)));
+        assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEvent, GENERATED_BY_DEBTOR, receipt)));
 
         ReceiptPDFTemplate receiptPdfTemplate = atomicReference.get();
 
@@ -2407,61 +1647,13 @@ class BuildTemplateServiceImplTest {
     }
 
     @Test
-    void mapTemplateAllFieldsSuccessCompleteTemplateAndIOChannelAndIuvOnWispNoticeCodeAndMissingIuv() {
-        List<BizEvent> bizEventList = Collections.singletonList(BizEvent.builder()
-                .id(BIZ_EVENT_ID)
-                .idPaymentManager(BIZ_EVENT_ID)
-                .debtorPosition(DebtorPosition.builder()
-                        .noticeNumber(WISP_NOTICE_CODE)
-                        .modelType(MODEL_TYPE_NOTICE_CODE)
-                        .build())
-                .creditor(Creditor.builder()
-                        .companyName(COMPANY_NAME)
-                        .idPA(ID_PA)
-                        .build())
-                .psp(Psp.builder()
-                        .idPsp(ID_PSP)
-                        .psp(PSP_NAME)
-                        .build())
-                .debtor(Debtor.builder()
-                        .fullName(DEBTOR_FULL_NAME)
-                        .entityUniqueIdentifierValue(DEBTOR_VALID_CF)
-                        .build())
-                .payer(Payer.builder().fullName(PAYER_FULL_NAME).entityUniqueIdentifierValue(PAYER_VALID_CF).build())
-                .paymentInfo(PaymentInfo.builder()
-                        .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS_DST_WINTER)
-                        .paymentToken(PAYMENT_TOKEN)
-                        .amount(AMOUNT_WITHOUT_CENTS)
-                        .fee(FEE_WITH_SINGLE_DIGIT_CENTS)
-                        .remittanceInformation(REMITTANCE_INFORMATION)
-                        .IUR(IUR)
-                        .build())
-                .transactionDetails(TransactionDetails.builder()
-                        .wallet(WalletItem.builder()
-                                .info(Info.builder().brand(BRAND).holder(HOLDER_FULL_NAME).type(PAYMENT_METHOD_TYPE).build())
-                                .onboardingChannel(PAGO_PA_CHANNEL_IO)
-                                .build())
-                        .transaction(Transaction.builder()
-                                .idTransaction(ID_TRANSACTION)
-                                .grandTotal(GRAND_TOTAL_LONG)
-                                .amount(AMOUNT_LONG)
-                                .fee(FEE_LONG)
-                                .rrn(RRN)
-                                .numAut(AUTH_CODE)
-                                .creationDate(DATE_TIME_TIMESTAMP_ZONED_DST_WINTER)
-                                .psp(TransactionPsp.builder()
-                                        .businessName(PSP_NAME)
-                                        .build())
-                                .origin(PAGOPA_PA_CHANNEL_ID)
-                                .build())
-                        .build())
-                .eventStatus(BizEventStatusType.DONE)
-                .build()
-        );
-        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
+    void mapTemplateAllFieldsSuccessCompleteTemplateAndIOChannelAndIuvOnWispNoticeCodeAndMissingIuv() throws IOException {
+        BizEvent bizEvent = getBizEventFromFile("biz-events/bizEvent_modelType2_WISP.json");
+        bizEvent.getDebtorPosition().setIuv(null);
+        Receipt receipt = buildReceiptWithAmountAndSingleCartListWithOnlyRemittance();
 
         AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
-        assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_DEBTOR, receipt)));
+        assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEvent, GENERATED_BY_DEBTOR, receipt)));
 
         ReceiptPDFTemplate receiptPdfTemplate = atomicReference.get();
 
@@ -2501,15 +1693,15 @@ class BuildTemplateServiceImplTest {
         assertEquals(MODEL_TYPE_NOTICE_TEXT, cart.getItems().get(0).getRefNumber().getType());
         assertEquals(WISP_NOTICE_CODE, cart.getItems().get(0).getRefNumber().getValue());
     }
-    
+
     @Test
     void mapTemplatePaymentMethodFieldsSuccessGuestMYBK() throws IOException {
-    	List<BizEvent> bizEventList = Collections.singletonList(getBizEventFromFile("biz-events/bizEventGuest.json"));
-    	
-        Receipt receipt = Receipt.builder().eventId(BIZ_EVENT_ID).eventData(EventData.builder().amount(FORMATTED_GRAND_TOTAL).cart(List.of(CartItem.builder().subject(REMITTANCE_INFORMATION).build())).build()).build();
+        BizEvent bizEvent = getBizEventFromFile("biz-events/bizEventGuest.json");
+
+        Receipt receipt = buildReceiptWithAmountAndSingleCartListWithOnlyRemittance();
 
         AtomicReference<ReceiptPDFTemplate> atomicReference = new AtomicReference<>();
-        assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_DEBTOR, receipt)));
+        assertDoesNotThrow(() -> atomicReference.set(buildTemplateService.buildTemplate(bizEvent, GENERATED_BY_DEBTOR, receipt)));
 
         ReceiptPDFTemplate receiptPdfTemplate = atomicReference.get();
 
@@ -2519,14 +1711,10 @@ class BuildTemplateServiceImplTest {
         it.gov.pagopa.receipt.pdf.generator.model.template.Transaction transaction = receiptPdfTemplate.getTransaction();
         assertEquals(MYBKPAYMENT_METHOD_NAME, transaction.getPaymentMethod().getName());
         assertEquals("mybank.png", transaction.getPaymentMethod().getLogo());
-        assertEquals(null, transaction.getPaymentMethod().getAccountHolder());
+        assertNull(transaction.getPaymentMethod().getAccountHolder());
         assertTrue(transaction.isProcessedByPagoPA());
 
         assertNull(receiptPdfTemplate.getUser());
-    }
-    
-    private BizEvent getBizEventFromFile(String relativePath) throws IOException {
-    	return ObjectMapperUtilsTest.readModelFromFile(relativePath, BizEvent.class);
     }
 
     private String currencyFormat(String value) {
@@ -2535,5 +1723,19 @@ class BuildTemplateServiceImplTest {
         numberFormat.setMaximumFractionDigits(2);
         numberFormat.setMinimumFractionDigits(2);
         return numberFormat.format(valueToFormat);
+    }
+
+    private Receipt buildReceiptWithAmountAndSingleCartListWithOnlyRemittance() {
+        return Receipt.builder()
+                .eventId(BIZ_EVENT_ID)
+                .eventData(
+                        EventData.builder()
+                                .amount(FORMATTED_GRAND_TOTAL)
+                                .cart(List.of(
+                                        CartItem.builder()
+                                                .subject(REMITTANCE_INFORMATION)
+                                                .build()))
+                                .build())
+                .build();
     }
 }

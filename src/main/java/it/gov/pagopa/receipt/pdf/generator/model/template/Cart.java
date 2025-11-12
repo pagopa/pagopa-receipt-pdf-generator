@@ -15,5 +15,6 @@ public class Cart {
 
     private List<Item> items;
     private String amountPartial;
+    private boolean hideFeesAndTotals;
 
 }
