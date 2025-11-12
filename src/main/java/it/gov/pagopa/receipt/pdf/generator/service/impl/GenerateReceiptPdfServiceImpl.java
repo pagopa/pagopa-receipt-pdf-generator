@@ -159,7 +159,7 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
             result = false;
         }
 
-        if (hasGenerationNotRetriableError(debtorMetadata, payerMetadata)) {
+        if (hasErrorOnTemplateData(debtorMetadata, payerMetadata)) {
             String errMsg = String.format("Receipt generation fail for debtor (status: %s) and/or payer (status: %s)",
                     debtorMetadata != null ? debtorMetadata.getStatusCode() : "N/A", payerMetadata.getStatusCode());
             throw new ReceiptGenerationNotToRetryException(errMsg);
@@ -167,7 +167,7 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
         return result;
     }
 
-    private boolean hasGenerationNotRetriableError(PdfMetadata debtorMetadata, PdfMetadata payerMetadata) {
+    private boolean hasErrorOnTemplateData(PdfMetadata debtorMetadata, PdfMetadata payerMetadata) {
         return (debtorMetadata != null && debtorMetadata.getStatusCode() == ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode())
                 || payerMetadata.getStatusCode() == ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode();
     }

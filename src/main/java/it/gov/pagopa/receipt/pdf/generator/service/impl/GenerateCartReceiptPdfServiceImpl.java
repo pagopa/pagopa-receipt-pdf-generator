@@ -141,7 +141,7 @@ public class GenerateCartReceiptPdfServiceImpl implements GenerateCartReceiptPdf
             overallSuccess = false;
         }
 
-        boolean debtorHasNotToRetryError = false;
+        boolean debtorHasErrorOnTemplateData = false;
         Map<String, PdfMetadata> debtorMetadataMap = pdfCartGeneration.getDebtorMetadataMap();
         for (CartPayment cartPayment : payload.getCart()) {
             String debtorFiscalCode = cartPayment.getDebtorFiscalCode();
@@ -159,18 +159,18 @@ public class GenerateCartReceiptPdfServiceImpl implements GenerateCartReceiptPdf
                 cartPayment.setMdAttach(buildReceiptMetadata(debtorMetadata));
             } else if (debtorMetadata.getStatusCode() != ALREADY_CREATED) {
                 if (debtorMetadata.getStatusCode() == ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode()) {
-                    debtorHasNotToRetryError = true;
+                    debtorHasErrorOnTemplateData = true;
                 }
                 cartPayment.setReasonErrDebtor(new ReasonError(debtorMetadata.getStatusCode(), debtorMetadata.getErrorMessage()));
                 overallSuccess = false;
             }
         }
 
-        boolean payerHasNotToRetryError =
+        boolean payerHasErrorOnTemplateData =
                 payerMetadata != null
                         && payerMetadata.getStatusCode() == ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode();
 
-        if (payerHasNotToRetryError || debtorHasNotToRetryError) {
+        if (payerHasErrorOnTemplateData || debtorHasErrorOnTemplateData) {
             String errMsg = String.format("Receipt generation fail for at least one debtor and/or payer with status: %s",
                     ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
             throw new CartReceiptGenerationNotToRetryException(errMsg);
