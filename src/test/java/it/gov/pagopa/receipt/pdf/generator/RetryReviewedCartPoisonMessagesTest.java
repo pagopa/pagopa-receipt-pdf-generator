@@ -74,7 +74,7 @@ class RetryReviewedCartPoisonMessagesTest {
     private EnvironmentVariables environment = new EnvironmentVariables("AES_SALT", AES_SALT, "AES_SECRET_KEY", AES_KEY);
 
     @BeforeEach
-    public void initiate() throws Aes256Exception {
+    void initiate() throws Aes256Exception {
         ENCRYPTED_VALID_CONTENT_TO_RETRY = Aes256Utils.encrypt(buildQueueBizEventList(1));
     }
 
