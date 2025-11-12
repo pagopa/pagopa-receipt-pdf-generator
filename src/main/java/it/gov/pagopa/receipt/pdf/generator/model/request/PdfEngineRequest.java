@@ -1,5 +1,7 @@
 package it.gov.pagopa.receipt.pdf.generator.model.request;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -11,10 +13,12 @@ import java.net.URL;
  */
 @Getter
 @Setter
+@Builder
+@AllArgsConstructor
 @NoArgsConstructor
 public class PdfEngineRequest {
 
-    URL template;
-    String data;
-    boolean applySignature;
+    private URL template;
+    private String data;
+    private boolean applySignature;
 }

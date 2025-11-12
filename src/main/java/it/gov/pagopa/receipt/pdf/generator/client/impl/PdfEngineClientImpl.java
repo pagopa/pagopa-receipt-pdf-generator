@@ -72,7 +72,7 @@ public class PdfEngineClientImpl implements PdfEngineClient {
             //Encode template and data
             HttpPost request = buildMultipartRequest(pdfEngineRequest, templateStream);
 
-            return handlePdfEngineResponse(request, workingDirPath);
+            return makeCall(request, workingDirPath);
         } catch (IOException e) {
             return createErrorResponse(e);
         }
@@ -101,7 +101,7 @@ public class PdfEngineClientImpl implements PdfEngineClient {
      * @param request The request to the PDF engine
      * @return pdf engine response
      */
-    private PdfEngineResponse handlePdfEngineResponse(HttpPost request, Path workingDirPath) {
+    private PdfEngineResponse makeCall(HttpPost request, Path workingDirPath) {
         PdfEngineResponse pdfEngineResponse = new PdfEngineResponse();
         //Execute call
         try (CloseableHttpResponse response = this.client.execute(request)) {
@@ -163,11 +163,9 @@ public class PdfEngineClientImpl implements PdfEngineClient {
                 response.getStatusLine().getStatusCode() == HttpStatus.SC_UNAUTHORIZED
         ) {
             return createErrorResponse("Unauthorized call to PDF engine function");
-
         }
 
         String errMsg = extractErrorMessageFormBody(entityResponse);
-
         if (errMsg == null) {
             errMsg = "Unknown error in PDF engine function";
         }
