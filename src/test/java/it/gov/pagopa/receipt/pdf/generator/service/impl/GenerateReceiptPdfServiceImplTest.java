@@ -1,7 +1,5 @@
 package it.gov.pagopa.receipt.pdf.generator.service.impl;
 
-import it.gov.pagopa.receipt.pdf.generator.client.PdfEngineClient;
-import it.gov.pagopa.receipt.pdf.generator.client.ReceiptBlobClient;
 import it.gov.pagopa.receipt.pdf.generator.entity.event.BizEvent;
 import it.gov.pagopa.receipt.pdf.generator.entity.event.Creditor;
 import it.gov.pagopa.receipt.pdf.generator.entity.event.Debtor;
@@ -20,23 +18,25 @@ import it.gov.pagopa.receipt.pdf.generator.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.ReceiptMetadata;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.enumeration.ReasonErrorCode;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.enumeration.ReceiptStatusType;
+import it.gov.pagopa.receipt.pdf.generator.exception.GeneratePDFException;
 import it.gov.pagopa.receipt.pdf.generator.exception.ReceiptGenerationNotToRetryException;
+import it.gov.pagopa.receipt.pdf.generator.exception.SavePDFToBlobException;
 import it.gov.pagopa.receipt.pdf.generator.exception.TemplateDataMappingException;
 import it.gov.pagopa.receipt.pdf.generator.model.PdfGeneration;
 import it.gov.pagopa.receipt.pdf.generator.model.PdfMetadata;
-import it.gov.pagopa.receipt.pdf.generator.model.response.BlobStorageResponse;
 import it.gov.pagopa.receipt.pdf.generator.model.response.PdfEngineResponse;
 import it.gov.pagopa.receipt.pdf.generator.model.template.ReceiptPDFTemplate;
 import it.gov.pagopa.receipt.pdf.generator.service.BuildTemplateService;
-import org.apache.commons.io.FileUtils;
+import it.gov.pagopa.receipt.pdf.generator.service.PdfEngineService;
+import it.gov.pagopa.receipt.pdf.generator.service.ReceiptBlobStorageService;
+import lombok.SneakyThrows;
 import org.apache.http.HttpStatus;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static it.gov.pagopa.receipt.pdf.generator.service.impl.GenerateReceiptPdfServiceImpl.ALREADY_CREATED;
@@ -51,12 +51,11 @@ import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+@ExtendWith(MockitoExtension.class)
 class GenerateReceiptPdfServiceImplTest {
 
     private static final String VALID_CF_DEBTOR = "JHNDOE00A01F205N";
@@ -70,54 +69,25 @@ class GenerateReceiptPdfServiceImplTest {
     private static final String RECEIPT_METADATA_ORIGINAL_URL = "originalUrl";
     private static final String RECEIPT_METADATA_ORIGINAL_NAME = "originalName";
 
-    private static File outputPdfDebtor;
-    private static File tempDirectoryDebtor;
-    private static File outputPdfPayer;
-    private static File tempDirectoryPayer;
-
-    private PdfEngineClient pdfEngineClientMock;
-    private ReceiptBlobClient receiptBlobClientMock;
+    @Mock
+    private PdfEngineService pdfEngineServiceMock;
+    @Mock
+    private ReceiptBlobStorageService receiptBlobStorageMock;
+    @Mock
     private BuildTemplateService buildTemplateServiceMock;
+    @InjectMocks
     private GenerateReceiptPdfServiceImpl sut;
 
-    @BeforeEach
-    void setUp() throws IOException {
-        pdfEngineClientMock = mock(PdfEngineClient.class);
-        receiptBlobClientMock = mock(ReceiptBlobClient.class);
-        buildTemplateServiceMock = mock(BuildTemplateService.class);
-
-        sut = spy(new GenerateReceiptPdfServiceImpl(pdfEngineClientMock, receiptBlobClientMock, buildTemplateServiceMock));
-        sut.setMinFileLength(0);
-        Path basePath = Path.of("src/test/resources");
-        tempDirectoryDebtor = Files.createTempDirectory(basePath, "tempDebtor").toFile();
-        outputPdfDebtor = File.createTempFile("outputDebtor", ".tmp", tempDirectoryDebtor);
-        tempDirectoryPayer = Files.createTempDirectory(basePath, "tempPayer").toFile();
-        outputPdfPayer = File.createTempFile("outputPayer", ".tmp", tempDirectoryPayer);
-    }
-
-    @AfterEach
-    void teardown() throws IOException {
-        if (tempDirectoryDebtor.exists()) {
-            FileUtils.deleteDirectory(tempDirectoryDebtor);
-        }
-        if (tempDirectoryPayer.exists()) {
-            FileUtils.deleteDirectory(tempDirectoryPayer);
-        }
-        assertFalse(tempDirectoryDebtor.exists());
-        assertFalse(outputPdfDebtor.exists());
-        assertFalse(tempDirectoryPayer.exists());
-        assertFalse(outputPdfPayer.exists());
-    }
-
     @Test
-    void generateReceiptsPayerNullWithSuccess() throws Exception {
+    @SneakyThrows
+    void generateReceiptsPayerNullWithSuccess() {
         Receipt receiptOnly = getReceiptWithOnlyDebtor(false);
         BizEvent bizEventOnly = getBizEventWithOnlyDebtor();
 
-        doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdfDebtor.getPath()))
-                .when(pdfEngineClientMock).generatePDF(any(), any());
-        doReturn(getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.CREATED.value()))
-                .when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
+        doReturn(getPdfEngineResponse())
+                .when(pdfEngineServiceMock).generatePDFReceipt(any(), any());
+        doReturn(getBlobStorageResponse())
+                .when(receiptBlobStorageMock).saveToBlobStorage(any(), anyString());
         doReturn(new ReceiptPDFTemplate())
                 .when(buildTemplateServiceMock).buildTemplate(any(), anyBoolean(), any(Receipt.class));
 
@@ -133,19 +103,20 @@ class GenerateReceiptPdfServiceImplTest {
         assertNull(pdfGeneration.getPayerMetadata());
 
         verify(buildTemplateServiceMock).buildTemplate(any(), anyBoolean(), any(Receipt.class));
-        verify(pdfEngineClientMock).generatePDF(any(), any());
-        verify(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
+        verify(pdfEngineServiceMock).generatePDFReceipt(any(), any());
+        verify(receiptBlobStorageMock).saveToBlobStorage(any(), anyString());
     }
 
     @Test
-    void generateReceiptsSameDebtorPayerWithSuccess() throws Exception {
+    @SneakyThrows
+    void generateReceiptsSameDebtorPayerWithSuccess() {
         Receipt receiptOnly = getReceiptWithDebtorPayer(VALID_CF_DEBTOR, false, false);
         BizEvent bizEventOnly = getBizEventWithDebtorPayer(VALID_CF_DEBTOR);
 
-        doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdfDebtor.getPath()))
-                .when(pdfEngineClientMock).generatePDF(any(), any());
-        doReturn(getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.CREATED.value()))
-                .when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
+        doReturn(getPdfEngineResponse())
+                .when(pdfEngineServiceMock).generatePDFReceipt(any(), any());
+        doReturn(getBlobStorageResponse())
+                .when(receiptBlobStorageMock).saveToBlobStorage(any(), anyString());
         doReturn(new ReceiptPDFTemplate())
                 .when(buildTemplateServiceMock).buildTemplate(any(), anyBoolean(), any(Receipt.class));
 
@@ -161,21 +132,21 @@ class GenerateReceiptPdfServiceImplTest {
         assertNull(pdfGeneration.getPayerMetadata());
 
         verify(buildTemplateServiceMock).buildTemplate(any(), anyBoolean(), any(Receipt.class));
-        verify(pdfEngineClientMock).generatePDF(any(), any());
-        verify(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
+        verify(pdfEngineServiceMock).generatePDFReceipt(any(), any());
+        verify(receiptBlobStorageMock).saveToBlobStorage(any(), anyString());
     }
 
     @Test
-    void generateReceiptsDifferentDebtorPayerWithSuccess() throws Exception {
+    @SneakyThrows
+    void generateReceiptsDifferentDebtorPayerWithSuccess() {
         Receipt receiptOnly = getReceiptWithDebtorPayer(VALID_CF_PAYER, false, false);
         BizEvent bizEventOnly = getBizEventWithDebtorPayer(VALID_CF_PAYER);
 
-        doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdfDebtor.getPath()),
-                getPdfEngineResponse(HttpStatus.SC_OK, outputPdfPayer.getPath()))
-                .when(pdfEngineClientMock).generatePDF(any(), any());
-        doReturn(getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.CREATED.value()),
-                getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.CREATED.value()))
-                .when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
+        doReturn(getPdfEngineResponse(),
+                getPdfEngineResponse())
+                .when(pdfEngineServiceMock).generatePDFReceipt(any(), any());
+        doReturn(getBlobStorageResponse(), getBlobStorageResponse())
+                .when(receiptBlobStorageMock).saveToBlobStorage(any(), anyString());
         doReturn(new ReceiptPDFTemplate())
                 .when(buildTemplateServiceMock).buildTemplate(any(), anyBoolean(), any(Receipt.class));
 
@@ -195,23 +166,23 @@ class GenerateReceiptPdfServiceImplTest {
         assertEquals(HttpStatus.SC_OK, pdfGeneration.getPayerMetadata().getStatusCode());
 
         verify(buildTemplateServiceMock, times(2)).buildTemplate(any(), anyBoolean(), any(Receipt.class));
-        verify(pdfEngineClientMock, times(2)).generatePDF(any(), any());
-        verify(receiptBlobClientMock, times(2)).savePdfToBlobStorage(any(), anyString());
+        verify(pdfEngineServiceMock, times(2)).generatePDFReceipt(any(), any());
+        verify(receiptBlobStorageMock, times(2)).saveToBlobStorage(any(), anyString());
     }
 
     @Test
-    void generateReceiptsDifferentDebtorPayerWithSuccessOnDebtAnonym() throws Exception {
+    @SneakyThrows
+    void generateReceiptsDifferentDebtorPayerWithSuccessOnDebtAnonym() {
         Receipt receiptOnly = getReceiptWithDebtorPayer(VALID_CF_PAYER, false, false);
         BizEvent listOfBizEvents = getBizEventWithDebtorPayer(VALID_CF_PAYER);
 
         receiptOnly.getEventData().setDebtorFiscalCode("ANONIMO");
 
-        doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdfDebtor.getPath()),
-                getPdfEngineResponse(HttpStatus.SC_OK, outputPdfPayer.getPath()))
-                .when(pdfEngineClientMock).generatePDF(any(), any());
-        doReturn(getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.CREATED.value()),
-                getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.CREATED.value()))
-                .when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
+        doReturn(getPdfEngineResponse(),
+                getPdfEngineResponse())
+                .when(pdfEngineServiceMock).generatePDFReceipt(any(), any());
+        doReturn(getBlobStorageResponse(), getBlobStorageResponse())
+                .when(receiptBlobStorageMock).saveToBlobStorage(any(), anyString());
         doReturn(new ReceiptPDFTemplate())
                 .when(buildTemplateServiceMock).buildTemplate(any(), anyBoolean(), any(Receipt.class));
 
@@ -226,12 +197,13 @@ class GenerateReceiptPdfServiceImplTest {
         assertEquals(HttpStatus.SC_OK, pdfGeneration.getPayerMetadata().getStatusCode());
 
         verify(buildTemplateServiceMock, times(1)).buildTemplate(any(), anyBoolean(), any(Receipt.class));
-        verify(pdfEngineClientMock, times(1)).generatePDF(any(), any());
-        verify(receiptBlobClientMock, times(1)).savePdfToBlobStorage(any(), anyString());
+        verify(pdfEngineServiceMock, times(1)).generatePDFReceipt(any(), any());
+        verify(receiptBlobStorageMock, times(1)).saveToBlobStorage(any(), anyString());
     }
 
     @Test
-    void generateReceiptsPayerNullReceiptAlreadyCreatedWithSuccess() throws TemplateDataMappingException {
+    @SneakyThrows
+    void generateReceiptsPayerNullReceiptAlreadyCreatedWithSuccess() {
         Receipt receiptOnly = getReceiptWithOnlyDebtor(true);
         BizEvent bizEventOnly = getBizEventWithOnlyDebtor();
 
@@ -247,12 +219,13 @@ class GenerateReceiptPdfServiceImplTest {
         assertNull(pdfGeneration.getPayerMetadata());
 
         verify(buildTemplateServiceMock, never()).buildTemplate(any(), anyBoolean(), any(Receipt.class));
-        verify(pdfEngineClientMock, never()).generatePDF(any(), any());
-        verify(receiptBlobClientMock, never()).savePdfToBlobStorage(any(), anyString());
+        verify(pdfEngineServiceMock, never()).generatePDFReceipt(any(), any());
+        verify(receiptBlobStorageMock, never()).saveToBlobStorage(any(), anyString());
     }
 
     @Test
-    void generateReceiptsSameDebtorPayerAndDebtorReceiptAlreadyCreatedWithSuccess() throws TemplateDataMappingException {
+    @SneakyThrows
+    void generateReceiptsSameDebtorPayerAndDebtorReceiptAlreadyCreatedWithSuccess() {
         Receipt receiptOnly = getReceiptWithDebtorPayer(VALID_CF_DEBTOR, true, false);
         BizEvent bizEventOnly = getBizEventWithDebtorPayer(VALID_CF_DEBTOR);
 
@@ -268,19 +241,20 @@ class GenerateReceiptPdfServiceImplTest {
         assertNull(pdfGeneration.getPayerMetadata());
 
         verify(buildTemplateServiceMock, never()).buildTemplate(any(), anyBoolean(), any(Receipt.class));
-        verify(pdfEngineClientMock, never()).generatePDF(any(), any());
-        verify(receiptBlobClientMock, never()).savePdfToBlobStorage(any(), anyString());
+        verify(pdfEngineServiceMock, never()).generatePDFReceipt(any(), any());
+        verify(receiptBlobStorageMock, never()).saveToBlobStorage(any(), anyString());
     }
 
     @Test
-    void generateReceiptsDifferentDebtorPayerAndPayerReceiptAlreadyCreatedWithSuccess() throws Exception {
+    @SneakyThrows
+    void generateReceiptsDifferentDebtorPayerAndPayerReceiptAlreadyCreatedWithSuccess() {
         Receipt receiptOnly = getReceiptWithDebtorPayer(VALID_CF_PAYER, false, true);
         BizEvent bizEventOnly = getBizEventWithDebtorPayer(VALID_CF_PAYER);
 
-        doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdfDebtor.getPath()))
-                .when(pdfEngineClientMock).generatePDF(any(), any());
-        doReturn(getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.CREATED.value()))
-                .when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
+        doReturn(getPdfEngineResponse())
+                .when(pdfEngineServiceMock).generatePDFReceipt(any(), any());
+        doReturn(getBlobStorageResponse())
+                .when(receiptBlobStorageMock).saveToBlobStorage(any(), anyString());
         doReturn(new ReceiptPDFTemplate())
                 .when(buildTemplateServiceMock).buildTemplate(any(), anyBoolean(), any(Receipt.class));
 
@@ -300,17 +274,18 @@ class GenerateReceiptPdfServiceImplTest {
         assertEquals(ALREADY_CREATED, pdfGeneration.getPayerMetadata().getStatusCode());
 
         verify(buildTemplateServiceMock).buildTemplate(any(), anyBoolean(), any(Receipt.class));
-        verify(pdfEngineClientMock).generatePDF(any(), any());
-        verify(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
+        verify(pdfEngineServiceMock).generatePDFReceipt(any(), any());
+        verify(receiptBlobStorageMock).saveToBlobStorage(any(), anyString());
     }
 
     @Test
-    void generateReceiptsPayerNullFailPDFEngineCallReturn500() throws Exception {
+    @SneakyThrows
+    void generateReceiptsPayerNullFailPDFEngineCallReturn500() {
         Receipt receiptOnly = getReceiptWithOnlyDebtor(false);
         BizEvent bizEventOnly = getBizEventWithOnlyDebtor();
 
-        doReturn(getPdfEngineResponse(HttpStatus.SC_INTERNAL_SERVER_ERROR, ""))
-                .when(pdfEngineClientMock).generatePDF(any(), any());
+        doThrow(new GeneratePDFException(ERROR_MESSAGE, HttpStatus.SC_INTERNAL_SERVER_ERROR))
+                .when(pdfEngineServiceMock).generatePDFReceipt(any(), any());
         doReturn(new ReceiptPDFTemplate())
                 .when(buildTemplateServiceMock).buildTemplate(any(), anyBoolean(), any(Receipt.class));
 
@@ -326,12 +301,13 @@ class GenerateReceiptPdfServiceImplTest {
         assertNull(pdfGeneration.getPayerMetadata());
 
         verify(buildTemplateServiceMock).buildTemplate(any(), anyBoolean(), any(Receipt.class));
-        verify(pdfEngineClientMock).generatePDF(any(), any());
-        verify(receiptBlobClientMock, never()).savePdfToBlobStorage(any(), anyString());
+        verify(pdfEngineServiceMock).generatePDFReceipt(any(), any());
+        verify(receiptBlobStorageMock, never()).saveToBlobStorage(any(), anyString());
     }
 
     @Test
-    void generateReceiptsPayerNullFailBuildTemplateData() throws Exception {
+    @SneakyThrows
+    void generateReceiptsPayerNullFailBuildTemplateData() {
         Receipt receiptOnly = getReceiptWithOnlyDebtor(false);
         BizEvent bizEventOnly = getBizEventWithOnlyDebtor();
 
@@ -350,18 +326,20 @@ class GenerateReceiptPdfServiceImplTest {
         assertNull(pdfGeneration.getPayerMetadata());
 
         verify(buildTemplateServiceMock).buildTemplate(any(), anyBoolean(), any(Receipt.class));
-        verify(pdfEngineClientMock, never()).generatePDF(any(), any());
-        verify(receiptBlobClientMock, never()).savePdfToBlobStorage(any(), anyString());
+        verify(pdfEngineServiceMock, never()).generatePDFReceipt(any(), any());
+        verify(receiptBlobStorageMock, never()).saveToBlobStorage(any(), anyString());
     }
 
     @Test
-    void generateReceiptsPayerNullFailSaveToBlobStorageThrowsException() throws Exception {
+    @SneakyThrows
+    void generateReceiptsPayerNullFailSaveToBlobStorageThrowsException() {
         Receipt receiptOnly = getReceiptWithOnlyDebtor(false);
         BizEvent bizEventOnly = getBizEventWithOnlyDebtor();
 
-        doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdfDebtor.getPath()))
-                .when(pdfEngineClientMock).generatePDF(any(), any());
-        doThrow(RuntimeException.class).when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
+        doReturn(getPdfEngineResponse())
+                .when(pdfEngineServiceMock).generatePDFReceipt(any(), any());
+        doThrow(new SavePDFToBlobException(ERROR_MESSAGE, ReasonErrorCode.ERROR_BLOB_STORAGE.getCode()))
+                .when(receiptBlobStorageMock).saveToBlobStorage(any(), anyString());
         doReturn(new ReceiptPDFTemplate())
                 .when(buildTemplateServiceMock).buildTemplate(any(), anyBoolean(), any(Receipt.class));
 
@@ -377,40 +355,13 @@ class GenerateReceiptPdfServiceImplTest {
         assertNull(pdfGeneration.getPayerMetadata());
 
         verify(buildTemplateServiceMock).buildTemplate(any(), anyBoolean(), any(Receipt.class));
-        verify(pdfEngineClientMock).generatePDF(any(), any());
-        verify(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
+        verify(pdfEngineServiceMock).generatePDFReceipt(any(), any());
+        verify(receiptBlobStorageMock).saveToBlobStorage(any(), anyString());
     }
 
     @Test
-    void generateReceiptsPayerNullFailSaveToBlobStorageReturn500() throws Exception {
-        Receipt receiptOnly = getReceiptWithOnlyDebtor(false);
-        BizEvent bizEventOnly = getBizEventWithOnlyDebtor();
-
-        doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdfDebtor.getPath()))
-                .when(pdfEngineClientMock).generatePDF(any(), any());
-        doReturn(getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.INTERNAL_SERVER_ERROR.value()))
-                .when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
-        doReturn(new ReceiptPDFTemplate())
-                .when(buildTemplateServiceMock).buildTemplate(any(), anyBoolean(), any(Receipt.class));
-
-        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly, Path.of("/tmp"));
-
-        assertNotNull(pdfGeneration);
-        assertTrue(pdfGeneration.isGenerateOnlyDebtor());
-        assertNotNull((pdfGeneration.getDebtorMetadata()));
-        assertNotNull((pdfGeneration.getDebtorMetadata().getErrorMessage()));
-        assertNull((pdfGeneration.getDebtorMetadata().getDocumentName()));
-        assertNull((pdfGeneration.getDebtorMetadata().getDocumentUrl()));
-        assertEquals(ReasonErrorCode.ERROR_BLOB_STORAGE.getCode(), (pdfGeneration.getDebtorMetadata().getStatusCode()));
-        assertNull((pdfGeneration.getPayerMetadata()));
-
-        verify(buildTemplateServiceMock).buildTemplate(any(), anyBoolean(), any(Receipt.class));
-        verify(pdfEngineClientMock).generatePDF(any(), any());
-        verify(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
-    }
-
-    @Test
-    void verifyPayerNullOrSameDebtorPayerWithSuccess() throws ReceiptGenerationNotToRetryException {
+    @SneakyThrows
+    void verifyPayerNullOrSameDebtorPayerWithSuccess() {
         Receipt receipt = buildReceiptForVerify(false, false);
 
         PdfGeneration pdfGeneration = PdfGeneration.builder()
@@ -436,7 +387,8 @@ class GenerateReceiptPdfServiceImplTest {
     }
 
     @Test
-    void verifyDifferentDebtorPayerWithSuccess() throws ReceiptGenerationNotToRetryException {
+    @SneakyThrows
+    void verifyDifferentDebtorPayerWithSuccess() {
         Receipt receipt = buildReceiptForVerify(false, false);
 
         PdfGeneration pdfGeneration = PdfGeneration.builder()
@@ -471,7 +423,8 @@ class GenerateReceiptPdfServiceImplTest {
     }
 
     @Test
-    void verifyPayerNullOrSameDebtorPayerFailMetadataNull() throws ReceiptGenerationNotToRetryException {
+    @SneakyThrows
+    void verifyPayerNullOrSameDebtorPayerFailMetadataNull() {
         Receipt receipt = buildReceiptForVerify(false, false);
 
         PdfGeneration pdfGeneration = PdfGeneration.builder()
@@ -488,7 +441,8 @@ class GenerateReceiptPdfServiceImplTest {
     }
 
     @Test
-    void verifyPayerNullOrSameDebtorPayerAlreadyCreatedSuccess() throws ReceiptGenerationNotToRetryException {
+    @SneakyThrows
+    void verifyPayerNullOrSameDebtorPayerAlreadyCreatedSuccess() {
         Receipt receipt = buildReceiptForVerify(true, false);
 
         PdfGeneration pdfGeneration = PdfGeneration.builder()
@@ -512,7 +466,8 @@ class GenerateReceiptPdfServiceImplTest {
     }
 
     @Test
-    void verifyPayerNullOrSameDebtorPayerFailReceiptGenerationInError() throws ReceiptGenerationNotToRetryException {
+    @SneakyThrows
+    void verifyPayerNullOrSameDebtorPayerFailReceiptGenerationInError() {
         Receipt receipt = buildReceiptForVerify(false, false);
 
         PdfGeneration pdfGeneration = PdfGeneration.builder()
@@ -536,6 +491,7 @@ class GenerateReceiptPdfServiceImplTest {
     }
 
     @Test
+    @SneakyThrows
     void verifyPayerNullOrSameDebtorPayerFailThrowsReceiptGenerationNotToRetryException() {
         Receipt receipt = buildReceiptForVerify(false, false);
 
@@ -559,7 +515,8 @@ class GenerateReceiptPdfServiceImplTest {
     }
 
     @Test
-    void verifyDifferentDebtorPayerAndDebtorAlreadyGeneratedSuccess() throws ReceiptGenerationNotToRetryException {
+    @SneakyThrows
+    void verifyDifferentDebtorPayerAndDebtorAlreadyGeneratedSuccess() {
         Receipt receipt = buildReceiptForVerify(true, false);
 
         PdfGeneration pdfGeneration = PdfGeneration.builder()
@@ -592,7 +549,8 @@ class GenerateReceiptPdfServiceImplTest {
     }
 
     @Test
-    void verifyDifferentDebtorPayerAndPayerAlreadyGeneratedSuccess() throws ReceiptGenerationNotToRetryException {
+    @SneakyThrows
+    void verifyDifferentDebtorPayerAndPayerAlreadyGeneratedSuccess() {
         Receipt receipt = buildReceiptForVerify(false, true);
 
         PdfGeneration pdfGeneration = PdfGeneration.builder()
@@ -625,7 +583,8 @@ class GenerateReceiptPdfServiceImplTest {
     }
 
     @Test
-    void verifyDifferentDebtorPayerFailDebtorGenerationInError() throws ReceiptGenerationNotToRetryException {
+    @SneakyThrows
+    void verifyDifferentDebtorPayerFailDebtorGenerationInError() {
         Receipt receipt = buildReceiptForVerify(false, false);
 
         PdfGeneration pdfGeneration = PdfGeneration.builder()
@@ -658,7 +617,8 @@ class GenerateReceiptPdfServiceImplTest {
     }
 
     @Test
-    void verifyDifferentDebtorPayerFailPayerGenerationInError() throws ReceiptGenerationNotToRetryException {
+    @SneakyThrows
+    void verifyDifferentDebtorPayerFailPayerGenerationInError() {
         Receipt receipt = buildReceiptForVerify(false, false);
 
         PdfGeneration pdfGeneration = PdfGeneration.builder()
@@ -691,7 +651,8 @@ class GenerateReceiptPdfServiceImplTest {
     }
 
     @Test
-    void verifyDifferentDebtorPayerFailGenerationInErrorForBoth() throws ReceiptGenerationNotToRetryException {
+    @SneakyThrows
+    void verifyDifferentDebtorPayerFailGenerationInErrorForBoth() {
         Receipt receipt = buildReceiptForVerify(false, false);
 
         String errorMessagePayer = "error message payer";
@@ -723,7 +684,8 @@ class GenerateReceiptPdfServiceImplTest {
     }
 
     @Test
-    void verifyDifferentDebtorPayerFailPayerReceiptMetadataNull() throws ReceiptGenerationNotToRetryException {
+    @SneakyThrows
+    void verifyDifferentDebtorPayerFailPayerReceiptMetadataNull() {
         Receipt receipt = buildReceiptForVerify(false, false);
 
         PdfGeneration pdfGeneration = PdfGeneration.builder()
@@ -749,6 +711,7 @@ class GenerateReceiptPdfServiceImplTest {
     }
 
     @Test
+    @SneakyThrows
     void verifyDifferentDebtorPayerFailThrowsReceiptGenerationNotToRetryException() {
         Receipt receipt = buildReceiptForVerify(false, false);
 
@@ -780,6 +743,7 @@ class GenerateReceiptPdfServiceImplTest {
     }
 
     @Test
+    @SneakyThrows
     void verifyDifferentDebtorPayerFailBothThrowsReceiptGenerationNotToRetryException() {
         Receipt receipt = buildReceiptForVerify(false, false);
 
@@ -810,54 +774,6 @@ class GenerateReceiptPdfServiceImplTest {
         assertEquals(errorMessagePayer, receipt.getReasonErrPayer().getMessage());
     }
 
-    @Test
-    void generateReceiptsSameDebtorPayerWithErrorOnFile() throws Exception {
-        Receipt receiptOnly = getReceiptWithDebtorPayer(VALID_CF_DEBTOR, false, false);
-        BizEvent bizEventOnly = getBizEventWithDebtorPayer(VALID_CF_DEBTOR);
-
-        doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdfDebtor.getPath()))
-                .when(pdfEngineClientMock).generatePDF(any(), any());
-        doReturn(getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.CREATED.value()))
-                .when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
-        doReturn(new ReceiptPDFTemplate())
-                .when(buildTemplateServiceMock).buildTemplate(any(), anyBoolean(), any(Receipt.class));
-
-        sut.setMinFileLength(10);
-        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly, Path.of("/tmp"));
-
-        assertNotNull(pdfGeneration);
-        assertTrue(pdfGeneration.isGenerateOnlyDebtor());
-        assertNotNull(pdfGeneration.getDebtorMetadata());
-        assertEquals("Minimum file size not reached", pdfGeneration.getDebtorMetadata().getErrorMessage());
-
-        verify(buildTemplateServiceMock).buildTemplate(any(), anyBoolean(), any(Receipt.class));
-        verify(pdfEngineClientMock).generatePDF(any(), any());
-    }
-
-    @Test
-    void verifyPayerNullOrSameDebtorPayerWithErrorOnFile() throws TemplateDataMappingException {
-        Receipt receiptOnly = getReceiptWithDebtorPayer(VALID_CF_PAYER, false, false);
-        BizEvent bizEventOnly = getBizEventWithDebtorPayer(VALID_CF_PAYER);
-
-        doReturn(getPdfEngineResponse(HttpStatus.SC_OK, outputPdfDebtor.getPath()),
-                getPdfEngineResponse(HttpStatus.SC_OK, outputPdfPayer.getPath()))
-                .when(pdfEngineClientMock).generatePDF(any(), any());
-        doReturn(getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.CREATED.value()),
-                getBlobStorageResponse(com.microsoft.azure.functions.HttpStatus.CREATED.value()))
-                .when(receiptBlobClientMock).savePdfToBlobStorage(any(), anyString());
-        doReturn(new ReceiptPDFTemplate())
-                .when(buildTemplateServiceMock).buildTemplate(any(), anyBoolean(), any(Receipt.class));
-
-        sut.setMinFileLength(10);
-        PdfGeneration pdfGeneration = sut.generateReceipts(receiptOnly, bizEventOnly, Path.of("/tmp"));
-
-        assertNotNull(pdfGeneration);
-        assertFalse(pdfGeneration.isGenerateOnlyDebtor());
-        assertNotNull(pdfGeneration.getDebtorMetadata());
-        assertEquals("Minimum file size not reached", pdfGeneration.getDebtorMetadata().getErrorMessage());
-
-    }
-
     private Receipt buildReceiptForVerify(boolean debtorAlreadyCreated, boolean payerAlreadyCreated) {
         return Receipt.builder()
                 .id("id")
@@ -871,23 +787,18 @@ class GenerateReceiptPdfServiceImplTest {
                 .build();
     }
 
-    private BlobStorageResponse getBlobStorageResponse(int status) {
-        BlobStorageResponse blobStorageResponse = new BlobStorageResponse();
-        blobStorageResponse.setStatusCode(status);
-        if (status == com.microsoft.azure.functions.HttpStatus.CREATED.value()) {
-            blobStorageResponse.setDocumentName("document");
-            blobStorageResponse.setDocumentUrl("url");
-        }
-        return blobStorageResponse;
+    private PdfMetadata getBlobStorageResponse() {
+        return PdfMetadata.builder()
+                .statusCode(HttpStatus.SC_OK)
+                .documentName("document name")
+                .documentUrl("document url")
+                .build();
     }
 
-    private PdfEngineResponse getPdfEngineResponse(int status, String pdfPath) {
+    private PdfEngineResponse getPdfEngineResponse() {
         PdfEngineResponse pdfEngineResponse = new PdfEngineResponse();
-        pdfEngineResponse.setTempPdfPath(pdfPath);
-        if (status != HttpStatus.SC_OK) {
-            pdfEngineResponse.setErrorMessage("error");
-        }
-        pdfEngineResponse.setStatusCode(status);
+        pdfEngineResponse.setTempPdfPath("pdfPath");
+        pdfEngineResponse.setStatusCode(HttpStatus.SC_OK);
         return pdfEngineResponse;
     }
 

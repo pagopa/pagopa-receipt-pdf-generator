@@ -3,6 +3,7 @@ package it.gov.pagopa.receipt.pdf.generator.utils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import it.gov.pagopa.receipt.pdf.generator.entity.event.BizEvent;
+import it.gov.pagopa.receipt.pdf.generator.entity.receipt.ReceiptMetadata;
 import it.gov.pagopa.receipt.pdf.generator.exception.BizEventNotValidException;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
@@ -77,5 +78,13 @@ public class ReceiptGeneratorUtils {
         } catch (IOException e) {
             logger.warn("Unable to clear working directory: {}", workingDirPath, e);
         }
+    }
+
+    public static boolean receiptAlreadyCreated(ReceiptMetadata receiptMetadata) {
+        return receiptMetadata != null
+                && receiptMetadata.getUrl() != null
+                && receiptMetadata.getName() != null
+                && !receiptMetadata.getUrl().isEmpty()
+                && !receiptMetadata.getName().isEmpty();
     }
 }
