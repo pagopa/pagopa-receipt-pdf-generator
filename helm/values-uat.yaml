@@ -69,7 +69,7 @@ microservice-chart: &microservice-chart
   #       mountPath: /tmp
   #     - name: temp
   #       mountPath: /temp
-  resources:
+  resources: &resources
     requests:
       memory: "1024Mi"
       cpu: "0.40"
@@ -101,7 +101,6 @@ microservice-chart: &microservice-chart
     ASPNETCORE_URLS: "http://*:8080"
     FUNCTIONS_WORKER_RUNTIME: "java"
     RECEIPT_QUEUE_TOPIC: "pagopa-u-weu-receipts-queue-receipt-waiting-4-gen"
-    CART_RECEIPT_QUEUE_TOPIC: "pagopa-u-weu-receipts-queue-cart-receipt-waiting-4-gen"
     RECEIPT_QUEUE_TOPIC_POISON: "pagopa-u-weu-receipts-queue-receipt-waiting-4-gen-poison"
     COSMOS_RECEIPT_QUEUE_MAX_RETRY: "5"
     PDF_ENGINE_ENDPOINT: "https://api.uat.platform.pagopa.it/shared/pdf-engine/v1/generate-pdf"
@@ -187,6 +186,9 @@ pagopa-receipt-pdf-generator:
     AzureWebJobs.GenerateReceiptProcess.Disabled: "false"
     AzureWebJobs.ManageReceiptPoisonQueueProcessor.Disabled: "false"
     AzureWebJobs.RetryReviewedPoisonMessagesProcessor.Disabled: "false"
+    AzureWebJobs.GenerateCartReceiptProcess.Disabled: "true"
+    AzureWebJobs.ManageCartReceiptPoisonQueueProcessor.Disabled: "true"
+    AzureWebJobs.RetryReviewedCartPoisonMessagesProcessor.Disabled: "true"
   envSecret:
     !!merge <<: *envSecret
 # Configuration for Cart functions
@@ -203,6 +205,8 @@ pagopa-receipt-pdf-generator-cart:
     AzureWebJobs.GenerateReceiptProcess.Disabled: "true"
     AzureWebJobs.ManageReceiptPoisonQueueProcessor.Disabled: "true"
     AzureWebJobs.RetryReviewedPoisonMessagesProcessor.Disabled: "true"
-    # TODO add cosmos infos for cart
+    AzureWebJobs.GenerateCartReceiptProcess.Disabled: "false"
+    AzureWebJobs.ManageCartReceiptPoisonQueueProcessor.Disabled: "false"
+    AzureWebJobs.RetryReviewedCartPoisonMessagesProcessor.Disabled: "false"
   envSecret:
     !!merge <<: *envSecret
