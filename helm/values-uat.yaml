@@ -101,7 +101,6 @@ microservice-chart:
     ASPNETCORE_URLS: "http://*:8080"
     FUNCTIONS_WORKER_RUNTIME: "java"
     RECEIPT_QUEUE_TOPIC: "pagopa-u-weu-receipts-queue-receipt-waiting-4-gen"
-    CART_RECEIPT_QUEUE_TOPIC: "pagopa-u-weu-receipts-queue-cart-receipt-waiting-4-gen"
     RECEIPT_QUEUE_TOPIC_POISON: "pagopa-u-weu-receipts-queue-receipt-waiting-4-gen-poison"
     COSMOS_RECEIPT_QUEUE_MAX_RETRY: "5"
     PDF_ENGINE_ENDPOINT: "https://api.uat.platform.pagopa.it/shared/pdf-engine/v1/generate-pdf"
