@@ -31,6 +31,10 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.ALREADY_CREATED;
+import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.ANONIMO;
+import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.DEBTOR_TEMPLATE_SUFFIX;
+import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.PAYER_TEMPLATE_SUFFIX;
 import static it.gov.pagopa.receipt.pdf.generator.utils.ReceiptGeneratorUtils.receiptAlreadyCreated;
 
 public class GenerateCartReceiptPdfServiceImpl implements GenerateCartReceiptPdfService {
@@ -38,11 +42,6 @@ public class GenerateCartReceiptPdfServiceImpl implements GenerateCartReceiptPdf
     private final Logger logger = LoggerFactory.getLogger(GenerateCartReceiptPdfServiceImpl.class);
 
     private static final String TEMPLATE_PREFIX = "pagopa-ricevuta-carrello";
-    private static final String PAYER_TEMPLATE_SUFFIX = "p";
-    private static final String DEBTOR_TEMPLATE_SUFFIX = "d";
-    private static final String ANONIMO = "ANONIMO";
-
-    public static final int ALREADY_CREATED = 208;
 
     private final PdfEngineService pdfEngineService;
     private final ReceiptBlobStorageService receiptBlobStorageService;

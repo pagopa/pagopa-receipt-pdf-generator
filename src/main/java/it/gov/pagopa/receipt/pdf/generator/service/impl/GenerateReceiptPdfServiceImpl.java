@@ -23,6 +23,9 @@ import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
+import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.ALREADY_CREATED;
+import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.DEBTOR_TEMPLATE_SUFFIX;
+import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.PAYER_TEMPLATE_SUFFIX;
 import static it.gov.pagopa.receipt.pdf.generator.utils.ReceiptGeneratorUtils.receiptAlreadyCreated;
 
 public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService {
@@ -30,10 +33,6 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
     private final Logger logger = LoggerFactory.getLogger(GenerateReceiptPdfServiceImpl.class);
 
     private static final String TEMPLATE_PREFIX = "pagopa-ricevuta";
-    private static final String PAYER_TEMPLATE_SUFFIX = "p";
-    private static final String DEBTOR_TEMPLATE_SUFFIX = "d";
-
-    public static final int ALREADY_CREATED = 208;
 
     private final PdfEngineService pdfEngineService;
     private final ReceiptBlobStorageService receiptBlobStorageService;

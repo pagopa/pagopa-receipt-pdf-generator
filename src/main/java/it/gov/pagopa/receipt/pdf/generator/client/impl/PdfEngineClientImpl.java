@@ -24,6 +24,8 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 
+import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.ZIP_FILE_NAME;
+
 /**
  * Client for the PDF Engine
  */
@@ -35,7 +37,6 @@ public class PdfEngineClientImpl implements PdfEngineClient {
     private final String ocpAimSubKey = System.getenv().getOrDefault("OCP_APIM_SUBSCRIPTION_KEY", "");
 
     private static final String HEADER_AUTH_KEY = "Ocp-Apim-Subscription-Key";
-    private static final String ZIP_FILE_NAME = "template.zip";
     private static final String TEMPLATE_KEY = "template";
     private static final String DATA_KEY = "data";
 
