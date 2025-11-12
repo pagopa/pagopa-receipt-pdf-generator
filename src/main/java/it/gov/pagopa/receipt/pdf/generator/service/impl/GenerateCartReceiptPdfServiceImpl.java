@@ -43,6 +43,13 @@ public class GenerateCartReceiptPdfServiceImpl implements GenerateCartReceiptPdf
 
     private final Logger logger = LoggerFactory.getLogger(GenerateCartReceiptPdfServiceImpl.class);
 
+    private static final String TEMPLATE_PREFIX = "pagopa-ricevuta";
+    private static final String PAYER_TEMPLATE_SUFFIX = "p";
+    private static final String DEBTOR_TEMPLATE_SUFFIX = "d";
+    private static final String ANONIMO = "ANONIMO";
+
+    public static final int ALREADY_CREATED = 208;
+
     private final PdfEngineService pdfEngineService;
     private final ReceiptBlobStorageService receiptBlobStorageService;
     private final BuildTemplateService buildTemplateService;
