@@ -1559,10 +1559,25 @@ class BuildTemplateServiceImplTest {
     }
 
     @Test
+    void mapCartTemplateFailBizEventNull() {
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () ->
+                buildTemplateService.buildCartTemplate(
+                        Collections.singletonList(null),
+                        GENERATED_BY_DEBTOR,
+                        ID_TRANSACTION,
+                        AMOUNT_WITHOUT_CENTS,
+                        Collections.emptyMap()
+                ));
+
+        assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
+        assertEquals("Error mapping bizEvent data to template, bizEvent is null", e.getMessage());
+    }
+
+    @Test
     void mapCartTemplateFailForCustomerIdNull() {
         TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () ->
                 buildTemplateService.buildCartTemplate(
-                        Collections.emptyList(),
+                        Collections.singletonList(new BizEvent()),
                         GENERATED_BY_DEBTOR,
                         null,
                         AMOUNT_WITHOUT_CENTS,
@@ -1583,7 +1598,7 @@ class BuildTemplateServiceImplTest {
     void mapCartTemplateFailForAmountNull() {
         TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () ->
                 buildTemplateService.buildCartTemplate(
-                        Collections.emptyList(),
+                        Collections.singletonList(new BizEvent()),
                         GENERATED_BY_DEBTOR,
                         ID_TRANSACTION,
                         null,
