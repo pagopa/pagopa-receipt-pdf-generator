@@ -1,5 +1,8 @@
 package it.gov.pagopa.receipt.pdf.generator.utils;
 
+import lombok.experimental.UtilityClass;
+
+@UtilityClass
 public class Constants {
 
     public static final String ZIP_FILE_NAME = "template.zip";
@@ -8,6 +11,4 @@ public class Constants {
     public static final String ANONIMO = "ANONIMO";
     public static final int ALREADY_CREATED = 208;
 
-    private Constants() {
-    }
 }
