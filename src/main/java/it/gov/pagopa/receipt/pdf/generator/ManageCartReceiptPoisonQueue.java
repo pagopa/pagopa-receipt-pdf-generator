@@ -143,7 +143,7 @@ public class ManageCartReceiptPoisonQueue {
                                     OutputBinding<CartReceiptError> receiptErrorOutputBinding) {
 
         CartReceiptError receiptError = CartReceiptError.builder()
-                .cartId(cartId)
+                .id(cartId)
                 .status(ReceiptErrorStatusType.TO_REVIEW).build();
 
         try {

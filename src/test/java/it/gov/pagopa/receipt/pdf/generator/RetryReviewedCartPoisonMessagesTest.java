@@ -83,8 +83,7 @@ class RetryReviewedCartPoisonMessagesTest {
         CartReceiptError receiptError = CartReceiptError.builder()
                 .messagePayload(ENCRYPTED_VALID_CONTENT_TO_RETRY)
                 .status(ReceiptErrorStatusType.REVIEWED)
-                .cartId(ID_TRANSACTION)
-                .id(RECEIPT_ERROR_ID)
+                .id(ID_TRANSACTION)
                 .build();
 
         CartForReceipt receipt = CartForReceipt.builder().status(CartStatusType.TO_REVIEW).eventId(BIZ_EVENT_ID).build();
@@ -112,7 +111,7 @@ class RetryReviewedCartPoisonMessagesTest {
         CartReceiptError receiptErrorCaptorValue = receiptErrorCaptor.getValue().get(0);
         assertEquals(ENCRYPTED_VALID_CONTENT_TO_RETRY, receiptErrorCaptorValue.getMessagePayload());
         assertEquals(ReceiptErrorStatusType.REQUEUED, receiptErrorCaptorValue.getStatus());
-        assertEquals(ID_TRANSACTION, receiptErrorCaptorValue.getCartId());
+        assertEquals(ID_TRANSACTION, receiptErrorCaptorValue.getId());
     }
 
     @Test
@@ -138,8 +137,7 @@ class RetryReviewedCartPoisonMessagesTest {
         CartReceiptError receiptError = CartReceiptError.builder()
                 .messagePayload(ENCRYPTED_VALID_CONTENT_TO_RETRY)
                 .status(ReceiptErrorStatusType.REVIEWED)
-                .cartId(ID_TRANSACTION)
-                .id(RECEIPT_ERROR_ID)
+                .id(ID_TRANSACTION)
                 .build();
 
         doThrow(new CartNotFoundException(COSMOS_ERROR)).when(cosmosMock).getCartForReceipt(ID_TRANSACTION);
@@ -155,7 +153,7 @@ class RetryReviewedCartPoisonMessagesTest {
         CartReceiptError documentCaptorValue = receiptErrorCaptor.getValue().get(0);
         assertEquals(ENCRYPTED_VALID_CONTENT_TO_RETRY, documentCaptorValue.getMessagePayload());
         assertEquals(ReceiptErrorStatusType.TO_REVIEW, documentCaptorValue.getStatus());
-        assertEquals(ID_TRANSACTION, documentCaptorValue.getCartId());
+        assertEquals(ID_TRANSACTION, documentCaptorValue.getId());
         assertNotNull(documentCaptorValue.getMessageError());
     }
 
@@ -164,8 +162,7 @@ class RetryReviewedCartPoisonMessagesTest {
         CartReceiptError receiptError = CartReceiptError.builder()
                 .messagePayload(ENCRYPTED_VALID_CONTENT_TO_RETRY)
                 .status(ReceiptErrorStatusType.REVIEWED)
-                .cartId(ID_TRANSACTION)
-                .id(RECEIPT_ERROR_ID)
+                .id(ID_TRANSACTION)
                 .build();
 
         CartForReceipt receipt = CartForReceipt.builder().status(CartStatusType.TO_REVIEW).eventId(BIZ_EVENT_ID).build();
@@ -188,7 +185,7 @@ class RetryReviewedCartPoisonMessagesTest {
         CartReceiptError documentCaptorValue = receiptErrorCaptor.getValue().get(0);
         assertEquals(ENCRYPTED_VALID_CONTENT_TO_RETRY, documentCaptorValue.getMessagePayload());
         assertEquals(ReceiptErrorStatusType.TO_REVIEW, documentCaptorValue.getStatus());
-        assertEquals(ID_TRANSACTION, documentCaptorValue.getCartId());
+        assertEquals(ID_TRANSACTION, documentCaptorValue.getId());
         assertNotNull(documentCaptorValue.getMessageError());
     }
 
@@ -197,8 +194,7 @@ class RetryReviewedCartPoisonMessagesTest {
         CartReceiptError receiptError = CartReceiptError.builder()
                 .messagePayload(ENCRYPTED_VALID_CONTENT_TO_RETRY)
                 .status(ReceiptErrorStatusType.REVIEWED)
-                .cartId(ID_TRANSACTION)
-                .id(RECEIPT_ERROR_ID)
+                .id(ID_TRANSACTION)
                 .build();
 
         CartForReceipt receipt = CartForReceipt.builder().status(CartStatusType.TO_REVIEW).eventId(BIZ_EVENT_ID).build();
@@ -226,7 +222,7 @@ class RetryReviewedCartPoisonMessagesTest {
         CartReceiptError documentCaptorValue = receiptErrorCaptor.getValue().get(0);
         assertEquals(ENCRYPTED_VALID_CONTENT_TO_RETRY, documentCaptorValue.getMessagePayload());
         assertEquals(ReceiptErrorStatusType.TO_REVIEW, documentCaptorValue.getStatus());
-        assertEquals(ID_TRANSACTION, documentCaptorValue.getCartId());
+        assertEquals(ID_TRANSACTION, documentCaptorValue.getId());
         assertNotNull(documentCaptorValue.getMessageError());
     }
 
@@ -236,8 +232,7 @@ class RetryReviewedCartPoisonMessagesTest {
         CartReceiptError receiptError = CartReceiptError.builder()
                 .messagePayload(encryptedMultiItemString)
                 .status(ReceiptErrorStatusType.REVIEWED)
-                .cartId(ID_TRANSACTION)
-                .id(RECEIPT_ERROR_ID)
+                .id(ID_TRANSACTION)
                 .build();
 
         CartForReceipt receipt = CartForReceipt.builder().status(CartStatusType.TO_REVIEW).eventId(ID_TRANSACTION).build();
@@ -265,7 +260,7 @@ class RetryReviewedCartPoisonMessagesTest {
         CartReceiptError receiptErrorCaptorValue = receiptErrorCaptor.getValue().get(0);
         assertEquals(encryptedMultiItemString, receiptErrorCaptorValue.getMessagePayload());
         assertEquals(ReceiptErrorStatusType.REQUEUED, receiptErrorCaptorValue.getStatus());
-        assertEquals(ID_TRANSACTION, receiptErrorCaptorValue.getCartId());
+        assertEquals(ID_TRANSACTION, receiptErrorCaptorValue.getId());
     }
 
     private static String buildQueueBizEventList(int numberOfEvents) {

@@ -113,7 +113,7 @@ class ManageCartReceiptPoisonQueueTest {
         CartReceiptError receiptErrorCaptor = this.cartReceiptErrorCaptor.getValue();
         assertNotNull(receiptErrorCaptor.getMessagePayload());
         assertEquals(VALID_CONTENT_NOT_TO_RETRY, Aes256Utils.decrypt(receiptErrorCaptor.getMessagePayload()));
-        assertEquals(ID_TRANSACTION, receiptErrorCaptor.getCartId());
+        assertEquals(ID_TRANSACTION, receiptErrorCaptor.getId());
         assertEquals(ReceiptErrorStatusType.TO_REVIEW, receiptErrorCaptor.getStatus());
 
         verify(receiptOutput).setValue(cartReceiptCaptor.capture());
@@ -135,7 +135,7 @@ class ManageCartReceiptPoisonQueueTest {
         CartReceiptError captured = cartReceiptErrorCaptor.getValue();
         assertNotNull(captured.getMessagePayload());
         assertEquals(INVALID_MESSAGE, Aes256Utils.decrypt(captured.getMessagePayload()));
-        assertNull(captured.getCartId());
+        assertNull(captured.getId());
         assertEquals(ReceiptErrorStatusType.TO_REVIEW, captured.getStatus());
 
         verifyNoInteractions(receiptOutput);
@@ -162,7 +162,7 @@ class ManageCartReceiptPoisonQueueTest {
         CartReceiptError captured = cartReceiptErrorCaptor.getValue();
         assertNotNull(captured.getMessagePayload());
         assertEquals(VALID_CONTENT_TO_RETRY, Aes256Utils.decrypt(captured.getMessagePayload()));
-        assertEquals(ID_TRANSACTION, captured.getCartId());
+        assertEquals(ID_TRANSACTION, captured.getId());
         assertEquals(ReceiptErrorStatusType.TO_REVIEW, captured.getStatus());
 
         verify(receiptOutput).setValue(cartReceiptCaptor.capture());
@@ -192,7 +192,7 @@ class ManageCartReceiptPoisonQueueTest {
         CartReceiptError captured = cartReceiptErrorCaptor.getValue();
         assertNotNull(captured.getMessagePayload());
         assertEquals(VALID_CONTENT_TO_RETRY, Aes256Utils.decrypt(captured.getMessagePayload()));
-        assertEquals(ID_TRANSACTION, captured.getCartId());
+        assertEquals(ID_TRANSACTION, captured.getId());
         assertEquals(ReceiptErrorStatusType.TO_REVIEW, captured.getStatus());
 
         verifyNoInteractions(receiptOutput);
@@ -217,7 +217,7 @@ class ManageCartReceiptPoisonQueueTest {
         CartReceiptError receiptErrorCaptor = this.cartReceiptErrorCaptor.getValue();
         assertNotNull(receiptErrorCaptor.getMessagePayload());
         assertEquals(VALID_CONTENT_MULTIPLE_ITEMS_NOT_TO_RETRY, Aes256Utils.decrypt(receiptErrorCaptor.getMessagePayload()));
-        assertEquals(ID_TRANSACTION, receiptErrorCaptor.getCartId());
+        assertEquals(ID_TRANSACTION, receiptErrorCaptor.getId());
         assertEquals(ReceiptErrorStatusType.TO_REVIEW, receiptErrorCaptor.getStatus());
 
         verify(receiptOutput).setValue(cartReceiptCaptor.capture());
