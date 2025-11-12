@@ -240,7 +240,7 @@ class RetryReviewedPoisonMessagesTest {
                 .build();
 
         Receipt receipt = Receipt.builder().status(ReceiptStatusType.TO_REVIEW).eventId(ID_TRANSACTION).build();
-        when(cosmosMock.getReceipt(ID_TRANSACTION)).thenReturn(receipt);
+        when(cosmosMock.getReceipt(BIZ_EVENT_ID)).thenReturn(receipt);
 
         when(queueResponse.getStatusCode()).thenReturn(HttpStatus.SC_CREATED);
         when(queueMock.sendMessageToQueue(any())).thenReturn(queueResponse);

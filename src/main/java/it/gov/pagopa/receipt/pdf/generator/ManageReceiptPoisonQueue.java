@@ -24,7 +24,7 @@ import it.gov.pagopa.receipt.pdf.generator.service.ReceiptCosmosService;
 import it.gov.pagopa.receipt.pdf.generator.service.impl.ReceiptCosmosServiceImpl;
 import it.gov.pagopa.receipt.pdf.generator.utils.Aes256Utils;
 import it.gov.pagopa.receipt.pdf.generator.utils.ObjectMapperUtils;
-import it.gov.pagopa.receipt.pdf.generator.utils.ReceiptUtils;
+import it.gov.pagopa.receipt.pdf.generator.utils.ReceiptGeneratorUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -125,15 +125,15 @@ public class ManageReceiptPoisonQueue {
                 logger.error("[{}] error for the function called at {} when attempting" +
                                 "to requeue BizEvent with id {}, saving to cosmos for review",
                         context.getFunctionName(), LocalDateTime.now(), bizEvent.getId(), e);
-                saveReceiptErrorAndUpdateReceipt(errorMessage, receiptsOutputBinding, receiptErrorOutputBinding, context, bizEvent, listOfBizEvents.size() > 1);
+                saveReceiptErrorAndUpdateReceipt(errorMessage, receiptsOutputBinding, receiptErrorOutputBinding, context, bizEvent);
             }
         } else {
-            saveReceiptErrorAndUpdateReceipt(errorMessage, receiptsOutputBinding, receiptErrorOutputBinding, context, bizEvent, listOfBizEvents.size() > 1);
+            saveReceiptErrorAndUpdateReceipt(errorMessage, receiptsOutputBinding, receiptErrorOutputBinding, context, bizEvent);
         }
     }
 
-    private void saveReceiptErrorAndUpdateReceipt(String errorMessage, OutputBinding<Receipt> receiptsOutputBinding, OutputBinding<ReceiptError> receiptErrorOutputBinding, ExecutionContext context, BizEvent bizEvent, boolean isMultiItem) {
-        String bizEventReference = ReceiptUtils.getReceiptEventReference(bizEvent, isMultiItem);
+    private void saveReceiptErrorAndUpdateReceipt(String errorMessage, OutputBinding<Receipt> receiptsOutputBinding, OutputBinding<ReceiptError> receiptErrorOutputBinding, ExecutionContext context, BizEvent bizEvent) {
+        String bizEventReference = ReceiptGeneratorUtils.getReceiptEventReference(bizEvent);
         saveToReceiptError(context, errorMessage, bizEventReference, receiptErrorOutputBinding);
         if (bizEventReference != null) {
             updateReceiptToReview(context, bizEventReference, receiptsOutputBinding);

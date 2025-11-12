@@ -203,7 +203,7 @@ class ManageReceiptPoisonQueueTest {
         ReceiptQueueClientImpl queueMock = mock(ReceiptQueueClientImpl.class);
 
         ReceiptCosmosService receiptCosmosService = mock(ReceiptCosmosService.class);
-        when(receiptCosmosService.getReceipt(ID_TRANSACTION)).thenReturn(VALID_MULTIPLE_ITEM_RECEIPT);
+        when(receiptCosmosService.getReceipt(BIZ_EVENT_ID)).thenReturn(VALID_MULTIPLE_ITEM_RECEIPT);
 
         function = spy(new ManageReceiptPoisonQueue(receiptCosmosService, queueMock));
 
@@ -217,7 +217,7 @@ class ManageReceiptPoisonQueueTest {
         ReceiptError receiptErrorCaptor = this.receiptErrorCaptor.getValue();
         assertNotNull(receiptErrorCaptor.getMessagePayload());
         assertEquals(VALID_CONTENT_MULTIPLE_ITEMS_NOT_TO_RETRY, Aes256Utils.decrypt(receiptErrorCaptor.getMessagePayload()));
-        assertEquals(ID_TRANSACTION, receiptErrorCaptor.getBizEventId());
+        assertEquals(BIZ_EVENT_ID, receiptErrorCaptor.getBizEventId());
         assertEquals(ReceiptErrorStatusType.TO_REVIEW, receiptErrorCaptor.getStatus());
 
         verify(receiptOutput).setValue(receiptCaptor.capture());
