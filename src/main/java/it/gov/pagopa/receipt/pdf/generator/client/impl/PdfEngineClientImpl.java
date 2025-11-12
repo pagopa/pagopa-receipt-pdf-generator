@@ -5,6 +5,7 @@ import it.gov.pagopa.receipt.pdf.generator.model.PdfEngineErrorResponse;
 import it.gov.pagopa.receipt.pdf.generator.model.request.PdfEngineRequest;
 import it.gov.pagopa.receipt.pdf.generator.model.response.PdfEngineResponse;
 import it.gov.pagopa.receipt.pdf.generator.utils.ObjectMapperUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
@@ -29,6 +30,7 @@ import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.ZIP_FILE_NAME;
 /**
  * Client for the PDF Engine
  */
+@Slf4j
 public class PdfEngineClientImpl implements PdfEngineClient {
 
     private static PdfEngineClientImpl instance = null;
@@ -69,7 +71,9 @@ public class PdfEngineClientImpl implements PdfEngineClient {
         //Generate client
         try (InputStream templateStream = pdfEngineRequest.getTemplate().openStream()) {
             //Encode template and data
+            log.info("Create multipart request");
             HttpPost request = buildMultipartRequest(pdfEngineRequest, templateStream);
+            log.info("Multipart request created");
 
             return makeCall(request, workingDirPath);
         } catch (IOException e) {
@@ -106,6 +110,7 @@ public class PdfEngineClientImpl implements PdfEngineClient {
         try (CloseableHttpResponse response = this.client.execute(request)) {
             //Retrieve response
             int statusCode = response.getStatusLine().getStatusCode();
+            log.info("PDF Engine Responded with {}", statusCode);
             HttpEntity entityResponse = response.getEntity();
 
             //Handles response
@@ -118,6 +123,7 @@ public class PdfEngineClientImpl implements PdfEngineClient {
             EntityUtils.consumeQuietly(entityResponse);
             return pdfEngineResponse;
         } catch (Exception e) {
+            log.error("Error calling PDF Engine", e);
             return createErrorResponse(e);
         }
     }
