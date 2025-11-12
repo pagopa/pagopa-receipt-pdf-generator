@@ -37,7 +37,7 @@ public class GenerateCartReceiptPdfServiceImpl implements GenerateCartReceiptPdf
 
     private final Logger logger = LoggerFactory.getLogger(GenerateCartReceiptPdfServiceImpl.class);
 
-    private static final String TEMPLATE_PREFIX = "pagopa-ricevuta-carrello";
+    private static final String TEMPLATE_PREFIX = "pagopa-ricevuta";
     private static final String PAYER_TEMPLATE_SUFFIX = "p";
     private static final String DEBTOR_TEMPLATE_SUFFIX = "d";
     private static final String ANONIMO = "ANONIMO";
@@ -228,7 +228,7 @@ public class GenerateCartReceiptPdfServiceImpl implements GenerateCartReceiptPdf
         String dateFormatted = LocalDate.now().format(DateTimeFormatter.ofPattern("yyMMdd"));
         String id = requestedByDebtor ? listOfBizEvents.get(0).getId() : eventId;
         String templateSuffix = requestedByDebtor ? DEBTOR_TEMPLATE_SUFFIX : PAYER_TEMPLATE_SUFFIX;
-        return String.format("%s-%s-%s-%s", TEMPLATE_PREFIX, dateFormatted, id, templateSuffix);
+        return String.format("%s-%s-%s-%s-c", TEMPLATE_PREFIX, dateFormatted, id, templateSuffix);
     }
 
     private boolean isDebtorFiscalCodeToIgnore(String debtorFiscalCode, Payload payload) {

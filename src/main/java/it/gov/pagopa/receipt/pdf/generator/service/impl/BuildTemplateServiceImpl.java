@@ -141,6 +141,12 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
             Map<String, CartInfo> cartInfoMap
     ) throws TemplateDataMappingException {
         BizEvent bizEvent = listOfBizEvents.get(0);
+        if (bizEvent == null) {
+            throw new TemplateDataMappingException(
+                    "Error mapping bizEvent data to template, bizEvent is null",
+                    ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode()
+            );
+        }
 
         return ReceiptPDFTemplate.builder()
                 .serviceCustomerId(serviceCustomerId)
