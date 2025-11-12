@@ -24,15 +24,16 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.ALREADY_CREATED;
+import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.ANONIMO;
+import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.BLOB_NAME_DATE_PATTERN;
 import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.DEBTOR_TEMPLATE_SUFFIX;
 import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.PAYER_TEMPLATE_SUFFIX;
+import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.TEMPLATE_PREFIX;
 import static it.gov.pagopa.receipt.pdf.generator.utils.ReceiptGeneratorUtils.receiptAlreadyCreated;
 
 public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService {
 
     private final Logger logger = LoggerFactory.getLogger(GenerateReceiptPdfServiceImpl.class);
-
-    private static final String TEMPLATE_PREFIX = "pagopa-ricevuta";
 
     private final PdfEngineService pdfEngineService;
     private final ReceiptBlobStorageService receiptBlobStorageService;
@@ -93,7 +94,7 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
         //Generate debtor's partial PDF
         if (receiptAlreadyCreated(receipt.getMdAttach())) {
             pdfGeneration.setDebtorMetadata(PdfMetadata.builder().statusCode(ALREADY_CREATED).build());
-        } else if (!"ANONIMO".equals(debtorCF)) {
+        } else if (!ANONIMO.equals(debtorCF)) {
             PdfMetadata generationResult = generateAndSavePDFReceipt(bizEvent, receipt, DEBTOR_TEMPLATE_SUFFIX, true, workingDirPath);
             pdfGeneration.setDebtorMetadata(generationResult);
         }
@@ -112,7 +113,7 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
         PdfMetadata debtorMetadata = pdfGeneration.getDebtorMetadata();
         boolean result = true;
 
-        if (receipt.getEventData() != null && !"ANONIMO".equals(receipt.getEventData().getDebtorFiscalCode())) {
+        if (isDebtorFiscalCodeValid(receipt)) {
 
             if (debtorMetadata == null) {
                 logger.error("Unexpected result for debtor pdf receipt generation. Receipt id {}", receipt.getId());
@@ -158,13 +159,21 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
             result = false;
         }
 
-        if ((debtorMetadata != null && debtorMetadata.getStatusCode() == ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode())
-                || payerMetadata.getStatusCode() == ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode()) {
+        if (hasGenerationNotRetriableError(debtorMetadata, payerMetadata)) {
             String errMsg = String.format("Receipt generation fail for debtor (status: %s) and/or payer (status: %s)",
                     debtorMetadata != null ? debtorMetadata.getStatusCode() : "N/A", payerMetadata.getStatusCode());
             throw new ReceiptGenerationNotToRetryException(errMsg);
         }
         return result;
+    }
+
+    private boolean hasGenerationNotRetriableError(PdfMetadata debtorMetadata, PdfMetadata payerMetadata) {
+        return (debtorMetadata != null && debtorMetadata.getStatusCode() == ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode())
+                || payerMetadata.getStatusCode() == ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode();
+    }
+
+    private boolean isDebtorFiscalCodeValid(Receipt receipt) {
+        return receipt.getEventData() != null && !ANONIMO.equals(receipt.getEventData().getDebtorFiscalCode());
     }
 
     private PdfMetadata generateAndSavePDFReceipt(
@@ -176,7 +185,7 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
     ) {
         try {
             ReceiptPDFTemplate template = this.buildTemplateService.buildTemplate(bizEvent, isGeneratingDebtor, receipt);
-            String dateFormatted = LocalDate.now().format(DateTimeFormatter.ofPattern("yyMMdd"));
+            String dateFormatted = LocalDate.now().format(DateTimeFormatter.ofPattern(BLOB_NAME_DATE_PATTERN));
             String blobName = String.format("%s-%s-%s-%s", TEMPLATE_PREFIX, dateFormatted, receipt.getEventId(), templateSuffix);
             PdfEngineResponse pdfEngineResponse = this.pdfEngineService.generatePDFReceipt(template, workingDirPath);
             return this.receiptBlobStorageService.saveToBlobStorage(pdfEngineResponse, blobName);

@@ -33,15 +33,15 @@ import java.util.stream.Collectors;
 
 import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.ALREADY_CREATED;
 import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.ANONIMO;
+import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.BLOB_NAME_DATE_PATTERN;
 import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.DEBTOR_TEMPLATE_SUFFIX;
 import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.PAYER_TEMPLATE_SUFFIX;
+import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.TEMPLATE_PREFIX;
 import static it.gov.pagopa.receipt.pdf.generator.utils.ReceiptGeneratorUtils.receiptAlreadyCreated;
 
 public class GenerateCartReceiptPdfServiceImpl implements GenerateCartReceiptPdfService {
 
     private final Logger logger = LoggerFactory.getLogger(GenerateCartReceiptPdfServiceImpl.class);
-
-    private static final String TEMPLATE_PREFIX = "pagopa-ricevuta";
 
     private final PdfEngineService pdfEngineService;
     private final ReceiptBlobStorageService receiptBlobStorageService;
@@ -224,7 +224,7 @@ public class GenerateCartReceiptPdfServiceImpl implements GenerateCartReceiptPdf
     }
 
     private String buildBlobName(boolean requestedByDebtor, String eventId, List<BizEvent> listOfBizEvents) {
-        String dateFormatted = LocalDate.now().format(DateTimeFormatter.ofPattern("yyMMdd"));
+        String dateFormatted = LocalDate.now().format(DateTimeFormatter.ofPattern(BLOB_NAME_DATE_PATTERN));
         String id = requestedByDebtor ? listOfBizEvents.get(0).getId() : eventId;
         String templateSuffix = requestedByDebtor ? DEBTOR_TEMPLATE_SUFFIX : PAYER_TEMPLATE_SUFFIX;
         return String.format("%s-%s-%s-%s-c", TEMPLATE_PREFIX, dateFormatted, id, templateSuffix);
