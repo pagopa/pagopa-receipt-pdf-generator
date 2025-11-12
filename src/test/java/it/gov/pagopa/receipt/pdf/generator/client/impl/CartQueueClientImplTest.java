@@ -35,10 +35,9 @@ class CartQueueClientImplTest {
         @SuppressWarnings("secrets:S6338")
         String mockKey = "mockKeymockKeymockKeymockKeymockKeymockKeymockKeymockKeymockKeymockKeymockKeymockKeyMK==";
         withEnvironmentVariables(
-                "RECEIPT_QUEUE_CONN_STRING", "DefaultEndpointsProtocol=https;AccountName=samplequeue;AccountKey=" + mockKey + ";EndpointSuffix=core.windows.net",
-                "CART_QUEUE_TOPIC", "validTopic"
-        ).execute(() -> Assertions.assertDoesNotThrow(CartQueueClientImpl::getInstance)
-        );
+                "RECEIPTS_STORAGE_CONN_STRING", "DefaultEndpointsProtocol=https;AccountName=samplequeue;AccountKey=" + mockKey + ";EndpointSuffix=core.windows.net",
+                "CART_RECEIPT_QUEUE_TOPIC", "validTopic"
+        ).execute(() -> Assertions.assertDoesNotThrow(CartQueueClientImpl::getInstance));
     }
 
     @Test
