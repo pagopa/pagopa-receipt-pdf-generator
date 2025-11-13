@@ -199,7 +199,7 @@ pagopa-receipt-pdf-generator-cart:
   !!merge <<: *microservice-chart
   ingress:
     !!merge <<: *ingress
-    path: /notused-receipt-cart/(.*)
+    path: /pagopa-receipt-pdf-generator-cart/(.*)
   resources:
     !!merge <<: *resources
   externalConfigMapValues:

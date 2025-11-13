@@ -76,7 +76,7 @@ microservice-chart: &microservice-chart
     limits:
       memory: "3Gi"
       cpu: "1.0"
-  autoscaling:
+  autoscaling: &autoscaling
     enable: true
     minReplica: 3
     maxReplica: 10
@@ -208,9 +208,12 @@ pagopa-receipt-pdf-generator-cart:
   !!merge <<: *microservice-chart
   ingress:
     !!merge <<: *ingress
-    path: /notused-receipt-cart/(.*)
+    path: /pagopa-receipt-pdf-generator-cart/(.*)
   resources:
     !!merge <<: *resources
+  autoscaling:
+    !!merge <<: *autoscaling
+    minReplica: 1
   externalConfigMapValues:
     !!merge <<: *externalConfigMapValues
   envConfig:
