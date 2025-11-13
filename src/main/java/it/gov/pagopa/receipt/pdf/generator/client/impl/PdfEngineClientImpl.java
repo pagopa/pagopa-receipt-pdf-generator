@@ -71,9 +71,7 @@ public class PdfEngineClientImpl implements PdfEngineClient {
         //Generate client
         try (InputStream templateStream = pdfEngineRequest.getTemplate().openStream()) {
             //Encode template and data
-            log.info("Create multipart request");
             HttpPost request = buildMultipartRequest(pdfEngineRequest, templateStream);
-            log.info("Multipart request created");
 
             return makeCall(request, workingDirPath);
         } catch (IOException e) {
@@ -110,7 +108,6 @@ public class PdfEngineClientImpl implements PdfEngineClient {
         try (CloseableHttpResponse response = this.client.execute(request)) {
             //Retrieve response
             int statusCode = response.getStatusLine().getStatusCode();
-            log.info("PDF Engine Responded with {}", statusCode);
             HttpEntity entityResponse = response.getEntity();
 
             //Handles response
