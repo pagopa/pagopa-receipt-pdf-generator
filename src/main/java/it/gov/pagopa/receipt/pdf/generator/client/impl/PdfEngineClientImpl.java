@@ -79,13 +79,13 @@ public class PdfEngineClientImpl implements PdfEngineClient {
         }
     }
 
-    private HttpPost buildMultipartRequest(PdfEngineRequest pdfEngineRequest, InputStream templateStream) {
+    private HttpPost buildMultipartRequest(PdfEngineRequest pdfEngineRequest, InputStream templateStream) throws IOException {
         StringBody dataBody = new StringBody(pdfEngineRequest.getData(), ContentType.APPLICATION_JSON);
 
         //Build the multipart request
         MultipartEntityBuilder builder = MultipartEntityBuilder.create();
         builder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
-        builder.addBinaryBody(TEMPLATE_KEY, templateStream, ContentType.create("application/zip"), ZIP_FILE_NAME);
+        builder.addBinaryBody(TEMPLATE_KEY, templateStream.readAllBytes(), ContentType.create("application/zip"), ZIP_FILE_NAME);
         builder.addPart(DATA_KEY, dataBody);
         HttpEntity entity = builder.build();
 
