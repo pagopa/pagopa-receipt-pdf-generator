@@ -1,4 +1,4 @@
-microservice-chart:
+microservice-chart: &microservice-chart
   namespace: "receipts"
   nameOverride: ""
   fullnameOverride: ""
@@ -21,7 +21,7 @@ microservice-chart:
     initialDelaySeconds: 60
     failureThreshold: 6
     periodSeconds: 10
-  deployment:
+  deployment: &deployment
     create: true
     replicas: 3
     strategy:
@@ -43,7 +43,7 @@ microservice-chart:
     ports:
       - 8080 #http
       - 12345 #jmx-exporter
-  ingress:
+  ingress: &ingress
     create: true
     host: "weuprod.receipts.internal.platform.pagopa.it"
     path: /pagopa-receipt-pdf-generator/(.*)
@@ -69,14 +69,14 @@ microservice-chart:
   #       mountPath: /tmp
   #     - name: temp
   #       mountPath: /temp
-  resources:
+  resources: &resources
     requests:
       memory: "2Gi"
       cpu: "0.70"
     limits:
       memory: "3Gi"
       cpu: "1.0"
-  autoscaling:
+  autoscaling: &autoscaling
     enable: true
     minReplica: 3
     maxReplica: 10
@@ -94,7 +94,7 @@ microservice-chart:
           type: Utilization # Allowed types are 'Utilization' or 'AverageValue'
           value: "70"
   fileConfig: {}
-  envConfig:
+  envConfig: &envConfig
     TZ: "Europe/Rome"
     ENV: "prod"
     LOG_LEVEL: "INFO"
@@ -123,14 +123,14 @@ microservice-chart:
     OTEL_TRACES_SAMPLER: "always_on"
     AZURE_FUNCTIONS_MESH_JAVA_OPTS: "-javaagent:/home/site/wwwroot/jmx_prometheus_javaagent-0.19.0.jar=12345:/home/site/wwwroot/config.yaml -javaagent:/home/site/wwwroot/opentelemetry-javaagent.jar -Xmx1024m -XX:+UseG1GC"
   # envConfigMapExternals:
-  externalConfigMapValues:
+  externalConfigMapValues: &externalConfigMapValues
     template-maps:
       PAYMENT_METHOD_NAME_MAP: payment-method-name-map
       BRAND_LOGO_MAP: brand-logo-map
-  envFieldRef:
+  envFieldRef: &envFieldRef
     APP_NAME: "metadata.labels['app.kubernetes.io/instance']"
     APP_VERSION: "metadata.labels['app.kubernetes.io/version']"
-  envSecret:
+  envSecret: &envSecret
     APPLICATIONINSIGHTS_CONNECTION_STRING: "ai-p-connection-string"
     RECEIPTS_STORAGE_CONN_STRING: "receipts-storage-account-connection-string"
     COSMOS_RECEIPTS_CONN_STRING: "cosmos-receipt-connection-string"
@@ -181,3 +181,46 @@ microservice-chart:
         pullPolicy: Always
       envConfig:
       envSecret:
+# Configuration for standard application
+pagopa-receipt-pdf-generator:
+  !!merge <<: *microservice-chart
+  ingress:
+    !!merge <<: *ingress
+  resources:
+    !!merge <<: *resources
+  externalConfigMapValues:
+    !!merge <<: *externalConfigMapValues
+  envConfig:
+    !!merge <<: *envConfig
+    AzureWebJobs.GenerateReceiptProcess.Disabled: "false"
+    AzureWebJobs.ManageReceiptPoisonQueueProcessor.Disabled: "false"
+    AzureWebJobs.RetryReviewedPoisonMessagesProcessor.Disabled: "false"
+    AzureWebJobs.GenerateCartReceiptProcess.Disabled: "true"
+    AzureWebJobs.ManageCartReceiptPoisonQueueProcessor.Disabled: "true"
+    AzureWebJobs.RetryReviewedCartPoisonMessagesProcessor.Disabled: "true"
+  envSecret:
+    !!merge <<: *envSecret
+# Configuration for Cart functions
+pagopa-receipt-pdf-generator-cart:
+  !!merge <<: *microservice-chart
+  ingress:
+    !!merge <<: *ingress
+    path: /pagopa-receipt-pdf-generator-cart/(.*)
+  resources:
+    !!merge <<: *resources
+  autoscaling:
+    !!merge <<: *autoscaling
+    minReplica: 1
+  externalConfigMapValues:
+    !!merge <<: *externalConfigMapValues
+  envConfig:
+    !!merge <<: *envConfig
+    WEBSITE_SITE_NAME: 'pagopareceiptpdfgeneratorcart'
+    AzureWebJobs.GenerateReceiptProcess.Disabled: "true"
+    AzureWebJobs.ManageReceiptPoisonQueueProcessor.Disabled: "true"
+    AzureWebJobs.RetryReviewedPoisonMessagesProcessor.Disabled: "true"
+    AzureWebJobs.GenerateCartReceiptProcess.Disabled: "false"
+    AzureWebJobs.ManageCartReceiptPoisonQueueProcessor.Disabled: "false"
+    AzureWebJobs.RetryReviewedCartPoisonMessagesProcessor.Disabled: "false"
+  envSecret:
+    !!merge <<: *envSecret
