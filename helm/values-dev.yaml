@@ -175,6 +175,7 @@ microservice-chart: &microservice-chart
 # Configuration for standard application
 pagopa-receipt-pdf-generator:
   !!merge <<: *microservice-chart
+  fullnameOverride: "pagopa-receipt-pdf-generator"
   ingress:
     !!merge <<: *ingress
   resources:
@@ -194,6 +195,7 @@ pagopa-receipt-pdf-generator:
 # Configuration for Cart functions
 pagopa-receipt-pdf-generator-cart:
   !!merge <<: *microservice-chart
+  fullnameOverride: "pagopa-receipt-pdf-generator-cart"
   ingress:
     !!merge <<: *ingress
     path: /pagopa-receipt-pdf-generator-cart/(.*)
