@@ -97,6 +97,7 @@ microservice-chart:
   envConfig:
     TZ: "Europe/Rome"
     ENV: "dev"
+    LOG_LEVEL: "INFO"
     WEBSITE_SITE_NAME: "pagopareceiptpdfgenerator" # required to show cloud role name in application insights
     ASPNETCORE_URLS: "http://*:8080"
     FUNCTIONS_WORKER_RUNTIME: "java"
