@@ -24,6 +24,8 @@ this.errorReceiptId = null;
 this.errorReceiptEventId = null;
 this.listOfEvents = null;
 this.transactionId = null;
+this.cartId = null;
+this.errorCartId = null;
 
 // After each Scenario
 After(async function () {
@@ -34,12 +36,13 @@ After(async function () {
     if (this.errorReceiptId != null) {
         await deleteDocumentFromErrorReceiptsDatastore(this.errorReceiptId);
     }
-    if (this.errorReceiptId != null) {
-        await deleteDocumentFromErrorCartDatastore(this.errorReceiptId);
+    if (this.errorCartId != null) {
+        await deleteDocumentFromErrorCartDatastore(this.errorCartId);
     }
-    if (this.transactionId != null) {
+    if(this.transactionId != null){
         await deleteDocumentFromCartsDatastoreById(this.transactionId);
     }
+
 
     this.eventId = null;
     this.responseToCheck = null;
@@ -47,6 +50,8 @@ After(async function () {
     this.errorReceiptId = null;
     this.errorReceiptEventId = null;
     this.listOfEvents = null;
+    this.cartId = null;
+    this.errorCartId = null;
     this.transactionId = null;
 });
 
@@ -104,13 +109,13 @@ When('the PDF receipt has been properly generate from biz event after {int} ms',
 When('the PDFs have been properly generate from cart after {int} ms', async function (time) {
     // boundary time spent by azure function to process event
     await sleep(time);
-    this.responseToCheck = await getDocumentByIdFromCartDatastore(this.eventId);
+    this.responseToCheck = await getDocumentByIdFromCartDatastore(this.transactionId);
 });
 
 When('the cart is discarded from generation after {int} ms', async function (time) {
     // boundary time spent by azure function to process event
     await sleep(time);
-    this.responseToCheck = await getDocumentByIdFromCartDatastore(this.eventId);
+    this.responseToCheck = await getDocumentByIdFromCartDatastore(this.transactionId);
 });
 
 
@@ -169,7 +174,7 @@ Then('the receipt-message-error datastore returns the error receipt', async func
 
 Then('the cart-receipts-message-error datastore returns the error receipt', async function () {
     assert.notStrictEqual(this.responseToCheck.resources.length, 0);
-    this.errorReceiptId = this.responseToCheck.resources[0].id;
+    this.errorCartId = this.responseToCheck.resources[0].id;
     assert.strictEqual(this.responseToCheck.resources.length, 1);
 });
 
@@ -182,12 +187,12 @@ Then('the error cart has the status {string}', function (targetStatus) {
     assert.strictEqual(this.responseToCheck.resources[0].status, targetStatus);
 });
 
-Given('a error cart with id {string} and transactionId {string} stored into cart-receipts-message-error datastore with status REVIEWED', async function (id, transactionId) {
-    await deleteDocumentFromErrorCartDatastore(id);
+Given('a error cart with id {string} and transactionId {string} stored into cart-receipts-message-error datastore with status REVIEWED', async function (cartId, transactionId) {
+    await deleteDocumentFromErrorCartDatastore(cartId);
 
-    assert.strictEqual(this.eventId, transactionId);
-    let response = await createDocumentInErrorCartDatastore(createErrorCart(id, transactionId));
-    this.errorReceiptId = id;
+    assert.strictEqual(this.transactionId, transactionId);
+    let response = await createDocumentInErrorCartDatastore(createErrorCart(cartId, transactionId));
+    this.errorCartId = cartId;
     assert.strictEqual(response.statusCode, 201);
 });
 
@@ -203,7 +208,7 @@ Given('a error receipt with id {string} stored into receipt-message-error datast
 When('the error cart has been properly stored on cart-receipts-message-error datastore after {int} ms', async function (time) {
     // boundary time spent by azure function to process event
     await sleep(time);
-    this.responseToCheck = await getDocumentByBizEventIdFromErrorCartDatastore(this.errorReceiptId);
+    this.responseToCheck = await getDocumentByBizEventIdFromErrorCartDatastore(this.errorCartId);
 });
 
 When('the error receipt has been properly stored on receipt-message-error datastore after {int} ms', async function (time) {
@@ -212,25 +217,25 @@ When('the error receipt has been properly stored on receipt-message-error datast
     this.responseToCheck = await getDocumentByBizEventIdFromErrorReceiptsDatastore(this.errorReceiptId);
 });
 
-Given('a cart with id {string} and eventId {string} and status {string} stored into cart datastore', async function(id, eventId, status) {
-    this.eventId = eventId;
-    // prior cancellation to avoid dirty cases
-    await deleteDocumentFromCartsDatastoreById(this.eventId);
+Given('a cart with id {string} and eventId {string} and status {string} stored into cart datastore', async function(cartId, eventId, status) {
+    this.cartId = cartId;
+    this.transactionId = eventId;
 
-    let cartStoreResponse = await createDocumentInCartDatastore(id, this.eventId, status);
-    this.receiptId = this.eventId;
+    // prior cancellation to avoid dirty cases
+    await deleteDocumentFromCartsDatastoreById(eventId);
+
+    let cartStoreResponse = await createDocumentInCartDatastore(cartId, eventId, status);
     assert.strictEqual(cartStoreResponse.statusCode, 201);
 });
 
 Given('random biz events for cart with id {string} and transaction id {string} enqueued on cart queue', async function(id, transactionId) {
-    assert.strictEqual(this.eventId, transactionId);
-    this.transactionId = transactionId;
+    assert.strictEqual(this.transactionId, transactionId);
     let listOfEvents = createEventsForCartQueue(id, 2, transactionId, STANDARD_NOTICE_NUMBER, IUV);
     await putMessageOnCartQueue(listOfEvents);
 });
 
 Then('the cart datastore returns the cart', async function() {
     assert.notStrictEqual(this.responseToCheck.resources.length, 0);
-    this.receiptId = this.responseToCheck.resources[0].id;
+    this.cartId = this.responseToCheck.resources[0].id;
     assert.strictEqual(this.responseToCheck.resources.length, 1);
 });

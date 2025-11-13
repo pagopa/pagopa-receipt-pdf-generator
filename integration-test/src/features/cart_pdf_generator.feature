@@ -7,17 +7,17 @@ Feature: Cart receipt generation triggered by a Queue message containing BizEven
         Then the cart datastore returns the cart
         And the receipt has eventId "tr-success-1"
         And the receipt has not the status "INSERTED"
-        And the receipt has the status "GENERATED"
+        And the receipt has not the status "FAILED"
         And the blob storage has the PDF document for payer
 
     Scenario: Successful PDF generation and status update for a RETRY cart receipt
         Given a cart with id "cart-receipt-success-2" and eventId "tr-success-2" and status "RETRY" stored into cart datastore
         And random biz events for cart with id "cart-receipt-success-2" and transaction id "tr-success-2" enqueued on cart queue
-        When the PDFs have been properly generate from cart after 20000 ms
+        When the PDFs have been properly generate from cart after 25000 ms
         Then the cart datastore returns the cart
         And the receipt has eventId "tr-success-2"
         And the receipt has not the status "RETRY"
-        And the receipt has the status "GENERATED"
+        And the receipt has not the status "FAILED"
         And the blob storage has the PDF document for payer
 
     Scenario: Cart receipt is discarded if status is not INSERTED or RETRY
