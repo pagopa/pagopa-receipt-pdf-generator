@@ -1,9 +1,14 @@
 const assert = require('assert');
 const { After, Given, When, Then, setDefaultTimeout } = require('@cucumber/cucumber');
-const { sleep, createEventsForQueue, createEventsForPoisonQueue, createErrorReceipt } = require("./common");
+const { sleep, createEventsForQueue, createEventsForPoisonQueue, createErrorCart, createErrorReceipt, createEventsForCartQueue } = require("./common");
 const { getDocumentByIdFromReceiptsDatastore, deleteDocumentFromErrorReceiptsDatastoreByBizEventId, deleteDocumentFromReceiptsDatastore, createDocumentInReceiptsDatastore, createDocumentInErrorReceiptsDatastore, deleteDocumentFromErrorReceiptsDatastore, getDocumentByBizEventIdFromErrorReceiptsDatastore } = require("./receipts_datastore_client");
 const { putMessageOnPoisonQueue, putMessageOnReceiptQueue } = require("./receipts_queue_client");
 const { receiptPDFExist } = require("./receipts_blob_storage_client");
+const {
+    getDocumentByIdFromCartDatastore, deleteDocumentFromCartsDatastoreById, createDocumentInCartDatastore,
+     getDocumentByBizEventIdFromErrorCartDatastore, createDocumentInErrorCartDatastore, deleteDocumentFromErrorCartDatastore
+} = require("./cart_datastore_client");
+const { putMessageOnCartQueue } = require("./cart_queue_client");
 const STANDARD_NOTICE_NUMBER = "310391366991197059"
 const WISP_NOTICE_NUMBER = "348391366991197059"
 const IUV = "10391366991197059"
@@ -18,6 +23,9 @@ this.receiptId = null;
 this.errorReceiptId = null;
 this.errorReceiptEventId = null;
 this.listOfEvents = null;
+this.transactionId = null;
+this.cartId = null;
+this.errorCartId = null;
 
 // After each Scenario
 After(async function () {
@@ -28,12 +36,23 @@ After(async function () {
     if (this.errorReceiptId != null) {
         await deleteDocumentFromErrorReceiptsDatastore(this.errorReceiptId);
     }
+    if (this.errorCartId != null) {
+        await deleteDocumentFromErrorCartDatastore(this.errorCartId);
+    }
+    if(this.transactionId != null){
+        await deleteDocumentFromCartsDatastoreById(this.transactionId);
+    }
+
+
     this.eventId = null;
     this.responseToCheck = null;
     this.receiptId = null;
     this.errorReceiptId = null;
     this.errorReceiptEventId = null;
     this.listOfEvents = null;
+    this.cartId = null;
+    this.errorCartId = null;
+    this.transactionId = null;
 });
 
 
@@ -85,6 +104,21 @@ When('the PDF receipt has been properly generate from biz event after {int} ms',
     this.responseToCheck = await getDocumentByIdFromReceiptsDatastore(this.eventId);
 });
 
+
+
+When('the PDFs have been properly generate from cart after {int} ms', async function (time) {
+    // boundary time spent by azure function to process event
+    await sleep(time);
+    this.responseToCheck = await getDocumentByIdFromCartDatastore(this.transactionId);
+});
+
+When('the cart is discarded from generation after {int} ms', async function (time) {
+    // boundary time spent by azure function to process event
+    await sleep(time);
+    this.responseToCheck = await getDocumentByIdFromCartDatastore(this.transactionId);
+});
+
+
 Then('the receipts datastore returns the receipt', async function () {
     assert.notStrictEqual(this.responseToCheck.resources.length, 0);
     this.receiptId = this.responseToCheck.resources[0].id;
@@ -112,6 +146,11 @@ Then('the blob storage has the PDF document', async function () {
     assert.strictEqual(true, blobExist);
 });
 
+Then('the blob storage has the PDF document for payer', async function () {
+    let blobExist = await receiptPDFExist(this.responseToCheck.resources[0].payload.mdAttachPayer.name);
+    assert.strictEqual(true, blobExist);
+});
+
 
 Given('a random biz event with id {string} enqueued on receipts poison queue with poison retry {string}', async function (id, value) {
     let attemptedPoisonRetry = (value === 'true');
@@ -133,8 +172,28 @@ Then('the receipt-message-error datastore returns the error receipt', async func
     assert.strictEqual(this.responseToCheck.resources.length, 1);
 });
 
+Then('the cart-receipts-message-error datastore returns the error receipt', async function () {
+    assert.notStrictEqual(this.responseToCheck.resources.length, 0);
+    this.errorCartId = this.responseToCheck.resources[0].id;
+    assert.strictEqual(this.responseToCheck.resources.length, 1);
+});
+
+
 Then('the error receipt has the status {string}', function (targetStatus) {
     assert.strictEqual(this.responseToCheck.resources[0].status, targetStatus);
+});
+
+Then('the error cart has the status {string}', function (targetStatus) {
+    assert.strictEqual(this.responseToCheck.resources[0].status, targetStatus);
+});
+
+Given('a error cart with id {string} and transactionId {string} stored into cart-receipts-message-error datastore with status REVIEWED', async function (cartId, transactionId) {
+    await deleteDocumentFromErrorCartDatastore(cartId);
+
+    assert.strictEqual(this.transactionId, transactionId);
+    let response = await createDocumentInErrorCartDatastore(createErrorCart(cartId, transactionId));
+    this.errorCartId = cartId;
+    assert.strictEqual(response.statusCode, 201);
 });
 
 Given('a error receipt with id {string} stored into receipt-message-error datastore with status REVIEWED', async function (id) {
@@ -146,8 +205,37 @@ Given('a error receipt with id {string} stored into receipt-message-error datast
     assert.strictEqual(response.statusCode, 201);
 });
 
+When('the error cart has been properly stored on cart-receipts-message-error datastore after {int} ms', async function (time) {
+    // boundary time spent by azure function to process event
+    await sleep(time);
+    this.responseToCheck = await getDocumentByBizEventIdFromErrorCartDatastore(this.errorCartId);
+});
+
 When('the error receipt has been properly stored on receipt-message-error datastore after {int} ms', async function (time) {
     // boundary time spent by azure function to process event
     await sleep(time);
     this.responseToCheck = await getDocumentByBizEventIdFromErrorReceiptsDatastore(this.errorReceiptId);
+});
+
+Given('a cart with id {string} and eventId {string} and status {string} stored into cart datastore', async function(cartId, eventId, status) {
+    this.cartId = cartId;
+    this.transactionId = eventId;
+
+    // prior cancellation to avoid dirty cases
+    await deleteDocumentFromCartsDatastoreById(eventId);
+
+    let cartStoreResponse = await createDocumentInCartDatastore(cartId, eventId, status);
+    assert.strictEqual(cartStoreResponse.statusCode, 201);
+});
+
+Given('random biz events for cart with id {string} and transaction id {string} enqueued on cart queue', async function(id, transactionId) {
+    assert.strictEqual(this.transactionId, transactionId);
+    let listOfEvents = createEventsForCartQueue(id, 2, transactionId, STANDARD_NOTICE_NUMBER, IUV);
+    await putMessageOnCartQueue(listOfEvents);
+});
+
+Then('the cart datastore returns the cart', async function() {
+    assert.notStrictEqual(this.responseToCheck.resources.length, 0);
+    this.cartId = this.responseToCheck.resources[0].id;
+    assert.strictEqual(this.responseToCheck.resources.length, 1);
 });
