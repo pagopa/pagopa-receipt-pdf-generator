@@ -14,4 +14,4 @@ services:
     env_file:
       - ./.env
     ports:
-      - "60486:80"
+      - "60486:8080"

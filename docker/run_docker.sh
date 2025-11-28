@@ -34,16 +34,12 @@ keyvault=$(yq  -r '."microservice-chart".keyvault.name' ../helm/values-$ENV.yaml
 secret=$(yq  -r '."microservice-chart".envSecret' ../helm/values-$ENV.yaml)
 for line in $(echo $secret | jq -r '. | to_entries[] | select(.key) | "\(.key)=\(.value)"'); do
   IFS='=' read -r -a array <<< "$line"
-  response=$(az keyvault secret show --vault-name $keyvault --name "${array[1]}")
+  name=$(printf '%s' "${array[1]}" | tr -d '\r')
+  response=$(az keyvault secret show --vault-name $keyvault --name "$name")
   value=$(echo $response | jq -r '.value')
   echo "${array[0]}=$value" >> .env
-#  if [ "${array[0]}" = "AFM_SA_CONNECTION_STRING" ];then
-#      echo "Set secret env ${array[0]}"
-#      echo "::add-mask::$value"
-#      echo AFM_SA_CONNECTION_STRING=$value >> $GITHUB_ENV
-#  fi
 done
-
+printf 'Environment variables retrieved'
 
 stack_name=$(cd .. && basename "$PWD")
 docker compose -p "${stack_name}" up -d --remove-orphans --force-recreate --build
@@ -54,7 +50,7 @@ docker compose -p "${stack_name}" up -d --remove-orphans --force-recreate --buil
 printf 'Waiting for the service'
 attempt_counter=0
 max_attempts=50
-until [ $(curl -s -o /dev/null -w "%{http_code}" http://localhost:60486/info) -eq 200 ]; do
+until [ $(curl -s -o /dev/null -w "%{http_code}" http://localhost:60486/health) -eq 200 ]; do
     if [ ${attempt_counter} -eq ${max_attempts} ];then
       echo "Max attempts reached"
       exit 1
