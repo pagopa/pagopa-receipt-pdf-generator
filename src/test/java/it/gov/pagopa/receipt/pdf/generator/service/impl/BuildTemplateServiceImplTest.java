@@ -1510,7 +1510,7 @@ class BuildTemplateServiceImplTest {
                         bizEventList,
                         GENERATED_BY_DEBTOR,
                         ID_TRANSACTION,
-                        AMOUNT_WITHOUT_CENTS,
+                        FORMATTED_AMOUNT,
                         cartInfoMap
                 )));
 
