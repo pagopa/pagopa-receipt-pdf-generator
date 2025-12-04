@@ -123,7 +123,7 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
                 listOfBizEvents,
                 requestedByDebtor,
                 validateCartServiceCustomerId(eventId),
-                getCartAmount(amount, requestedByDebtor),
+                getCartAmount(amount),
                 cartInfoMap
         );
 
@@ -247,11 +247,8 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
         throw new TemplateDataMappingException(formatErrorMessage(TemplateDataField.TRANSACTION_AMOUNT, TemplateDatasource.RECEIPT), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
     }
 
-    private String getCartAmount(String amount, boolean requestedByDebtor) throws TemplateDataMappingException {
+    private String getCartAmount(String amount) throws TemplateDataMappingException {
         if (amount != null) {
-            if (requestedByDebtor) {
-                return currencyFormat(amount);
-            }
             return amount;
         }
         throw new TemplateDataMappingException(formatErrorMessage(TemplateDataField.TRANSACTION_AMOUNT, TemplateDatasource.CART), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
