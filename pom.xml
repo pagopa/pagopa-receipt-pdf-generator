@@ -5,7 +5,7 @@
 
     <groupId>it.gov.pagopa.receipt</groupId>
     <artifactId>receipt-pdf-generator</artifactId>
-    <version>1.14.11</version>
+    <version>1.14.12-add-san-marino-temp</version>
     <packaging>jar</packaging>
 
     <name>pagopa-receipt-pdf-generator</name>
