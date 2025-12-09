@@ -2,6 +2,7 @@ package it.gov.pagopa.receipt.pdf.generator.utils;
 
 public class TemplateDataField {
     public static final String ERROR_MAPPING_MESSAGE = "Error mapping %s data to template, missing property %s";
+    public static final String ERROR_PSP_NOT_CONFIGURED = "Error mapping bizEvent data to template, because PSP %s is not configured.";
     public static final String SERVICE_CUSTOMER_ID = "serviceCustomerId";
     public static final String TRANSACTION_TIMESTAMP = "transaction.timestamp";
     public static final String TRANSACTION_AMOUNT = "transaction.amount";
