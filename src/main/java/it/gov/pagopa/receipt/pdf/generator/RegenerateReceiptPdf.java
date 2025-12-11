@@ -149,7 +149,7 @@ public class RegenerateReceiptPdf {
                 return buildErrorResponse(
                         request,
                         HttpStatus.INTERNAL_SERVER_ERROR,
-                        "Receipt could not be updated with the new attachments"
+                        "Unable to generate PDF receipt"
                 );
             }
         } catch (ReceiptGenerationNotToRetryException e) {

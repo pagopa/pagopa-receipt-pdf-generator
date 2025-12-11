@@ -46,21 +46,21 @@ public class HelpdeskUtils {
 
         if (bizEvent == null) {
             return BizEventValidityCheck.builder()
-                    .invalid(false)
+                    .invalid(true)
                     .error("Biz event is null")
                     .build();
         }
 
         if (!BizEventStatusType.DONE.equals(bizEvent.getEventStatus())) {
             return BizEventValidityCheck.builder()
-                    .invalid(false)
+                    .invalid(true)
                     .error(String.format("Biz event is in invalid status %s", bizEvent.getEventStatus()))
                     .build();
         }
 
         if (!hasValidFiscalCode(bizEvent)) {
             return BizEventValidityCheck.builder()
-                    .invalid(false)
+                    .invalid(true)
                     .error("Biz event is in invalid because debtor's and payer's identifiers are missing or not valid")
                     .build();
         }
@@ -71,14 +71,14 @@ public class HelpdeskUtils {
                 && ECOMMERCE.equals(bizEvent.getTransactionDetails().getInfo().getClientId())
         ) {
             return BizEventValidityCheck.builder()
-                    .invalid(false)
+                    .invalid(true)
                     .error("Biz event is in invalid because it is from e-commerce and e-commerce filter is enabled")
                     .build();
         }
 
         if (!isCartMod1(bizEvent)) {
             return BizEventValidityCheck.builder()
-                    .invalid(false)
+                    .invalid(true)
                     .error("Biz event is in invalid because contain either an invalid amount value or it is a legacy cart element")
                     .build();
         }
