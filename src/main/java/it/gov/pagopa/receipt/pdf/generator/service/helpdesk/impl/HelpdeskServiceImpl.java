@@ -76,7 +76,11 @@ public class HelpdeskServiceImpl implements HelpdeskService {
         return receipt;
     }
 
-    private void tokenizeFiscalCodes(BizEvent bizEvent, Receipt receipt, EventData eventData) throws JsonProcessingException, PDVTokenizerException {
+    private void tokenizeFiscalCodes(
+            BizEvent bizEvent,
+            Receipt receipt,
+            EventData eventData
+    ) throws JsonProcessingException, PDVTokenizerException {
         try {
             //Tokenize Debtor
             eventData.setDebtorFiscalCode(tokenizerDebtorFiscalCode(bizEvent));

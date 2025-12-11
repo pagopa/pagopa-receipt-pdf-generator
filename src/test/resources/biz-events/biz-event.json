@@ -89,17 +89,49 @@
     }
   ],
   "transactionDetails": {
+    "origin": null,
     "transaction": {
-      "origin": "IO",
+      "idTransaction": "1",
+      "transactionId": null,
+      "grandTotal": 707770,
+      "amount": 700000,
+      "fee": 7770,
+      "transactionStatus": null,
+      "accountingStatus": null,
+      "rrn": "rrn",
+      "authorizationCode": null,
+      "creationDate": "2023-08-05T09:11:54Z",
+      "numAut": "authCode",
+      "accountCode": null,
       "psp": {
-        "businessName": "Nexi"
-      }
+        "idChannel": null,
+        "businessName": "name",
+        "serviceName": null
+      },
+      "origin": "IO"
     },
     "wallet": {
+      "idWallet": null,
+      "walletType": null,
+      "enableableFunctions": null,
+      "pagoPa": false,
+      "onboardingChannel": "IO",
+      "favourite": false,
+      "createDate": null,
       "info": {
-        "brand": "MASTER"
-      }
-    }
+        "type": "CP",
+        "blurredNumber": null,
+        "holder": "John Doe HOLDER",
+        "expireMonth": null,
+        "expireYear": null,
+        "brand": "MASTER",
+        "issuerAbi": null,
+        "issuerName": null,
+        "label": null
+      },
+      "authRequest": null
+    },
+    "info": null
   },
   "timestamp": 1686919660002,
   "properties": {},
