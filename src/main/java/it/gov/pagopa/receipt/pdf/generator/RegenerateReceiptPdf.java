@@ -119,7 +119,6 @@ public class RegenerateReceiptPdf {
 
         Integer totalNotice = HelpdeskUtils.getTotalNotice(bizEvent, context, logger);
         if (totalNotice > 1) {
-            // TODO cart management: future developments to be defined
             return buildErrorResponse(
                     request,
                     HttpStatus.UNPROCESSABLE_ENTITY,

@@ -10,6 +10,7 @@ import it.gov.pagopa.receipt.pdf.generator.service.helpdesk.PDVTokenizerServiceR
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.ThrowingSupplier;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -54,7 +55,10 @@ class PDVTokenizerServiceRetryWrapperImplTest {
                 "PDV_TOKENIZER_INITIAL_INTERVAL", "1",
                 "PDV_TOKENIZER_MULTIPLIER", "2",
                 "PDV_TOKENIZER_RANDOMIZATION_FACTOR", "0.1")
-                .execute(() -> assertDoesNotThrow(() -> new PDVTokenizerServiceRetryWrapperImpl()));
+                .execute(() ->
+                        assertDoesNotThrow(
+                                (ThrowingSupplier<PDVTokenizerServiceRetryWrapperImpl>) PDVTokenizerServiceRetryWrapperImpl::new)
+                );
     }
 
     @Test
