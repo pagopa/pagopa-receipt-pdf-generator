@@ -11,6 +11,7 @@ import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -21,6 +22,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static uk.org.webcompere.systemstubs.SystemStubs.withEnvironmentVariables;
 
 class PDVTokenizerServiceRetryWrapperImplTest {
 
@@ -43,6 +45,16 @@ class PDVTokenizerServiceRetryWrapperImplTest {
         Retry retry = Retry.of("id", config);
 
         sut = spy(new PDVTokenizerServiceRetryWrapperImpl(pdvTokenizerServiceMock, retry));
+    }
+
+    @Test
+    void testSingletonConnectionError() throws Exception {
+        withEnvironmentVariables(
+                "PDV_TOKENIZER_MAX_RETRIES", "1",
+                "PDV_TOKENIZER_INITIAL_INTERVAL", "1",
+                "PDV_TOKENIZER_MULTIPLIER", "2",
+                "PDV_TOKENIZER_RANDOMIZATION_FACTOR", "0.1")
+                .execute(() -> assertDoesNotThrow(() -> new PDVTokenizerServiceRetryWrapperImpl()));
     }
 
     @Test

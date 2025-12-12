@@ -321,6 +321,35 @@ class RegenerateReceiptPdfTest {
 
     @Test
     @SneakyThrows
+    void regeneratePDFFailBizEventNotValidForLegacyCart() {
+        BizEvent bizEvent = getBizEventFromFile("biz-events/biz-event.json");
+        bizEvent.getPaymentInfo().setTotalNotice(null);
+        bizEvent.getPaymentInfo().setAmount("1");
+
+        doReturn(bizEvent).when(bizEventCosmosClient).getBizEventDocument(anyString());
+
+        // test execution
+        HttpResponseMessage response = assertDoesNotThrow(() -> sut.run(
+                requestMock,
+                bizEvent.getId(),
+                documentdb,
+                executionContextMock
+        ));
+
+        assertNotNull(response);
+        assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatusCode());
+        ProblemJson body = (ProblemJson) response.getBody();
+        assertNotNull(body);
+        assertEquals("Biz event is in invalid because contain either an invalid amount value or it is a legacy cart element", body.getDetail());
+
+        verify(receiptCosmosServiceMock, never()).getReceipt(anyString());
+        verify(generateReceiptPdfServiceMock, never()).generateReceipts(any(), any(), any());
+        verify(generateReceiptPdfServiceMock, never()).verifyAndUpdateReceipt(any(), any());
+        verify(documentdb, never()).setValue(receiptBindingCaptor.capture());
+    }
+
+    @Test
+    @SneakyThrows
     void regeneratePDFFailBuildReceiptError() {
         BizEvent bizEvent = getBizEventFromFile("biz-events/biz-event.json");
 
