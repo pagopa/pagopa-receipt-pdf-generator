@@ -23,7 +23,8 @@ class ReceiptCosmosClientImplTest {
         String mockKey = "mockKeymockKeymockKeymockKeymockKeymockKeymockKeymockKeymockKeymockKeymockKeymockKeyMK==";
         withEnvironmentVariables(
                 "COSMOS_RECEIPT_KEY", mockKey,
-                "COSMOS_RECEIPT_SERVICE_ENDPOINT", ""
+                "COSMOS_RECEIPT_SERVICE_ENDPOINT", "",
+                "COSMOS_RECEIPT_READ_REGION", ""
         ).execute(() -> Assertions.assertThrows(IllegalArgumentException.class, ReceiptCosmosClientImpl::getInstance)
         );
     }
