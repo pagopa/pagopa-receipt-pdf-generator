@@ -7,4 +7,4 @@ Feature: Helpdesk receipt regenerate
     Then the api response has a 200 Http status
     And the receipt with eventId "receipt-generator-helpdesk-int-test-id-1" is recovered from datastore
     And the receipt has attachment metadata
-    And the blob storage has the PDF document
+    And the PDF is present on blob storage

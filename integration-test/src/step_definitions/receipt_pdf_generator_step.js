@@ -278,3 +278,8 @@ Then('the receipt has attachment metadata', function () {
     receiptPdfFileName = receipt.mdAttach.name;
     this.receiptId = receipt.id;
 });
+
+Then('the PDF is present on blob storage', async function () {
+    let blobExist = await receiptPDFExist(receiptPdfFileName);
+    assert.strictEqual(blobExist, true);
+  });
