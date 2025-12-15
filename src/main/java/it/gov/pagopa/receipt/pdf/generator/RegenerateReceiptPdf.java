@@ -126,7 +126,7 @@ public class RegenerateReceiptPdf {
             );
         }
 
-        Receipt receipt = bulidNewReceipt(context, bizEvent);
+        Receipt receipt = buildNewReceipt(context, bizEvent);
         if (!isReceiptStatusValid(receipt)) {
             String errDetail = String.format(
                     "Failed to re-create receipt entity with eventId %s: %s",
@@ -178,7 +178,7 @@ public class RegenerateReceiptPdf {
         }
     }
 
-    private Receipt bulidNewReceipt(ExecutionContext context, BizEvent bizEvent) {
+    private Receipt buildNewReceipt(ExecutionContext context, BizEvent bizEvent) {
         Receipt receipt = this.helpdeskService.createReceipt(bizEvent);
         try {
             Receipt existingReceipt = this.receiptCosmosService.getReceipt(bizEvent.getId());
