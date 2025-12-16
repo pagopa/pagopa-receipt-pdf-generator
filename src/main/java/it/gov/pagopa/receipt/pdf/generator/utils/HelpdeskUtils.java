@@ -218,7 +218,7 @@ public class HelpdeskUtils {
     public static boolean isValidFiscalCode(String fiscalCode) {
         if (fiscalCode != null && !fiscalCode.isEmpty()) {
             Pattern patternCF = Pattern.compile("^[A-Z]{6}[0-9LMNPQRSTUV]{2}[ABCDEHLMPRST][0-9LMNPQRSTUV]{2}[A-Z][0-9LMNPQRSTUV]{3}[A-Z]$");
-            Pattern patternPIVA = Pattern.compile("/^[0-9]{11}$/");
+            Pattern patternPIVA = Pattern.compile("^\\d{11}$");
 
             return patternCF.matcher(fiscalCode).find() || patternPIVA.matcher(fiscalCode).find();
         }
