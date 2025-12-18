@@ -13,3 +13,7 @@ dependencies:
     version: 8.0.2
     repository: "https://pagopa.github.io/aks-microservice-chart-blueprint"
     alias: pagopa-receipt-pdf-generator-cart
+  - name: microservice-chart
+    version: 8.0.2
+    repository: "https://pagopa.github.io/aks-microservice-chart-blueprint"
+    alias: pagopa-receipt-pdf-generator-helpdesk
