@@ -71,11 +71,11 @@ microservice-chart: &microservice-chart
   #       mountPath: /temp
   resources: &resources
     requests:
-      memory: "2Gi"
-      cpu: "0.70"
+      memory: "2.3Gi"
+      cpu: "0.5"
     limits:
       memory: "3Gi"
-      cpu: "1.0"
+      cpu: "0.7"
   autoscaling: &autoscaling
     enable: true
     minReplica: 3
@@ -87,12 +87,12 @@ microservice-chart: &microservice-chart
         metadata:
           # Required
           type: Utilization # Allowed types are 'Utilization' or 'AverageValue'
-          value: "75"
+          value: "80"
       - type: memory
         metadata:
           # Required
           type: Utilization # Allowed types are 'Utilization' or 'AverageValue'
-          value: "70"
+          value: "90"
   fileConfig: {}
   envConfig: &envConfig
     TZ: "Europe/Rome"
