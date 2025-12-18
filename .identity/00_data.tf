@@ -84,6 +84,6 @@ data "azurerm_user_assigned_identity" "identity_cd_01" {
 }
 
 data "azurerm_key_vault_secret" "key_vault_integration_test_subkey" {
-  name         = "apikey-helpdesk-receipt" # "integration-test-subkey"
+  name         = "receipt-generator-helpdesk-integration-test-api-key" # "integration-test-subkey"
   key_vault_id = data.azurerm_key_vault.key_vault_domain.id
 }
