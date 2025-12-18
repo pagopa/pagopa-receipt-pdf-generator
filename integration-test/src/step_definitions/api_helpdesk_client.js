@@ -17,6 +17,19 @@ async function postRegenerateReceiptPdf(eventId) {
 		});
 }
 
+async function postRegenerateCartReceiptPdf(cartId) {
+	let endpoint = process.env.REGENERATE_RECEIPT_PDF_ENDPOINT || "cart-receipts/{cart-id}/regenerate-receipt-pdf";
+	endpoint = endpoint.replace("{cart-id}", cartId);
+
+	return await axios.post(helpdesk_url + endpoint, {})
+		.then(res => {
+			return res;
+		})
+		.catch(error => {
+			return error.response;
+		});
+}
+
 module.exports = {
 	postRegenerateReceiptPdf
 }
