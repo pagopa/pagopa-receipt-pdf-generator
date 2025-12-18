@@ -10,6 +10,7 @@ import it.gov.pagopa.receipt.pdf.generator.entity.event.InfoTransaction;
 import it.gov.pagopa.receipt.pdf.generator.entity.event.enumeration.BizEventStatusType;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.CartItem;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.EventData;
+import it.gov.pagopa.receipt.pdf.generator.entity.receipt.IOMessageData;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.ReceiptMetadata;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.enumeration.ReceiptStatusType;
@@ -121,6 +122,7 @@ class RegenerateReceiptPdfTest {
         Receipt savedReceipt = receiptBindingCaptor.getValue();
         assertNotNull(savedReceipt);
         assertEquals(existingReceipt.getId(), savedReceipt.getId());
+        assertNotNull(savedReceipt.getIoMessageData());
     }
 
     @Test
@@ -155,29 +157,6 @@ class RegenerateReceiptPdfTest {
         Receipt savedReceipt = receiptBindingCaptor.getValue();
         assertNotNull(savedReceipt);
         assertEquals(newReceipt.getId(), savedReceipt.getId());
-    }
-
-    @Test
-    @SneakyThrows
-    void regeneratePDFFailInvalidParameter() {
-        // test execution
-        HttpResponseMessage response = assertDoesNotThrow(() -> sut.run(
-                requestMock,
-                null,
-                documentdb,
-                executionContextMock
-        ));
-
-        assertNotNull(response);
-        assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatusCode());
-        ProblemJson body = (ProblemJson) response.getBody();
-        assertNotNull(body);
-        assertEquals("Missing valid eventId parameter", body.getDetail());
-
-        verify(receiptCosmosServiceMock, never()).getReceipt(anyString());
-        verify(generateReceiptPdfServiceMock, never()).generateReceipts(any(), any(), any());
-        verify(generateReceiptPdfServiceMock, never()).verifyAndUpdateReceipt(any(), any());
-        verify(documentdb, never()).setValue(receiptBindingCaptor.capture());
     }
 
     @Test
@@ -452,11 +431,12 @@ class RegenerateReceiptPdfTest {
                         .build())
                 .mdAttach(ReceiptMetadata.builder().name("DEBTOR_NAME").url("DEBTOR_URL").build())
                 .mdAttachPayer(ReceiptMetadata.builder().name("PAYER_NAME").url("PAYER_URL").build())
+                .ioMessageData(IOMessageData.builder().idMessageDebtor("debtor").idMessagePayer("payer").build())
                 .eventId("biz-event-id")
-                .status(ReceiptStatusType.INSERTED)
+                .status(ReceiptStatusType.IO_NOTIFIED)
                 .generated_at(ORIGINAL_GENERATED_AT)
-                .inserted_at(0L)
-                .notified_at(0L)
+                .inserted_at(134512343)
+                .notified_at(0123434213)
                 .build();
     }
 

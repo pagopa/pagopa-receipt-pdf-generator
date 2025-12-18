@@ -11,7 +11,6 @@ import com.microsoft.azure.functions.annotation.BindingName;
 import com.microsoft.azure.functions.annotation.CosmosDBOutput;
 import com.microsoft.azure.functions.annotation.FunctionName;
 import com.microsoft.azure.functions.annotation.HttpTrigger;
-import io.micrometer.core.instrument.util.StringUtils;
 import it.gov.pagopa.receipt.pdf.generator.client.BizEventCosmosClient;
 import it.gov.pagopa.receipt.pdf.generator.client.impl.BizEventCosmosClientImpl;
 import it.gov.pagopa.receipt.pdf.generator.entity.event.BizEvent;
@@ -96,12 +95,6 @@ public class RegenerateReceiptPdf {
             final ExecutionContext context
     ) throws IOException {
         logger.info("[{}] function called at {}", context.getFunctionName(), LocalDateTime.now());
-
-        if (StringUtils.isBlank(bizEventId)) {
-            String errMsg = "Missing valid eventId parameter";
-            logger.error(LOG_FORMAT, context.getFunctionName(), errMsg);
-            return buildErrorResponse(request, HttpStatus.BAD_REQUEST, errMsg);
-        }
 
         BizEvent bizEvent;
         try {
