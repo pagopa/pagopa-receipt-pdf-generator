@@ -198,7 +198,7 @@
         }
       ]
     },
-    "/cart-receipts/{event-id}/regenerate-receipt-pdf": {
+    "/cart-receipts/{cart-id}/regenerate-receipt-pdf": {
       "post": {
         "tags": [
           "API-regenerateCartReceiptPdf"

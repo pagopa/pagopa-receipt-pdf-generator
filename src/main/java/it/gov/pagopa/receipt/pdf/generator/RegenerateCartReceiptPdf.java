@@ -91,7 +91,7 @@ public class RegenerateCartReceiptPdf {
                     route = "cart-receipts/{cart-id}/regenerate-receipt-pdf",
                     authLevel = AuthorizationLevel.ANONYMOUS)
             HttpRequestMessage<Optional<String>> request,
-            @BindingName("biz-event-id") String cartId,
+            @BindingName("cart-id") String cartId,
             @CosmosDBOutput(
                     name = "ReceiptDatastore",
                     databaseName = "db",
