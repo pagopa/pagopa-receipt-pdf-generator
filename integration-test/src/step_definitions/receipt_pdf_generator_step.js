@@ -1,6 +1,6 @@
 const assert = require('assert');
 const { After, Given, When, Then, setDefaultTimeout } = require('@cucumber/cucumber');
-const { sleep, createEventsForQueue, createEventsForPoisonQueue, createErrorCart, createErrorReceipt, createEventsForCartQueue, createCart, createNotifiedCart } = require("./common");
+const { sleep, createEventsForQueue, createEventsForPoisonQueue, createErrorCart, createErrorReceipt, createEventsForCartQueue, createEvent, createCart, createNotifiedCart } = require("./common");
 const { getDocumentByIdFromReceiptsDatastore, deleteDocumentFromErrorReceiptsDatastoreByBizEventId, deleteDocumentFromReceiptsDatastore, createDocumentInReceiptsDatastore, createDocumentInErrorReceiptsDatastore, deleteDocumentFromErrorReceiptsDatastore, getDocumentByBizEventIdFromErrorReceiptsDatastore } = require("./receipts_datastore_client");
 const { putMessageOnPoisonQueue, putMessageOnReceiptQueue } = require("./receipts_queue_client");
 const { receiptPDFExist } = require("./receipts_blob_storage_client");
@@ -286,14 +286,14 @@ Then('the PDF is present on blob storage', async function () {
     assert.strictEqual(blobExist, true);
 });
 
-Given('a notified cart with id {string} stored into cart datastore', async function (cartId, status) {
+Given('a notified cart with id {string} stored into cart datastore', async function (cartId) {
     this.cartId = cartId;
-    this.transactionId = eventId;
+    this.transactionId = cartId;
 
     // prior cancellation to avoid dirty cases
-    await deleteDocumentFromCartsDatastoreById(eventId);
+    await deleteDocumentFromCartsDatastoreById(cartId);
 
-    let cart = createNotifiedCart(cartId, eventId);
+    let cart = createNotifiedCart(cartId, cartId);
     let cartStoreResponse = await createDocumentInCartDatastore(cart);
     assert.strictEqual(cartStoreResponse.statusCode, 201);
 });
