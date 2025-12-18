@@ -204,6 +204,7 @@ pagopa-receipt-pdf-generator:
     AzureWebJobs.ManageCartReceiptPoisonQueueProcessor.Disabled: "true"
     AzureWebJobs.RetryReviewedCartPoisonMessagesProcessor.Disabled: "true"
     AzureWebJobs.RegenerateReceiptFunc.Disabled: "true"
+    AzureWebJobs.RegenerateCartReceiptFunc.Disabled: "true"
   envSecret:
     !!merge <<: *envSecret
 # Configuration for Cart functions
@@ -227,6 +228,7 @@ pagopa-receipt-pdf-generator-cart:
     AzureWebJobs.ManageCartReceiptPoisonQueueProcessor.Disabled: "false"
     AzureWebJobs.RetryReviewedCartPoisonMessagesProcessor.Disabled: "false"
     AzureWebJobs.RegenerateReceiptFunc.Disabled: "true"
+    AzureWebJobs.RegenerateCartReceiptFunc.Disabled: "true"
   envSecret:
     !!merge <<: *envSecret
 pagopa-receipt-pdf-generator-helpdesk:
@@ -249,5 +251,6 @@ pagopa-receipt-pdf-generator-helpdesk:
     AzureWebJobs.ManageCartReceiptPoisonQueueProcessor.Disabled: "true"
     AzureWebJobs.RetryReviewedCartPoisonMessagesProcessor.Disabled: "true"
     AzureWebJobs.RegenerateReceiptFunc.Disabled: "false"
+    AzureWebJobs.RegenerateCartReceiptFunc.Disabled: "false"
   envSecret:
     !!merge <<: *envSecret
