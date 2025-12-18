@@ -5,7 +5,6 @@ import com.azure.cosmos.CosmosClientBuilder;
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosDatabase;
 import com.azure.cosmos.models.CosmosQueryRequestOptions;
-import com.azure.cosmos.models.FeedResponse;
 import com.azure.cosmos.util.CosmosPagedIterable;
 import it.gov.pagopa.receipt.pdf.generator.client.BizEventCosmosClient;
 import it.gov.pagopa.receipt.pdf.generator.entity.event.BizEvent;
@@ -79,7 +78,7 @@ public class BizEventCosmosClientImpl implements BizEventCosmosClient {
      * {@inheritDoc}
      */
     @Override
-    public Iterable<FeedResponse<BizEvent>> getAllBizEventDocument(String transactionId, String continuationToken, Integer pageSize) {
+    public List<BizEvent> getAllCartBizEventDocument(String transactionId) {
         CosmosDatabase cosmosDatabase = this.cosmosClient.getDatabase(databaseId);
         CosmosContainer cosmosContainer = cosmosDatabase.getContainer(containerId);
 
@@ -90,7 +89,8 @@ public class BizEventCosmosClientImpl implements BizEventCosmosClient {
         //Query the container
         return cosmosContainer
                 .queryItems(query, new CosmosQueryRequestOptions(), BizEvent.class)
-                .iterableByPage(continuationToken, pageSize);
+                .stream().limit(6)
+                .toList();
     }
 
 }

@@ -14,8 +14,12 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Iterator;
+import java.util.List;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -54,13 +58,29 @@ class BizEventCosmosClientImplTest {
     }
 
     @Test
-    void getAllBizEventDocumentsSuccess() {
+    void getAllCartBizEventDocumentsSuccess() {
         when(cosmosClientMock.getDatabase(any())).thenReturn(mockDatabase);
         when(mockDatabase.getContainer(any())).thenReturn(mockContainer);
         when(mockContainer.queryItems(anyString(), any(), eq(BizEvent.class))).thenReturn(mockIterable);
-        when(mockIterable.iterableByPage(null, 100)).thenReturn(mockFeedResponse);
+        when(mockIterable.stream()).thenReturn(Stream.of(new BizEvent()));
 
-        assertDoesNotThrow(() -> sut.getAllBizEventDocument("", null, 100));
+        List<BizEvent> result = assertDoesNotThrow(() -> sut.getAllCartBizEventDocument(""));
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+    }
+
+    @Test
+    void getAllCartBizEventDocumentsSuccessQueryResultTruncated() {
+        when(cosmosClientMock.getDatabase(any())).thenReturn(mockDatabase);
+        when(mockDatabase.getContainer(any())).thenReturn(mockContainer);
+        when(mockContainer.queryItems(anyString(), any(), eq(BizEvent.class))).thenReturn(mockIterable);
+        when(mockIterable.stream()).thenReturn(Stream.of(new BizEvent(), new BizEvent(), new BizEvent(), new BizEvent(), new BizEvent(), new BizEvent(), new BizEvent()));
+
+        List<BizEvent> result = assertDoesNotThrow(() -> sut.getAllCartBizEventDocument(""));
+
+        assertNotNull(result);
+        assertEquals(6, result.size());
     }
 
     @Test

@@ -1,8 +1,9 @@
 package it.gov.pagopa.receipt.pdf.generator.client;
 
-import com.azure.cosmos.models.FeedResponse;
 import it.gov.pagopa.receipt.pdf.generator.entity.event.BizEvent;
 import it.gov.pagopa.receipt.pdf.generator.exception.BizEventNotFoundException;
+
+import java.util.List;
 
 public interface BizEventCosmosClient {
 
@@ -18,10 +19,8 @@ public interface BizEventCosmosClient {
     /**
      * Retrieve all biz-event documents related to a specific cart from CosmosDB database
      *
-     * @param transactionId     id that identifies the cart
-     * @param continuationToken Paged query continuation token
-     * @param pageSize          the page size
+     * @param transactionId id that identifies the cart
      * @return a list of biz-event document
      */
-    Iterable<FeedResponse<BizEvent>> getAllBizEventDocument(String transactionId, String continuationToken, Integer pageSize);
+    List<BizEvent> getAllCartBizEventDocument(String transactionId);
 }
