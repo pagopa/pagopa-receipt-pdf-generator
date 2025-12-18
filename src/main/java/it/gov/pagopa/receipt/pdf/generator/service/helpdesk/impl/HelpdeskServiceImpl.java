@@ -1,6 +1,9 @@
 package it.gov.pagopa.receipt.pdf.generator.service.helpdesk.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import it.gov.pagopa.receipt.pdf.generator.entity.cart.CartForReceipt;
+import it.gov.pagopa.receipt.pdf.generator.entity.cart.CartPayment;
+import it.gov.pagopa.receipt.pdf.generator.entity.cart.Payload;
 import it.gov.pagopa.receipt.pdf.generator.entity.event.BizEvent;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.CartItem;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.EventData;
@@ -16,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -23,7 +27,9 @@ import java.util.UUID;
 import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.ANONIMO;
 import static it.gov.pagopa.receipt.pdf.generator.utils.HelpdeskUtils.formatAmount;
 import static it.gov.pagopa.receipt.pdf.generator.utils.HelpdeskUtils.getAmount;
+import static it.gov.pagopa.receipt.pdf.generator.utils.HelpdeskUtils.getCartAmount;
 import static it.gov.pagopa.receipt.pdf.generator.utils.HelpdeskUtils.getItemSubject;
+import static it.gov.pagopa.receipt.pdf.generator.utils.HelpdeskUtils.getTransactionCreationDate;
 import static it.gov.pagopa.receipt.pdf.generator.utils.HelpdeskUtils.isValidChannelOrigin;
 import static it.gov.pagopa.receipt.pdf.generator.utils.HelpdeskUtils.isValidFiscalCode;
 
@@ -62,7 +68,7 @@ public class HelpdeskServiceImpl implements HelpdeskService {
             return receipt;
         }
 
-        eventData.setTransactionCreationDate(HelpdeskUtils.getTransactionCreationDate(bizEvent));
+        eventData.setTransactionCreationDate(getTransactionCreationDate(bizEvent));
         BigDecimal amount = getAmount(bizEvent);
         eventData.setAmount(!amount.equals(BigDecimal.ZERO) ? formatAmount(amount.toString()) : null);
 
@@ -74,6 +80,43 @@ public class HelpdeskServiceImpl implements HelpdeskService {
 
         receipt.setEventData(eventData);
         return receipt;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public CartForReceipt buildCart(List<BizEvent> bizEventList) throws PDVTokenizerException, JsonProcessingException {
+        List<CartPayment> cartItems = new ArrayList<>();
+        for (BizEvent bizEvent : bizEventList) {
+            cartItems.add(buildCartPayment(bizEvent));
+        }
+
+        BizEvent bizEvent = bizEventList.get(0);
+        String transactionId = bizEvent.getTransactionDetails().getTransaction().getTransactionId();
+        BigDecimal amount = getCartAmount(bizEvent);
+        return CartForReceipt.builder()
+                .id(transactionId)
+                .eventId(transactionId)
+                .version("1") // this is the first version of this document
+                .payload(Payload.builder()
+                        .payerFiscalCode(tokenizerPayerFiscalCode(bizEvent))
+                        .totalNotice(Integer.parseInt(bizEvent.getPaymentInfo().getTotalNotice()))
+                        .totalAmount(!amount.equals(BigDecimal.ZERO) ? formatAmount(amount.toString()) : null)
+                        .transactionCreationDate(getTransactionCreationDate(bizEvent))
+                        .cart(cartItems)
+                        .build())
+                .build();
+    }
+
+    private CartPayment buildCartPayment(BizEvent bizEvent) throws PDVTokenizerException, JsonProcessingException {
+        String debtorFiscalCode = tokenizerDebtorFiscalCode(bizEvent);
+        return CartPayment.builder()
+                .bizEventId(bizEvent.getId())
+                .amount(formatAmount(bizEvent.getPaymentInfo().getAmount()))
+                .debtorFiscalCode(debtorFiscalCode)
+                .payeeName(bizEvent.getCreditor() != null ? bizEvent.getCreditor().getCompanyName() : null)
+                .subject(getItemSubject(bizEvent))
+                .build();
     }
 
     private void tokenizeFiscalCodes(
