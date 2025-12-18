@@ -71,7 +71,7 @@ microservice-chart: &microservice-chart
   #       mountPath: /temp
   resources: &resources
     requests:
-      memory: "2.3Gi"
+      memory: "2400Mi" # ~ 2.3 GB
       cpu: "0.5"
     limits:
       memory: "3Gi"
