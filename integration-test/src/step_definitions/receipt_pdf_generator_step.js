@@ -30,6 +30,7 @@ this.listOfEvents = null;
 this.transactionId = null;
 this.cartId = null;
 this.errorCartId = null;
+this.eventIdList = [];
 
 // After each Scenario
 After(async function () {
@@ -49,7 +50,11 @@ After(async function () {
     if (this.eventId != null) {
         await deleteDocumentFromBizEventsDatastore(this.eventId);
     }
-
+    if (this.eventIdList != null) {
+        for (let id of this.eventIdList) {
+            await deleteDocumentFromBizEventsDatastore(id);
+        }
+    }
 
     this.eventId = null;
     this.responseToCheck = null;
@@ -60,6 +65,7 @@ After(async function () {
     this.cartId = null;
     this.errorCartId = null;
     this.transactionId = null;
+    this.eventIdList = [];
 });
 
 
@@ -174,15 +180,13 @@ When('the biz event has been properly stored on receipt-message-error datastore 
 });
 
 Then('the receipt-message-error datastore returns the error receipt', async function () {
-    assert.notStrictEqual(this.responseToCheck.resources.length, 0);
-    this.errorReceiptId = this.responseToCheck.resources[0].id;
     assert.strictEqual(this.responseToCheck.resources.length, 1);
+    this.errorReceiptId = this.responseToCheck.resources[0].id;
 });
 
 Then('the cart-receipts-message-error datastore returns the error receipt', async function () {
-    assert.notStrictEqual(this.responseToCheck.resources.length, 0);
-    this.errorCartId = this.responseToCheck.resources[0].id;
     assert.strictEqual(this.responseToCheck.resources.length, 1);
+    this.errorCartId = this.responseToCheck.resources[0].id;
 });
 
 
@@ -298,11 +302,14 @@ Given('a notified cart with id {string} stored into cart datastore', async funct
     assert.strictEqual(cartStoreResponse.statusCode, 201);
 });
 
-Given('random biz events for cart with id {string} and transaction id {string} stored into biz event datastore', async function (id, transactionId) {
+Given('random biz events for cart with id prefix {string} and transaction id {string} stored into biz event datastore', async function (id, transactionId) {
     assert.strictEqual(this.transactionId, transactionId);
-    let listOfEvents = createEventsForCartQueue(id, 2, transactionId, STANDARD_NOTICE_NUMBER, IUV);
-    for (let biz of listOfEvents) {
-        await createDocumentInBizEventsDatastore(biz);
+    assert.strictEqual(this.transactionId, id);
+
+    for (let i = 0; i < 2; i++) {
+        let event = createEvent(`${id}-${i}`, "DONE", 2);
+        await createDocumentInBizEventsDatastore(event);
+        this.eventIdList.push(event.id);
     }
 });
 

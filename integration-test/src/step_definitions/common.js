@@ -236,7 +236,7 @@ function createNotifiedCart(id, eventId) {
 			},
 			"cart": [
 				{
-					"bizEventId": "bz1" + id,
+					"bizEventId": `${id}-1`,
 					"subject": "oggetto 1",
 					"payeeName": "Ministero delle infrastrutture e dei trasporti",
 					"debtorFiscalCode": FISCAL_CODE,
@@ -253,7 +253,7 @@ function createNotifiedCart(id, eventId) {
 					"reasonErrDebtor": null
 				},
 				{
-					"bizEventId": "bz2" + id,
+					"bizEventId": `${id}-2`,
 					"subject": "oggetto 2",
 					"payeeName": "Ministero delle infrastrutture e dei trasporti",
 					"debtorFiscalCode": FISCAL_CODE,

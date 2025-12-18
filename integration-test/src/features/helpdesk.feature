@@ -11,7 +11,7 @@ Feature: Helpdesk receipt regenerate
 
   Scenario: regenerateCartReceiptPdf API retrieve the cart receipt with the given cart id and regenerate its pdf updating cart receipt's metadata
     Given a notified cart with id "receipt-generator-helpdesk-int-test-id-2" stored into cart datastore
-    And random biz events for cart with id "receipt-generator-helpdesk-int-test-id-2" and transaction id "receipt-generator-helpdesk-int-test-id-2" stored into biz event datastore
+    And random biz events for cart with id prefix "receipt-generator-helpdesk-int-test-id-2" and transaction id "receipt-generator-helpdesk-int-test-id-2" stored into biz event datastore
     When regenerateCartReceiptPdf API is called with cartId "receipt-generator-helpdesk-int-test-id-2" as path param
     Then the api response has a 200 Http status
     And the cart receipt with eventId "receipt-generator-helpdesk-int-test-id-2" is recovered from datastore
