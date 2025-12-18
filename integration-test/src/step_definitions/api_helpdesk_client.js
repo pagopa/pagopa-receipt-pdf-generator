@@ -31,5 +31,5 @@ async function postRegenerateCartReceiptPdf(cartId) {
 }
 
 module.exports = {
-	postRegenerateReceiptPdf
+	postRegenerateReceiptPdf, postRegenerateCartReceiptPdf
 }
