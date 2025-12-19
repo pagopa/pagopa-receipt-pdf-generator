@@ -439,7 +439,12 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
         if (event.getPsp() != null && event.getPsp().getIdPsp() != null) {
             LinkedHashMap<String, String> info = (LinkedHashMap<String, String>) pspMap
                     .getOrDefault(event.getPsp().getIdPsp(), new LinkedHashMap<>());
-            String pspFee = getPspFee(event);
+
+          if (info.isEmpty()) {
+            throw new TemplateDataMappingException(String.format(TemplateDataField.ERROR_PSP_NOT_CONFIGURED, event.getPsp().getIdPsp()), ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode());
+          }
+
+          String pspFee = getPspFee(event);
             return PSP.builder()
                     .name(getOrThrow(info, "name", TemplateDataField.TRANSACTION_PSP_NAME))
                     .fee(PSPFee.builder()
