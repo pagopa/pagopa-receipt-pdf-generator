@@ -1,6 +1,6 @@
 const assert = require('assert');
 const { After, Given, When, Then, setDefaultTimeout } = require('@cucumber/cucumber');
-const { sleep, createEventsForQueue, createEventsForPoisonQueue, createErrorCart, createErrorReceipt, createEventsForCartQueue, createEvent, createCart, createNotifiedCart } = require("./common");
+const { sleep, createEventsForQueue, createEventsForPoisonQueue, createErrorCart, createErrorReceipt, createEventsForCartQueue, createEvent, createCart, createCartForRegenerate } = require("./common");
 const { getDocumentByIdFromReceiptsDatastore, deleteDocumentFromErrorReceiptsDatastoreByBizEventId, deleteDocumentFromReceiptsDatastore, createDocumentInReceiptsDatastore, createDocumentInErrorReceiptsDatastore, deleteDocumentFromErrorReceiptsDatastore, getDocumentByBizEventIdFromErrorReceiptsDatastore } = require("./receipts_datastore_client");
 const { putMessageOnPoisonQueue, putMessageOnReceiptQueue } = require("./receipts_queue_client");
 const { receiptPDFExist } = require("./receipts_blob_storage_client");
@@ -281,6 +281,10 @@ Then("the receipt with eventId {string} is recovered from datastore", async func
     receipt = responseCosmos.resources[0];
 });
 
+Then('the receipt status is {string}', (expectedStatus) => {
+  assert.strictEqual(receipt.status, expectedStatus);
+})
+
 Then('the receipt has attachment metadata', function () {
     assert.strictEqual(receipt.mdAttach != undefined && receipt.mdAttach != null && receipt.mdAttach.name != "", true);
     receiptPdfFileName = receipt.mdAttach.name;
@@ -292,14 +296,14 @@ Then('the PDF is present on blob storage', async function () {
     assert.strictEqual(blobExist, true);
 });
 
-Given('a notified cart with id {string} stored into cart datastore', async function (cartId) {
+Given('a cart with id {string} and status {string} stored into cart datastore', async function (cartId, status) {
     this.cartId = cartId;
     this.transactionId = cartId;
 
     // prior cancellation to avoid dirty cases
     await deleteDocumentFromCartsDatastoreById(cartId);
 
-    let cart = createNotifiedCart(cartId, cartId);
+    let cart = createCartForRegenerate(cartId, cartId, status);
     let cartStoreResponse = await createDocumentInCartDatastore(cart);
     assert.strictEqual(cartStoreResponse.statusCode, 201);
 });
@@ -348,3 +352,7 @@ Then('all the PDF are present on blob storage', async function () {
         assert.strictEqual(blobExist, true);
     }
 });
+
+Then('the cart receipt status is {string}', (expectedStatus) => {
+  assert.strictEqual(cart.status, expectedStatus);
+})

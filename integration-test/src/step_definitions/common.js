@@ -148,15 +148,7 @@ function createReceipt(id, status) {
 				{
 					"payeeName": "Comune di Milano",
 					"subject": "ACI"
-				},
-				{
-					"payeeName": "Comune di Milano",
-					"subject": "ACI"
-				},
-				{
-					"payeeName": "Comune di Milano",
-					"subject": "ACI"
-				},
+				}
 			]
 		},
 		"status": status,
@@ -214,7 +206,7 @@ function createCart(id, eventId, status) {
 	return cart
 }
 
-function createNotifiedCart(id, eventId) {
+function createCartForRegenerate(id, eventId, status) {
 	let cart =
 	{
 		"eventId": eventId,
@@ -225,15 +217,15 @@ function createNotifiedCart(id, eventId) {
 			"transactionCreationDate": "2025-11-02T10:14:57.218496702Z",
 			"totalNotice": "2",
 			"totalAmount": "26,48",
-			"mdAttachPayer": {
+			"mdAttachPayer": status === "IO_NOTIFIED" ? {
 				"name": "pagopa-ricevuta-251204-test-ricevute-carrello-363eb6c9-781a-4b62-87d7-b5365d2e9b55-0-p-c.pdf",
 				"url": "https://pagopauweureceiptsfnsa.blob.core.windows.net/pagopa-u-weu-receipts-azure-blob-receipt-st-attach/pagopa-ricevuta-251204-test-ricevute-carrello-363eb6c9-781a-4b62-87d7-b5365d2e9b55-0-p-c.pdf"
-			},
-			"messagePayer": {
+			} : null,
+			"messagePayer": status === "IO_NOTIFIED" ? {
 				"id": "01KBMCY97TG0TQJ70RQBE61GFK",
 				"subject": "Ricevuta di pagamento",
 				"markdown": "Hai effettuato il pagamento di 5 avvisi:\n\n# Avviso 1\n\n**Importo:** 16,00 €\n**Oggetto:** Pagamento multa 1\n**Ente creditore:** Ministero delle infrastrutture e dei trasporti\n\n# Avviso 2\n\n**Importo:** 10,20 €\n**Oggetto:** Pagamento multa 2\n**Ente creditore:** Ministero delle infrastrutture e dei trasporti\n\n# Avviso 3\n\n**Importo:** 25,00 €\n**Oggetto:** Pagamento multa 3\n**Ente creditore:** Ministero delle infrastrutture e dei trasporti\n\n# Avviso 4\n\n**Importo:** 34,50 €\n**Oggetto:** Pagamento multa 4\n**Ente creditore:** Ministero delle infrastrutture e dei trasporti\n\n# Avviso 5\n\n**Importo:** 91,00 €\n**Oggetto:** Pagamento multa 5\n**Ente creditore:** Ministero delle infrastrutture e dei trasporti\n\n\nEcco la ricevuta con i dettagli."
-			},
+			} : null,
 			"cart": [
 				{
 					"bizEventId": `${id}-1`,
@@ -241,15 +233,15 @@ function createNotifiedCart(id, eventId) {
 					"payeeName": "Ministero delle infrastrutture e dei trasporti",
 					"debtorFiscalCode": FISCAL_CODE,
 					"amount": "16.0",
-					"mdAttach": {
+					"mdAttach": status === "IO_NOTIFIED" ? {
 						"name": "pagopa-ricevuta-251204-doc-test-ricevute-31b43ccf-9cbb-4637-9027-415303e7c1d1-0-1-d-c.pdf",
 						"url": "https://pagopauweureceiptsfnsa.blob.core.windows.net/pagopa-u-weu-receipts-azure-blob-receipt-st-attach/pagopa-ricevuta-251204-doc-test-ricevute-31b43ccf-9cbb-4637-9027-415303e7c1d1-0-1-d-c.pdf"
-					},
-					"messageDebtor": {
+					} : null,
+					"messageDebtor": status === "IO_NOTIFIED" ? {
 						"id": "01KBMCY9HPXHQQHTDPBC1KF0AJ",
 						"subject": "Ricevuta del pagamento a Ministero delle infrastrutture e dei trasporti",
 						"markdown": "È stato effettuato il pagamento di un avviso intestato a te:\n\n**Importo**: 10,20 €\n\n**Oggetto:** Pagamento multa 2\n\n**Ente creditore**: Ministero delle infrastrutture e dei trasporti\n\nEcco la ricevuta con i dettagli."
-					},
+					} : null,
 					"reasonErrDebtor": null
 				},
 				{
@@ -258,21 +250,21 @@ function createNotifiedCart(id, eventId) {
 					"payeeName": "Ministero delle infrastrutture e dei trasporti",
 					"debtorFiscalCode": FISCAL_CODE,
 					"amount": "10.2",
-					"mdAttach": {
+					"mdAttach": status === "IO_NOTIFIED" ? {
 						"name": "pagopa-ricevuta-251204-doc-test-ricevute-31b43ccf-9cbb-4637-9027-415303e7c1d1-0-4-d-c.pdf",
 						"url": "https://pagopauweureceiptsfnsa.blob.core.windows.net/pagopa-u-weu-receipts-azure-blob-receipt-st-attach/pagopa-ricevuta-251204-doc-test-ricevute-31b43ccf-9cbb-4637-9027-415303e7c1d1-0-4-d-c.pdf"
-					},
-					"messageDebtor": {
+					} : null,
+					"messageDebtor": status === "IO_NOTIFIED" ? {
 						"id": "01KBMCY9RXWFMGPPCDYKRD1GG8",
 						"subject": "Ricevuta del pagamento a Ministero delle infrastrutture e dei trasporti",
 						"markdown": "È stato effettuato il pagamento di un avviso intestato a te:\n\n**Importo**: 34,50 €\n\n**Oggetto:** Pagamento multa 4\n\n**Ente creditore**: Ministero delle infrastrutture e dei trasporti\n\nEcco la ricevuta con i dettagli."
-					},
+					} : null,
 					"reasonErrDebtor": null
 				}
 			],
 			"reasonErrPayer": null
 		},
-		"status": "IO_NOTIFIED",
+		"status": status,
 		"numRetry": 0,
 		"notificationNumRetry": 0,
 		"reasonErr": null,
@@ -556,5 +548,5 @@ function createEvent(id, status, transactionId, totalNotice, orgCode, iuv) {
 
 
 module.exports = {
-	sleep, createReceipt, createEventsForPoisonQueue, createEventsForQueue, createErrorReceipt, createCart, createErrorCart, createEventsForCartQueue, createEvent, createNotifiedCart
+	sleep, createReceipt, createEventsForPoisonQueue, createEventsForQueue, createErrorReceipt, createCart, createErrorCart, createEventsForCartQueue, createEvent, createCartForRegenerate
 }
