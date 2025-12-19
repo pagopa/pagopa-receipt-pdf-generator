@@ -115,7 +115,8 @@ public class RegenerateReceiptPdf {
             return buildErrorResponse(
                     request,
                     HttpStatus.UNPROCESSABLE_ENTITY,
-                    "Failed to regenerate receipt, the provided biz event is part of a cart"
+                    "Failed to regenerate receipt, the provided biz event is part of a cart. " +
+                            "Use the dedicate API for regeneration (cart-receipts/{cart-id}/regenerate-receipt-pdf)"
             );
         }
 
