@@ -31,6 +31,7 @@ this.transactionId = null;
 this.cartId = null;
 this.errorCartId = null;
 this.eventIdList = [];
+this.receiptPdfFileNameList = [];
 
 // After each Scenario
 After(async function () {
@@ -66,6 +67,7 @@ After(async function () {
     this.errorCartId = null;
     this.transactionId = null;
     this.eventIdList = [];
+    this.receiptPdfFileNameList = [];
 });
 
 
@@ -306,8 +308,9 @@ Given('random biz events for cart with id prefix {string} and transaction id {st
     assert.strictEqual(this.transactionId, transactionId);
     assert.strictEqual(this.transactionId, id);
 
+    this.eventIdList = []
     for (let i = 0; i < 2; i++) {
-        let event = createEvent(`${id}-${i}`, "DONE", 2);
+        let event = createEvent(`${id}-${i}`, "DONE", transactionId, 2);
         await createDocumentInBizEventsDatastore(event);
         this.eventIdList.push(event.id);
     }
@@ -324,18 +327,20 @@ Then("the cart receipt with eventId {string} is recovered from datastore", async
 });
 
 Then('the cart receipt has attachment metadata', function () {
+    this.receiptPdfFileNameList = [];
+
     assert.strictEqual(cart.payload.mdAttachPayer != undefined, true);
     assert.strictEqual(cart.payload.mdAttachPayer != null, true);
     assert.strictEqual(cart.payload.mdAttachPayer.name != "", true);
-    this.receiptPdfFileNameList.put(cart.payload.mdAttachPayer.name);
+    this.receiptPdfFileNameList.push(cart.payload.mdAttachPayer.name);
 
     for (let cartItem of cart.payload.cart) {
         assert.strictEqual(cartItem.mdAttach != undefined, true);
         assert.strictEqual(cartItem.mdAttach != null, true);
         assert.strictEqual(cartItem.mdAttach.name != "", true);
-        this.receiptPdfFileNameList.put(cartItem.mdAttach.name);
+        this.receiptPdfFileNameList.push(cartItem.mdAttach.name);
     }
-    assert.strictEqual(this.receiptPdfFileNameList.size(), 3);
+    assert.strictEqual(this.receiptPdfFileNameList.length, 3);
 });
 Then('all the PDF are present on blob storage', async function () {
     for (let fileName of this.receiptPdfFileNameList) {

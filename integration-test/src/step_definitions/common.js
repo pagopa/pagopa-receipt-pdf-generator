@@ -528,7 +528,7 @@ function createEvent(id, status, transactionId, totalNotice, orgCode, iuv) {
 			"user": {
 				"fullName": "John Doe",
 				"type": "F",
-				"fiscalCode": FISCAL_CODE,
+				"fiscalCode": PAYER_FISCAL_CODE,
 				"notificationEmail": "john.doe@mail.it",
 				"userId": "1234",
 				"userStatus": "11",
@@ -539,7 +539,8 @@ function createEvent(id, status, transactionId, totalNotice, orgCode, iuv) {
 				"transactionId": transactionId || "123456",
 				"grandTotal": 0,
 				"amount": 1000,
-				"fee": 0
+				"fee": 0,
+				"origin": "IO"
 			}
 		},
 		"timestamp": 1679067463501,
