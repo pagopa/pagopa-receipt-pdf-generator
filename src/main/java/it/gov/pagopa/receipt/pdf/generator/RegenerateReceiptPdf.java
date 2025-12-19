@@ -119,7 +119,8 @@ public class RegenerateReceiptPdf {
             );
         }
 
-        Receipt receipt = buildNewReceipt(context, bizEvent);
+        Receipt receipt = this.helpdeskService.createReceipt(bizEvent);
+        ReceiptStatusType originalStatus = addExistingReceiptInfoIfExist(context, bizEvent, receipt);
         if (!isReceiptStatusValid(receipt)) {
             String errDetail = String.format(
                     "Failed to re-create receipt entity with eventId %s: %s",
@@ -136,7 +137,7 @@ public class RegenerateReceiptPdf {
             if (success) {
                 receipt.setInserted_at(System.currentTimeMillis());
                 receipt.setGenerated_at(System.currentTimeMillis());
-                receipt.setStatus(ReceiptStatusType.IO_NOTIFIED);
+                receipt.setStatus(getReceiptStatus(originalStatus));
             } else {
                 return buildErrorResponse(
                         request,
@@ -162,6 +163,34 @@ public class RegenerateReceiptPdf {
                 .build();
     }
 
+    private ReceiptStatusType addExistingReceiptInfoIfExist(
+            ExecutionContext context,
+            BizEvent bizEvent,
+            Receipt receipt
+    ) {
+        try {
+            Receipt existingReceipt = this.receiptCosmosService.getReceipt(bizEvent.getId());
+
+            // set same id to overwrite existing receipt
+            receipt.setId(existingReceipt.getId());
+            // keep notification info if present to avoid data loss on regeneration
+            receipt.setIoMessageData(existingReceipt.getIoMessageData());
+            receipt.setNotified_at(existingReceipt.getNotified_at());
+            return existingReceipt.getStatus();
+        } catch (ReceiptNotFoundException e) {
+            logger.info("[{}] Receipt not found with the provided biz event id, a new receipt will be generated",
+                    context.getFunctionName());
+        }
+        return null;
+    }
+
+    private ReceiptStatusType getReceiptStatus(ReceiptStatusType originalStatus) {
+        if (originalStatus != null && originalStatus.isANotifierStatus()) {
+            return originalStatus;
+        }
+        return ReceiptStatusType.NOT_TO_NOTIFY;
+    }
+
     private PdfGeneration generatePDFReceipt(Receipt receipt, BizEvent bizEvent) throws IOException {
         Path workingDirPath = ReceiptGeneratorUtils.createWorkingDirectory();
         try {
@@ -169,22 +198,6 @@ public class RegenerateReceiptPdf {
         } finally {
             ReceiptGeneratorUtils.deleteTempFolder(workingDirPath, logger);
         }
-    }
-
-    private Receipt buildNewReceipt(ExecutionContext context, BizEvent bizEvent) {
-        Receipt receipt = this.helpdeskService.createReceipt(bizEvent);
-        try {
-            Receipt existingReceipt = this.receiptCosmosService.getReceipt(bizEvent.getId());
-
-            // keep notification info if present to avoid data loss on regeneration
-            receipt.setId(existingReceipt.getId());
-            receipt.setIoMessageData(existingReceipt.getIoMessageData());
-            receipt.setNotified_at(existingReceipt.getNotified_at());
-        } catch (ReceiptNotFoundException e) {
-            logger.info("[{}] Receipt not found with the provided biz event id, a new receipt will be generated",
-                    context.getFunctionName());
-        }
-        return receipt;
     }
 
     private HttpResponseMessage buildErrorResponse(

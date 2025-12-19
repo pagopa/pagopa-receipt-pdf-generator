@@ -137,7 +137,7 @@ public class RegenerateCartReceiptPdf {
                     "An error occurred while building cart receipt: " + e.getMessage()
             );
         }
-        addExistingCartInfoIfExist(cartId, context, cart);
+        CartStatusType originalStatus = addExistingCartInfoIfExist(cartId, context, cart);
 
         PdfCartGeneration pdfGeneration = generatePDFReceipt(cart, bizEventList);
         try {
@@ -145,7 +145,7 @@ public class RegenerateCartReceiptPdf {
             if (success) {
                 cart.setInserted_at(System.currentTimeMillis());
                 cart.setGenerated_at(System.currentTimeMillis());
-                cart.setStatus(CartStatusType.IO_NOTIFIED);
+                cart.setStatus(getCartStatus(originalStatus));
             } else {
                 return buildErrorResponse(
                         request,
@@ -171,7 +171,14 @@ public class RegenerateCartReceiptPdf {
                 .build();
     }
 
-    private void addExistingCartInfoIfExist(String cartId, ExecutionContext context, CartForReceipt cart) {
+    private CartStatusType getCartStatus(CartStatusType originalStatus) {
+        if (originalStatus != null && originalStatus.isANotifierStatus()) {
+            return originalStatus;
+        }
+        return CartStatusType.NOT_TO_NOTIFY;
+    }
+
+    private CartStatusType addExistingCartInfoIfExist(String cartId, ExecutionContext context, CartForReceipt cart) {
         try {
             CartForReceipt existingCart = this.cartReceiptCosmosService.getCartForReceipt(cartId);
             if (CartStatusType.IO_NOTIFIED.equals(existingCart.getStatus())) {
@@ -181,10 +188,12 @@ public class RegenerateCartReceiptPdf {
                 cart.getPayload().getCart().forEach(cartPayment -> cartPayment.setMessageDebtor(cartInfoMap.get(cartPayment.getBizEventId())));
                 cart.setNotified_at(existingCart.getNotified_at());
             }
+            return existingCart.getStatus();
         } catch (CartNotFoundException e) {
             logger.info("[{}] Cart receipt not found with the provided cart id, a new receipt will be generated",
                     context.getFunctionName());
         }
+        return null;
     }
 
     private PdfCartGeneration generatePDFReceipt(
