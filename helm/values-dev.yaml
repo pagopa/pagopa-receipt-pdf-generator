@@ -52,7 +52,7 @@ microservice-chart: &microservice-chart
     name: "receipts-workload-identity"
   azure:
     workloadIdentityClientId: <workload-identity-client-id-set-automatically-by-gha>
-  podAnnotations: {}
+  podAnnotations: { }
   podSecurityContext:
     seccompProfile:
       type: RuntimeDefault
@@ -93,7 +93,7 @@ microservice-chart: &microservice-chart
           # Required
           type: Utilization # Allowed types are 'Utilization' or 'AverageValue'
           value: "70"
-  fileConfig: {}
+  fileConfig: { }
   envConfig: &envConfig
     TZ: "Europe/Rome"
     ENV: "dev"
@@ -156,7 +156,7 @@ microservice-chart: &microservice-chart
   keyvault:
     name: "pagopa-d-receipts-kv"
     tenantId: "7788edaf-0346-4068-9d79-c868aed15b3d"
-  nodeSelector: {}
+  nodeSelector: { }
   affinity:
     nodeAffinity:
       requiredDuringSchedulingIgnoredDuringExecution:
@@ -231,6 +231,9 @@ pagopa-receipt-pdf-generator-cart:
     AzureWebJobs.RegenerateCartReceiptFunc.Disabled: "true"
   envSecret:
     !!merge <<: *envSecret
+  envFieldRef:
+    !!merge <<: *envFieldRef
+    APP_NAME: "metadata.labels['app.kubernetes.io/instance']-cart"
 pagopa-receipt-pdf-generator-helpdesk:
   !!merge <<: *microservice-chart
   fullnameOverride: "pagopa-receipt-pdf-generator-helpdesk"
@@ -254,3 +257,6 @@ pagopa-receipt-pdf-generator-helpdesk:
     AzureWebJobs.RegenerateCartReceiptFunc.Disabled: "false"
   envSecret:
     !!merge <<: *envSecret
+  envFieldRef:
+    !!merge <<: *envFieldRef
+    APP_NAME: "metadata.labels['app.kubernetes.io/instance']-helpdesk"
