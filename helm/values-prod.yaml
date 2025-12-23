@@ -243,6 +243,9 @@ pagopa-receipt-pdf-generator-cart:
     AzureWebJobs.RegenerateCartReceiptFunc.Disabled: "true"
   envSecret:
     !!merge <<: *envSecret
+  envFieldRef:
+    !!merge <<: *envFieldRef
+    APP_NAME: "metadata.labels['app.kubernetes.io/instance']-cart"
 pagopa-receipt-pdf-generator-helpdesk:
   !!merge <<: *microservice-chart
   fullnameOverride: "pagopa-receipt-pdf-generator-helpdesk"
@@ -270,3 +273,6 @@ pagopa-receipt-pdf-generator-helpdesk:
     AzureWebJobs.RegenerateCartReceiptFunc.Disabled: "false"
   envSecret:
     !!merge <<: *envSecret
+  envFieldRef:
+    !!merge <<: *envFieldRef
+    APP_NAME: "metadata.labels['app.kubernetes.io/instance']-helpdesk"
