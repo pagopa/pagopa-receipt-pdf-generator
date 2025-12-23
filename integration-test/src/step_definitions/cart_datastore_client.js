@@ -28,8 +28,7 @@ async function deleteDocumentFromCartsDatastoreById(id){
     })
 }
 
-async function createDocumentInCartDatastore(id, eventId, status) {
-    let cart = createCart(id, eventId, status);
+async function createDocumentInCartDatastore(cart) {
     try {
         return await cartContainer.items.create(cart);
     } catch (err) {

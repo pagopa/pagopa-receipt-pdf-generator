@@ -2,8 +2,8 @@ apiVersion: v2
 name: pagopareceiptpdfgenerator
 description: Microservice description
 type: application
-version: 0.192.0
-appVersion: 1.16.5
+version: 0.195.0
+appVersion: 1.16.5-3-PAGOPA-3453-add-regenerate-cart-receipts
 dependencies:
   - name: microservice-chart
     version: 8.0.2
@@ -13,3 +13,7 @@ dependencies:
     version: 8.0.2
     repository: "https://pagopa.github.io/aks-microservice-chart-blueprint"
     alias: pagopa-receipt-pdf-generator-cart
+  - name: microservice-chart
+    version: 8.0.2
+    repository: "https://pagopa.github.io/aks-microservice-chart-blueprint"
+    alias: pagopa-receipt-pdf-generator-helpdesk
