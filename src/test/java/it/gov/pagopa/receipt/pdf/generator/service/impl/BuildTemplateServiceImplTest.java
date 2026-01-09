@@ -918,6 +918,26 @@ class BuildTemplateServiceImplTest {
     }
 
     @Test
+    void mapTemplateNoInfoPspError() {
+        String notConfiguredIdPsp = "NotConfiguredPSP";
+        BizEvent bizEventList = BizEvent.builder()
+                .id(BIZ_EVENT_ID)
+                .paymentInfo(PaymentInfo.builder()
+                        .IUR(IUR)
+                        .paymentDateTime(DATE_TIME_TIMESTAMP_MILLISECONDS_DST_WINTER)
+                        .amount(AMOUNT_WITHOUT_CENTS)
+                        .build())
+                .psp(Psp.builder()
+                        .idPsp(notConfiguredIdPsp)
+                        .build())
+                .build();
+        TemplateDataMappingException e = assertThrows(TemplateDataMappingException.class, () -> buildTemplateService.buildTemplate(bizEventList, GENERATED_BY_PAYER, buildReceiptWithAmountAndSingleCartListWithOnlyRemittance()));
+
+        assertEquals(ReasonErrorCode.ERROR_TEMPLATE_PDF.getCode(), e.getStatusCode());
+        assertEquals(String.format(TemplateDataField.ERROR_PSP_NOT_CONFIGURED, notConfiguredIdPsp), e.getMessage());
+    }
+
+    @Test
     void mapTemplateNoPspNameError() {
         BizEvent bizEventList = BizEvent.builder()
                 .id(BIZ_EVENT_ID)
