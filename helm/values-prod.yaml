@@ -4,7 +4,7 @@ microservice-chart: &microservice-chart
   fullnameOverride: ""
   image:
     repository: ghcr.io/pagopa/pagopa-receipt-pdf-generator
-    tag: "1.16.5"
+    tag: "1.16.5-3-PAGOPA-3453-add-regenerate-cart-receipts"
     pullPolicy: Always
   # https://github.com/Azure/azure-functions-host/blob/dev/src/WebJobs.Script.WebHost/Controllers/HostController.cs
   livenessProbe:
@@ -107,9 +107,14 @@ microservice-chart: &microservice-chart
     COSMOS_CART_RECEIPT_QUEUE_MAX_RETRY: "5"
     PDF_ENGINE_ENDPOINT: "https://api.platform.pagopa.it/shared/pdf-engine/v1/generate-pdf"
     COSMOS_RECEIPT_SERVICE_ENDPOINT: "https://pagopa-p-weu-receipts-ds-cosmos-account.documents.azure.com:443/"
+    COSMOS_BIZ_EVENT_SERVICE_ENDPOINT: "https://pagopa-d-weu-bizevents-ds-cosmos-account.documents.azure.com:443/"
+    COSMOS_BIZ_EVENT_READ_REGION: "North Europe"
+    COSMOS_RECEIPT_READ_REGION: "West Europe"
     COSMOS_RECEIPT_DB_NAME: "db"
+    COSMOS_BIZ_EVENT_DB_NAME: "db"
     COSMOS_RECEIPT_CONTAINER_NAME: "receipts"
     CART_FOR_RECEIPT_CONTAINER_NAME: "cart-for-receipts"
+    COSMOS_BIZ_EVENT_CONTAINER_NAME: "biz-events"
     CART_RECEIPT_QUEUE_TOPIC: "pagopa-p-weu-receipts-queue-cart-receipt-waiting-4-gen"
     CART_RECEIPT_QUEUE_TOPIC_POISON: "pagopa-p-weu-receipts-queue-cart-receipt-waiting-4-gen-poison"
     BLOB_STORAGE_ACCOUNT_ENDPOINT: "https://pagopapweureceiptsfnsa.blob.core.windows.net"
@@ -117,10 +122,17 @@ microservice-chart: &microservice-chart
     WORKING_DIRECTORY_PATH: "/temp"
     MIN_PDF_LENGTH: "10000"
     PDV_TOKENIZER_BASE_PATH: "https://api.tokenizer.pdv.pagopa.it/tokenizer/v1"
+    PDV_TOKENIZER_INITIAL_INTERVAL: "200"
+    PDV_TOKENIZER_MULTIPLIER: "2.0"
+    PDV_TOKENIZER_RANDOMIZATION_FACTOR: "0.6"
+    PDV_TOKENIZER_MAX_RETRIES: "3"
     OTEL_RESOURCE_ATTRIBUTES: "service.name=pagopareceiptpdfgeneratorotl,deployment.environment=prod"
     OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector.elastic-system.svc:4317"
     OTEL_LOGS_EXPORTER: "none"
     OTEL_TRACES_SAMPLER: "always_on"
+    ECOMMERCE_FILTER_ENABLED: "false"
+    LIST_VALID_ORIGINS: "IO,CHECKOUT,WISP,CHECKOUT_CART"
+    UNWANTED_REMITTANCE_INFO: "pagamento multibeneficiario,pagamento bpay"
     AZURE_FUNCTIONS_MESH_JAVA_OPTS: "-javaagent:/home/site/wwwroot/jmx_prometheus_javaagent-0.19.0.jar=12345:/home/site/wwwroot/config.yaml -javaagent:/home/site/wwwroot/opentelemetry-javaagent.jar -Xmx1024m -XX:+UseG1GC"
   # envConfigMapExternals:
   externalConfigMapValues: &externalConfigMapValues
@@ -140,6 +152,7 @@ microservice-chart: &microservice-chart
     PDV_TOKENIZER_SUBSCRIPTION_KEY: "tokenizer-api-key"
     AES_SECRET_KEY: "aes-secret-key"
     AES_SALT: "aes-salt"
+    COSMOS_BIZ_EVENT_KEY: "cosmos-bizevent-pkey"
   keyvault:
     name: "pagopa-p-receipts-kv"
     tenantId: "7788edaf-0346-4068-9d79-c868aed15b3d"
@@ -199,6 +212,8 @@ pagopa-receipt-pdf-generator:
     AzureWebJobs.GenerateCartReceiptProcess.Disabled: "true"
     AzureWebJobs.ManageCartReceiptPoisonQueueProcessor.Disabled: "true"
     AzureWebJobs.RetryReviewedCartPoisonMessagesProcessor.Disabled: "true"
+    AzureWebJobs.RegenerateReceiptFunc.Disabled: "true"
+    AzureWebJobs.RegenerateCartReceiptFunc.Disabled: "true"
   envSecret:
     !!merge <<: *envSecret
 # Configuration for Cart functions
@@ -224,5 +239,34 @@ pagopa-receipt-pdf-generator-cart:
     AzureWebJobs.GenerateCartReceiptProcess.Disabled: "false"
     AzureWebJobs.ManageCartReceiptPoisonQueueProcessor.Disabled: "false"
     AzureWebJobs.RetryReviewedCartPoisonMessagesProcessor.Disabled: "false"
+    AzureWebJobs.RegenerateReceiptFunc.Disabled: "true"
+    AzureWebJobs.RegenerateCartReceiptFunc.Disabled: "true"
+  envSecret:
+    !!merge <<: *envSecret
+pagopa-receipt-pdf-generator-helpdesk:
+  !!merge <<: *microservice-chart
+  fullnameOverride: "pagopa-receipt-pdf-generator-helpdesk"
+  ingress:
+    !!merge <<: *ingress
+    path: /pagopa-receipt-pdf-generator-helpdesk/(.*)
+  resources:
+    !!merge <<: *resources
+  autoscaling:
+    !!merge <<: *autoscaling
+    minReplica: 1
+  externalConfigMapValues:
+    !!merge <<: *externalConfigMapValues
+  envConfig:
+    !!merge <<: *envConfig
+    WEBSITE_SITE_NAME: 'pagopareceiptpdfgeneratorhelpdesk'
+    COSMOS_RECEIPT_READ_REGION: "North Europe"
+    AzureWebJobs.GenerateReceiptProcess.Disabled: "true"
+    AzureWebJobs.ManageReceiptPoisonQueueProcessor.Disabled: "true"
+    AzureWebJobs.RetryReviewedPoisonMessagesProcessor.Disabled: "true"
+    AzureWebJobs.GenerateCartReceiptProcess.Disabled: "true"
+    AzureWebJobs.ManageCartReceiptPoisonQueueProcessor.Disabled: "true"
+    AzureWebJobs.RetryReviewedCartPoisonMessagesProcessor.Disabled: "true"
+    AzureWebJobs.RegenerateReceiptFunc.Disabled: "false"
+    AzureWebJobs.RegenerateCartReceiptFunc.Disabled: "false"
   envSecret:
     !!merge <<: *envSecret

@@ -1,4 +1,4 @@
-package it.gov.pagopa.receipt.pdf.generator.service;
+package it.gov.pagopa.receipt.pdf.generator.service.helpdesk;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import it.gov.pagopa.receipt.pdf.generator.client.PDVTokenizerClient;

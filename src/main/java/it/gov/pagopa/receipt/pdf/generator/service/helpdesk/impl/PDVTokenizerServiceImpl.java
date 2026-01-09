@@ -1,4 +1,4 @@
-package it.gov.pagopa.receipt.pdf.generator.service.impl;
+package it.gov.pagopa.receipt.pdf.generator.service.helpdesk.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import it.gov.pagopa.receipt.pdf.generator.client.PDVTokenizerClient;
@@ -7,7 +7,7 @@ import it.gov.pagopa.receipt.pdf.generator.exception.PDVTokenizerException;
 import it.gov.pagopa.receipt.pdf.generator.model.tokenizer.ErrorResponse;
 import it.gov.pagopa.receipt.pdf.generator.model.tokenizer.PiiResource;
 import it.gov.pagopa.receipt.pdf.generator.model.tokenizer.TokenResource;
-import it.gov.pagopa.receipt.pdf.generator.service.PDVTokenizerService;
+import it.gov.pagopa.receipt.pdf.generator.service.helpdesk.PDVTokenizerService;
 import it.gov.pagopa.receipt.pdf.generator.utils.ObjectMapperUtils;
 import org.apache.http.HttpStatus;
 

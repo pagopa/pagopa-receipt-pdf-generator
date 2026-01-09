@@ -19,14 +19,14 @@ on:
 env:
   PROJECT_KEY: pagopa_pagopa-receipt-pdf-generator
 
-permissions:
-  id-token: write
-  contents: read
-  deployments: write
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   code-review:
+    permissions:
+      id-token: write
+      contents: read
+      deployments: write
     name: Code Review
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
@@ -46,6 +46,10 @@ jobs:
           cpd_exclusions: "**/model/**,**/entity/**"
 
   smoke-test:
+    permissions:
+      id-token: write
+      contents: read
+      deployments: write
     name: Smoke Test
     runs-on: ubuntu-latest
     environment:
@@ -75,12 +79,22 @@ jobs:
       - name: Run Integration Tests
         shell: bash
         id: run_integration_test
+        env:
+          CUCUMBER_PUBLISH_TOKEN_ENV: ${{ secrets.CUCUMBER_PUBLISH_TOKEN }}
+          RECEIPTS_STORAGE_CONN_STRING_ENV: ${{ secrets.RECEIPTS_STORAGE_CONN_STRING }}
+          RECEIPTS_COSMOS_CONN_STRING_ENV: ${{ secrets.RECEIPTS_COSMOS_CONN_STRING }}
+          BIZ_EVENTS_COSMOS_CONN_STRING_ENV: ${{ secrets.BIZ_EVENTS_COSMOS_CONN_STRING }}
+          AES_SALT_ENV: ${{ secrets.AES_SALT }}
+          AES_SECRET_KEY_ENV: ${{ secrets.AES_SECRET_KEY }}
+          SUBKEY_ENV: ${{ secrets.SUBKEY }}
         run: |
-          export CUCUMBER_PUBLISH_TOKEN=${{ secrets.CUCUMBER_PUBLISH_TOKEN }}
-          export RECEIPTS_STORAGE_CONN_STRING='${{ secrets.RECEIPTS_STORAGE_CONN_STRING }}'
-          export RECEIPTS_COSMOS_CONN_STRING='${{ secrets.RECEIPTS_COSMOS_CONN_STRING }}'
-          export AES_SALT='${{ secrets.AES_SALT }}'
-          export AES_SECRET_KEY='${{ secrets.AES_SECRET_KEY }}'
+          export CUCUMBER_PUBLISH_TOKEN='$CUCUMBER_PUBLISH_TOKEN_ENV'
+          export RECEIPTS_STORAGE_CONN_STRING='$RECEIPTS_STORAGE_CONN_STRING_ENV'
+          export RECEIPTS_COSMOS_CONN_STRING='$RECEIPTS_COSMOS_CONN_STRING_ENV'
+          export BIZ_EVENTS_COSMOS_CONN_STRING='$BIZ_EVENTS_COSMOS_CONN_STRING_ENV'
+          export AES_SALT='$AES_SALT_ENV'
+          export AES_SECRET_KEY='$AES_SECRET_KEY_ENV'
+          export SUBKEY='$SUBKEY_ENV'
 
           cd ./integration-test
           chmod +x ./run_integration_test.sh

@@ -12,6 +12,8 @@ import it.gov.pagopa.receipt.pdf.generator.client.CartReceiptsCosmosClient;
 import it.gov.pagopa.receipt.pdf.generator.entity.cart.CartForReceipt;
 import it.gov.pagopa.receipt.pdf.generator.exception.CartNotFoundException;
 
+import java.util.List;
+
 public class CartReceiptsCosmosClientImpl implements CartReceiptsCosmosClient {
 
     private static CartReceiptsCosmosClientImpl instance;
@@ -23,11 +25,13 @@ public class CartReceiptsCosmosClientImpl implements CartReceiptsCosmosClient {
     private CartReceiptsCosmosClientImpl() {
         String azureKey = System.getenv("COSMOS_RECEIPT_KEY");
         String serviceEndpoint = System.getenv("COSMOS_RECEIPT_SERVICE_ENDPOINT");
+        String readRegion = System.getenv("COSMOS_RECEIPT_READ_REGION");
 
         this.cosmosClient = new CosmosClientBuilder()
                 .endpoint(serviceEndpoint)
                 .key(azureKey)
                 .consistencyLevel(ConsistencyLevel.BOUNDED_STALENESS)
+                .preferredRegions(List.of(readRegion))
                 .buildClient();
     }
 
