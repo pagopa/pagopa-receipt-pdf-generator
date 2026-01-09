@@ -120,8 +120,7 @@ public class HelpdeskUtils {
                 } catch (NumberFormatException e) {
                     logger.error("[{}] event with id {} discarded because has an invalid total notice value: {}",
                             context.getFunctionName(), bizEvent.getId(),
-                            totalNotice,
-                            e);
+                            totalNotice);
                     throw e;
                 }
                 return intTotalNotice;
