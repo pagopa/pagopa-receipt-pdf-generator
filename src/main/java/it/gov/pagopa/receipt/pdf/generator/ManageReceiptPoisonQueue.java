@@ -106,7 +106,7 @@ public class ManageReceiptPoisonQueue {
                 retriableContent = true;
             }
         } catch (JsonProcessingException e) {
-            logger.error("[{}] received parsing error in the function called at {}",
+            logger.warn("[{}] received parsing error in the function called at {}",
                     context.getFunctionName(), LocalDateTime.now(), e);
         }
 

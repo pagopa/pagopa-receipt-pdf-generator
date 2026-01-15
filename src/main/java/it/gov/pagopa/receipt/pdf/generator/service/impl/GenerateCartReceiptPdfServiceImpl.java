@@ -159,7 +159,7 @@ public class GenerateCartReceiptPdfServiceImpl implements GenerateCartReceiptPdf
 
             PdfMetadata debtorMetadata = debtorMetadataMap.get(cartPayment.getBizEventId());
             if (debtorMetadata == null) {
-                logger.error("Unexpected result for debtor of biz event id {} pdf cart receipt generation. Cart receipt id {}",
+                logger.warn("Unexpected result for debtor of biz event id {} pdf cart receipt generation. Cart receipt id {}",
                         cart.getEventId(), cartPayment.getBizEventId());
                 overallSuccess = false;
             } else if (debtorMetadata.getStatusCode() == HttpStatus.SC_OK) {

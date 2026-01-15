@@ -105,7 +105,7 @@ public class ManageCartReceiptPoisonQueue {
                 retriableContent = true;
             }
         } catch (BizEventNotValidException e) {
-            logger.error("[{}] received parsing error in the function called at {}",
+            logger.warn("[{}] received parsing error in the function called at {}",
                     context.getFunctionName(), LocalDateTime.now(), e);
         }
 
