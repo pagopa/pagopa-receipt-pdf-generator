@@ -200,7 +200,7 @@ public class GenerateReceiptPdf {
                     }
                 }
                 receipt.setStatus(receiptStatusType);
-                logger.error("[{}] Error generating receipt for Receipt {} will be saved with status {}",
+                logger.warn("[{}] Error generating receipt for Receipt {} will be saved with status {}",
                         context.getFunctionName(),
                         receipt.getId(),
                         receiptStatusType);
