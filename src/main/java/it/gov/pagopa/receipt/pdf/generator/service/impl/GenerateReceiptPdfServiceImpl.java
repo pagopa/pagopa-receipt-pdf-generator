@@ -116,7 +116,7 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
         if (isDebtorFiscalCodeValid(receipt)) {
 
             if (debtorMetadata == null) {
-                logger.error("Unexpected result for debtor pdf receipt generation. Receipt id {}", receipt.getId());
+                logger.warn("Unexpected result for debtor pdf receipt generation. Receipt id {}", receipt.getId());
                 return false;
             }
 
@@ -143,7 +143,7 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
 
         PdfMetadata payerMetadata = pdfGeneration.getPayerMetadata();
         if (payerMetadata == null) {
-            logger.error("Unexpected result for payer pdf receipt generation. Receipt id {}", receipt.getId());
+            logger.warn("Unexpected result for payer pdf receipt generation. Receipt id {}", receipt.getId());
             return false;
         }
 
