@@ -175,7 +175,7 @@ class HelpdeskServiceImplTest {
         CartForReceipt result = assertDoesNotThrow(() -> sut.buildCart(bizEventList));
 
         assertNotNull(result);
-        assertEquals(CART_ID, result.getEventId());
+        assertEquals(CART_ID, result.getCartId());
         assertNull(result.getStatus());
         assertNotNull(result.getPayload());
         assertEquals(TOKENIZED_PAYER_FISCAL_CODE, result.getPayload().getPayerFiscalCode());

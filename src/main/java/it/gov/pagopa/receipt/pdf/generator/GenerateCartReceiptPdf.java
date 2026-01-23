@@ -167,10 +167,10 @@ public class GenerateCartReceiptPdf {
     ) {
         Payload payload = cart.getPayload();
         if (isCartReceiptInInvalidState(cart)) {
-            logger.info("[{}] Cart receipt with id {} is discarded from generation because it is not in INSERTED " +
+            logger.info("[{}] Cart with id {} is discarded from generation because it is not in INSERTED " +
                             "or RETRY (status: {}) or have null payload (payload is null: {})",
                     context.getFunctionName(),
-                    cart.getEventId(),
+                    cart.getCartId(),
                     cart.getStatus(),
                     payload == null);
             return true;
@@ -229,9 +229,9 @@ public class GenerateCartReceiptPdf {
         if (success) {
             cart.setStatus(CartStatusType.GENERATED);
             cart.setGenerated_at(System.currentTimeMillis());
-            logger.info("[{}] Cart receipt with event id {} being saved with status {}",
+            logger.info("[{}] Cart with id {} being saved with status {}",
                     context.getFunctionName(),
-                    cart.getEventId(),
+                    cart.getCartId(),
                     cart.getStatus());
             return;
         }
