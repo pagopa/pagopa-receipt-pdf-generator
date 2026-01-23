@@ -12,8 +12,8 @@ locals {
   receipt_pdf_generator_url      = "https://${local.receipt_pdf_generator_hostname}/pagopa-receipt-pdf-generator"
 
   helpdesk_api = {
-    display_name          = "Receipt PDF generator - Helpdesk API"
-    description           = "Receipt PDF generator API for helpdesk support"
+    display_name          = "Receipt PDF Generator - Helpdesk API"
+    description           = "Receipt PDF Generator API for helpdesk support"
     published             = true
     subscription_required = true
     approval_required     = false
