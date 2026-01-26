@@ -52,7 +52,7 @@ jobs:
           BIZ_EVENTS_COSMOS_CONN_STRING_ENV: ${{ secrets.BIZ_EVENTS_COSMOS_CONN_STRING }}
           AES_SALT_ENV: ${{ secrets.AES_SALT }}
           AES_SECRET_KEY_ENV: ${{ secrets.AES_SECRET_KEY }}
-          SUBKEY_ENV: ${{ secrets.SUBKEY }}
+          HELPDESK_SUBKEY_ENV: ${{ secrets.HELPDESK_SUBKEY }}
         run: |
           export CUCUMBER_PUBLISH_TOKEN='$CUCUMBER_PUBLISH_TOKEN_ENV'
           export RECEIPTS_STORAGE_CONN_STRING='$RECEIPTS_STORAGE_CONN_STRING_ENV'
@@ -60,7 +60,7 @@ jobs:
           export BIZ_EVENTS_COSMOS_CONN_STRING='$BIZ_EVENTS_COSMOS_CONN_STRING_ENV'
           export AES_SALT='$AES_SALT_ENV'
           export AES_SECRET_KEY='$AES_SECRET_KEY_ENV'
-          export SUBKEY='$SUBKEY_ENV'
+          export HELPDESK_SUBKEY='$HELPDESK_SUBKEY_ENV'
 
           cd ./integration-test
           chmod +x ./run_integration_test.sh
