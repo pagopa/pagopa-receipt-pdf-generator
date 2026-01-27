@@ -60,7 +60,7 @@ jobs:
           export BIZ_EVENTS_COSMOS_CONN_STRING='$BIZ_EVENTS_COSMOS_CONN_STRING_ENV'
           export AES_SALT='$AES_SALT_ENV'
           export AES_SECRET_KEY='$AES_SECRET_KEY_ENV'
-          export HELPDESK_SUBKEY='$HELPDESK_SUBKEY_ENV'
+          export HELPDESK_SUBKEY="$HELPDESK_SUBKEY_ENV"
 
           cd ./integration-test
           chmod +x ./run_integration_test.sh
