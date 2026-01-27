@@ -1,35 +1,44 @@
 const axios = require("axios");
 
-const helpdesk_url = process.env.HELPDESK_URL;
+// --- INSTANCE CONFIGURATION ---
+const helpdeskClient = axios.create({
+    baseURL: process.env.HELPDESK_URL,
+    headers: {
+        'Ocp-Apim-Subscription-Key': process.env.HELPDESK_SUBKEY || ""
+    }
+});
 
-axios.defaults.headers.common['Ocp-Apim-Subscription-Key'] = process.env.HELPDESK_SUBKEY || ""; // for all requests
+// Conditional management of Canary
+if (process.env.canary) {
+    helpdeskClient.defaults.headers.common['X-CANARY'] = 'canary';
+}
+
+// --- GENERIC HELPER FOR POSTS ---
+async function performPost(path) {
+    try {
+        return await helpdeskClient.post(path, {});
+    } catch (error) {
+        return error.response;
+    }
+}
+
+// --- API FUNCTIONS ---
 
 async function postRegenerateReceiptPdf(eventId) {
-	let endpoint = process.env.REGENERATE_RECEIPT_PDF_ENDPOINT || "receipts/{bizevent-id}/regenerate-receipt-pdf";
-	endpoint = endpoint.replace("{bizevent-id}", eventId);
+    const endpoint = "receipts/{bizevent-id}/regenerate-receipt-pdf"
+        .replace("{bizevent-id}", eventId);
 
-	return await axios.post(helpdesk_url + endpoint, {})
-		.then(res => {
-			return res;
-		})
-		.catch(error => {
-			return error.response;
-		});
+    return await performPost(endpoint);
 }
 
 async function postRegenerateCartReceiptPdf(cartId) {
-	let endpoint = process.env.REGENERATE_RECEIPT_PDF_ENDPOINT || "cart-receipts/{cart-id}/regenerate-receipt-pdf";
-	endpoint = endpoint.replace("{cart-id}", cartId);
+    const endpoint = "cart-receipts/{cart-id}/regenerate-receipt-pdf"
+        .replace("{cart-id}", cartId);
 
-	return await axios.post(helpdesk_url + endpoint, {})
-		.then(res => {
-			return res;
-		})
-		.catch(error => {
-			return error.response;
-		});
+    return await performPost(endpoint);
 }
 
 module.exports = {
-	postRegenerateReceiptPdf, postRegenerateCartReceiptPdf
-}
+    postRegenerateReceiptPdf,
+    postRegenerateCartReceiptPdf
+};
