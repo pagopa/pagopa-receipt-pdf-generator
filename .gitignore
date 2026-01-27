@@ -45,4 +45,4 @@ yarn.lock
 **/*.local.uat
 .azure/
 
-.env
+**/*.env
