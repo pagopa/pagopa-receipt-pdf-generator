@@ -8,8 +8,8 @@ locals {
     helpdesk_api_product_id = "technical_support_api"
   }
 
-  receipt_pdf_generator_hostname = var.env == "prod" ? "weu${var.env}.receipt-pdf-generator.internal.platform.pagopa.it" : "weu${var.env}.receipt-pdf-generator.internal.${var.env}.platform.pagopa.it"
-  receipt_pdf_generator_url      = "https://${local.receipt_pdf_generator_hostname}/pagopa-receipt-pdf-generator"
+  receipt_pdf_generator_hostname = var.env == "prod" ? "weu${var.env}.receipts.internal.platform.pagopa.it" : "weu${var.env}.receipts.internal.${var.env}.platform.pagopa.it"
+  receipt_pdf_generator_url      = "https://${local.receipt_pdf_generator_hostname}/pagopa-receipt-pdf-generator-helpdesk"
 
   helpdesk_api = {
     display_name          = "Receipt PDF Generator - Helpdesk API"
