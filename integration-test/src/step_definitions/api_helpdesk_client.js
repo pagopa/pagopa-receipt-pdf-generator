@@ -8,21 +8,6 @@ const helpdeskClient = axios.create({
     }
 });
 
-helpdeskClient.interceptors.request.use(config => {
-    const subKey = config.headers['Ocp-Apim-Subscription-Key'] || "";
-    const canary = config.headers['X-CANARY'] || "not set";
-
-    console.log(`[Axios Request] URL: ${config.baseURL || ''}${config.url || ''}`);
-    console.log(`[Auth Check] SubKey Length: ${String(subKey).length}`);
-    console.log(`[Canary Check] Header: ${canary}`);
-
-    if (subKey && (subKey.startsWith(' ') || subKey.endsWith(' '))) {
-        console.warn("WARNING: The key contains spaces at the beginning or end!");
-    }
-
-    return config;
-});
-
 // Conditional management of Canary
 if (process.env.canary) {
     helpdeskClient.defaults.headers.common['X-CANARY'] = 'canary';
