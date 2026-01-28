@@ -225,6 +225,7 @@ public class RegenerateCartReceiptPdf {
 
     private Map<String, MessageData> groupCartInfoByBizEventId(List<CartPayment> cart) {
         return cart.stream()
+                .filter(cartPayment -> cartPayment.getMessageDebtor() != null)
                 .collect(Collectors.toMap(
                         CartPayment::getBizEventId,
                         CartPayment::getMessageDebtor
