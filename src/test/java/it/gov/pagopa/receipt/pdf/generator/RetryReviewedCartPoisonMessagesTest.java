@@ -86,7 +86,7 @@ class RetryReviewedCartPoisonMessagesTest {
                 .id(ID_TRANSACTION)
                 .build();
 
-        CartForReceipt receipt = CartForReceipt.builder().status(CartStatusType.TO_REVIEW).eventId(BIZ_EVENT_ID).build();
+        CartForReceipt receipt = CartForReceipt.builder().status(CartStatusType.TO_REVIEW).cartId(BIZ_EVENT_ID).build();
         when(cosmosMock.getCartForReceipt(ID_TRANSACTION)).thenReturn(receipt);
 
         when(queueResponse.getStatusCode()).thenReturn(HttpStatus.SC_CREATED);
@@ -99,7 +99,7 @@ class RetryReviewedCartPoisonMessagesTest {
 
         verify(cosmosMock).updateCartForReceipt(receiptCaptor.capture());
         CartForReceipt receiptCaptorValue = receiptCaptor.getValue();
-        assertEquals(BIZ_EVENT_ID, receiptCaptorValue.getEventId());
+        assertEquals(BIZ_EVENT_ID, receiptCaptorValue.getCartId());
         assertEquals(CartStatusType.INSERTED, receiptCaptorValue.getStatus());
 
         verify(queueMock).sendMessageToQueue(messageCaptor.capture());
@@ -165,7 +165,7 @@ class RetryReviewedCartPoisonMessagesTest {
                 .id(ID_TRANSACTION)
                 .build();
 
-        CartForReceipt receipt = CartForReceipt.builder().status(CartStatusType.TO_REVIEW).eventId(BIZ_EVENT_ID).build();
+        CartForReceipt receipt = CartForReceipt.builder().status(CartStatusType.TO_REVIEW).cartId(BIZ_EVENT_ID).build();
         when(cosmosMock.getCartForReceipt(ID_TRANSACTION)).thenReturn(receipt);
         doThrow(new UnableToSaveException(COSMOS_ERROR)).when(cosmosMock).updateCartForReceipt(any(CartForReceipt.class));
 
@@ -176,7 +176,7 @@ class RetryReviewedCartPoisonMessagesTest {
 
         verify(cosmosMock).updateCartForReceipt(receiptCaptor.capture());
         CartForReceipt receiptCaptorValue = receiptCaptor.getValue();
-        assertEquals(BIZ_EVENT_ID, receiptCaptorValue.getEventId());
+        assertEquals(BIZ_EVENT_ID, receiptCaptorValue.getCartId());
         assertEquals(CartStatusType.INSERTED, receiptCaptorValue.getStatus());
 
         verifyNoInteractions(queueMock);
@@ -197,7 +197,7 @@ class RetryReviewedCartPoisonMessagesTest {
                 .id(ID_TRANSACTION)
                 .build();
 
-        CartForReceipt receipt = CartForReceipt.builder().status(CartStatusType.TO_REVIEW).eventId(BIZ_EVENT_ID).build();
+        CartForReceipt receipt = CartForReceipt.builder().status(CartStatusType.TO_REVIEW).cartId(BIZ_EVENT_ID).build();
         when(cosmosMock.getCartForReceipt(ID_TRANSACTION)).thenReturn(receipt);
 
         when(queueResponse.getStatusCode()).thenReturn(HttpStatus.SC_BAD_REQUEST);
@@ -210,7 +210,7 @@ class RetryReviewedCartPoisonMessagesTest {
 
         verify(cosmosMock).updateCartForReceipt(receiptCaptor.capture());
         CartForReceipt receiptCaptorValue = receiptCaptor.getValue();
-        assertEquals(BIZ_EVENT_ID, receiptCaptorValue.getEventId());
+        assertEquals(BIZ_EVENT_ID, receiptCaptorValue.getCartId());
         assertEquals(CartStatusType.INSERTED, receiptCaptorValue.getStatus());
 
         verify(queueMock).sendMessageToQueue(messageCaptor.capture());
@@ -235,7 +235,7 @@ class RetryReviewedCartPoisonMessagesTest {
                 .id(ID_TRANSACTION)
                 .build();
 
-        CartForReceipt receipt = CartForReceipt.builder().status(CartStatusType.TO_REVIEW).eventId(ID_TRANSACTION).build();
+        CartForReceipt receipt = CartForReceipt.builder().status(CartStatusType.TO_REVIEW).cartId(ID_TRANSACTION).build();
         when(cosmosMock.getCartForReceipt(ID_TRANSACTION)).thenReturn(receipt);
 
         when(queueResponse.getStatusCode()).thenReturn(HttpStatus.SC_CREATED);
@@ -248,7 +248,7 @@ class RetryReviewedCartPoisonMessagesTest {
 
         verify(cosmosMock).updateCartForReceipt(receiptCaptor.capture());
         CartForReceipt receiptCaptorValue = receiptCaptor.getValue();
-        assertEquals(ID_TRANSACTION, receiptCaptorValue.getEventId());
+        assertEquals(ID_TRANSACTION, receiptCaptorValue.getCartId());
         assertEquals(CartStatusType.INSERTED, receiptCaptorValue.getStatus());
 
         verify(queueMock).sendMessageToQueue(messageCaptor.capture());

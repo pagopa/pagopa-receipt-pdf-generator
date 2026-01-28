@@ -111,7 +111,7 @@ class RegenerateCartReceiptPdfTest {
         // test execution
         HttpResponseMessage response = assertDoesNotThrow(() -> sut.run(
                 requestMock,
-                newCart.getEventId(),
+                newCart.getCartId(),
                 documentdb,
                 executionContextMock
         ));
@@ -149,7 +149,7 @@ class RegenerateCartReceiptPdfTest {
         // test execution
         HttpResponseMessage response = assertDoesNotThrow(() -> sut.run(
                 requestMock,
-                newCart.getEventId(),
+                newCart.getCartId(),
                 documentdb,
                 executionContextMock
         ));
@@ -390,7 +390,7 @@ class RegenerateCartReceiptPdfTest {
         // test execution
         HttpResponseMessage response = assertDoesNotThrow(() -> sut.run(
                 requestMock,
-                newCart.getEventId(),
+                newCart.getCartId(),
                 documentdb,
                 executionContextMock
         ));
@@ -423,7 +423,7 @@ class RegenerateCartReceiptPdfTest {
         // test execution
         HttpResponseMessage response = assertDoesNotThrow(() -> sut.run(
                 requestMock,
-                newCart.getEventId(),
+                newCart.getCartId(),
                 documentdb,
                 executionContextMock
         ));
@@ -451,7 +451,7 @@ class RegenerateCartReceiptPdfTest {
         }
         return CartForReceipt.builder()
                 .id("idCart")
-                .eventId("idCart")
+                .cartId("idCart")
                 .payload(Payload.builder()
                         .mdAttachPayer(buildMdAttach())
                         .messagePayer(buildMessageDebtor())
@@ -474,7 +474,7 @@ class RegenerateCartReceiptPdfTest {
         }
         return CartForReceipt.builder()
                 .id("idCart")
-                .eventId("idCart")
+                .cartId("idCart")
                 .payload(Payload.builder()
                         .cart(cartPayments)
                         .totalNotice(bizEventList.size())

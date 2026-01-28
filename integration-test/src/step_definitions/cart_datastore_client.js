@@ -15,7 +15,7 @@ const errorCartContainer = client.database(databaseId).container(errorCartContai
 async function getDocumentByIdFromCartDatastore(id) {
     return await cartContainer.items
         .query({
-            query: "SELECT * from c WHERE c.eventId=@id",
+            query: "SELECT * from c WHERE c.cartId=@id",
             parameters: [{ name: "@id", value: id }]
         })
         .fetchNext();
@@ -24,7 +24,7 @@ async function getDocumentByIdFromCartDatastore(id) {
 async function deleteDocumentFromCartsDatastoreById(id){
     let documents = await getDocumentByIdFromCartDatastore(id);
     documents?.resources?.forEach(el => {
-        deleteDocumentFromCartDatastore(el.id, el.eventId);
+        deleteDocumentFromCartDatastore(el.id, el.cartId);
     })
 }
 

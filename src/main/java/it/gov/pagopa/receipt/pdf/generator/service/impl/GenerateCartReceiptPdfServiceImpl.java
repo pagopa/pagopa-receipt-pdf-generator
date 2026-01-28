@@ -96,7 +96,7 @@ public class GenerateCartReceiptPdfServiceImpl implements GenerateCartReceiptPdf
                 PdfMetadata generationResult = generateAndSavePDFReceipt(
                         listOfBizEvents,
                         false,
-                        cartForReceipt.getEventId(),
+                        cartForReceipt.getCartId(),
                         payload.getTotalAmount(),
                         cartInfoMap,
                         workingDirPath
@@ -120,7 +120,7 @@ public class GenerateCartReceiptPdfServiceImpl implements GenerateCartReceiptPdf
                 PdfMetadata generationResult = generateAndSavePDFReceipt(
                         Collections.singletonList(bizEventMap.get(bizEventId)),
                         true,
-                        cartForReceipt.getEventId(),
+                        cartForReceipt.getCartId(),
                         cartPayment.getAmount(),
                         Collections.singletonMap(bizEventId, cartInfoMap.get(bizEventId)),
                         workingDirPath
@@ -144,7 +144,7 @@ public class GenerateCartReceiptPdfServiceImpl implements GenerateCartReceiptPdf
         Payload payload = cart.getPayload();
         PdfMetadata payerMetadata = pdfCartGeneration.getPayerMetadata();
 
-        if (payload.getPayerFiscalCode() != null && !processPayerMetadata(payerMetadata, payload, cart.getEventId())) {
+        if (payload.getPayerFiscalCode() != null && !processPayerMetadata(payerMetadata, payload, cart.getCartId())) {
             overallSuccess = false;
         }
 
@@ -160,7 +160,7 @@ public class GenerateCartReceiptPdfServiceImpl implements GenerateCartReceiptPdf
             PdfMetadata debtorMetadata = debtorMetadataMap.get(cartPayment.getBizEventId());
             if (debtorMetadata == null) {
                 logger.warn("Unexpected result for debtor of biz event id {} pdf cart receipt generation. Cart receipt id {}",
-                        cart.getEventId(), cartPayment.getBizEventId());
+                        cart.getCartId(), cartPayment.getBizEventId());
                 overallSuccess = false;
             } else if (debtorMetadata.getStatusCode() == HttpStatus.SC_OK) {
                 cartPayment.setMdAttach(buildReceiptMetadata(debtorMetadata));

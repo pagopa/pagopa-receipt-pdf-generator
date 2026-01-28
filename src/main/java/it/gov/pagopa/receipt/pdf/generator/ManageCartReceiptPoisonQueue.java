@@ -150,7 +150,7 @@ public class ManageCartReceiptPoisonQueue {
             String encodedEvent = Aes256Utils.encrypt(errorMessage);
             receiptError.setMessagePayload(encodedEvent);
 
-            logger.debug("[{}] saving new entry to the retry error to review with payload {}",
+            logger.error("[{}] saving new entry to the retry error to review with payload {}",
                     context.getFunctionName(), encodedEvent);
         } catch (Aes256Exception e) {
             receiptError.setMessageError(e.getMessage());

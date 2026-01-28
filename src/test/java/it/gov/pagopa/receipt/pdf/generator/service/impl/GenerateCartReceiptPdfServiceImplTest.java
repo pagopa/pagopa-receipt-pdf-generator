@@ -922,7 +922,7 @@ class GenerateCartReceiptPdfServiceImplTest {
         }
 
         return CartForReceipt.builder()
-                .eventId(CART_ID)
+                .cartId(CART_ID)
                 .payload(
                         Payload.builder()
                                 .payerFiscalCode(payerFiscalCode)

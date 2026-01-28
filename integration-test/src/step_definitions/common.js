@@ -158,10 +158,10 @@ function createReceipt(id, status) {
 	return receipt
 }
 
-function createCart(id, eventId, status) {
+function createCart(id, cartId, status) {
 	let cart =
 	{
-		"eventId": eventId,
+		"cartId": cartId,
 		"id": id,
 		"version": "1",
 		"payload": {
@@ -206,10 +206,10 @@ function createCart(id, eventId, status) {
 	return cart
 }
 
-function createCartForRegenerate(id, eventId, status) {
+function createCartForRegenerate(id, cartId, status) {
 	let cart =
 	{
-		"eventId": eventId,
+		"cartId": cartId,
 		"id": id,
 		"version": "1",
 		"payload": {
