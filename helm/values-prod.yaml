@@ -256,7 +256,7 @@ pagopa-receipt-pdf-generator-helpdesk:
   autoscaling:
     !!merge <<: *autoscaling
     minReplica: 1
-    maxReplica: 1
+    maxReplica: 3
   externalConfigMapValues:
     !!merge <<: *externalConfigMapValues
   envConfig:
