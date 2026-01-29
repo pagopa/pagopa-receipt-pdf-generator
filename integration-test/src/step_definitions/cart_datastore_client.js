@@ -58,7 +58,7 @@ async function getDocumentByBizEventIdFromErrorCartDatastore(id) {
 async function deleteAllHelpdeskDocumentFromErrorCartDatastore() {
     let documents = await errorCartContainer.items
         .query({
-            query: "SELECT * from c WHERE c.eventId LIKE 'receipt-cart-helpdesk-int-test-id%'"
+            query: "SELECT * from c WHERE c.id LIKE 'receipt-cart-helpdesk%' or c.id LIKE 'receipt-generator-helpdesk%'"
         })
         .fetchAll();
 
