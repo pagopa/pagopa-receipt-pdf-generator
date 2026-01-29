@@ -23,9 +23,10 @@ async function getDocumentByIdFromCartDatastore(id) {
 
 async function deleteDocumentFromCartsDatastoreById(id) {
     let documents = await getDocumentByIdFromCartDatastore(id);
-    documents?.resources?.forEach(el => {
-        deleteDocumentFromCartDatastore(el.id, el.cartId);
-    })
+
+    for (let document of documents.resources) {
+        await deleteDocumentFromCartDatastore(document.id, document.cartId);
+    }
 }
 
 async function createDocumentInCartDatastore(cart) {
@@ -62,9 +63,9 @@ async function deleteAllHelpdeskDocumentFromErrorCartDatastore() {
         })
         .fetchAll();
 
-    documents?.resources?.forEach(el => {
-        deleteDocumentFromErrorCartDatastore(el.id, el.cartId);
-    })
+    for (let document of documents.resources) {
+        await deleteDocumentFromErrorCartDatastore(document.id, document.cartId);
+    }
 }
 
 async function createDocumentInErrorCartDatastore(document) {
