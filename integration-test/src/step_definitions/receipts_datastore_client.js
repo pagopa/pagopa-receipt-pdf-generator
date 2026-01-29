@@ -54,7 +54,7 @@ async function getDocumentByBizEventIdFromErrorReceiptsDatastore(bizEventId) {
             query: "SELECT * from c WHERE c.bizEventId=@bizEventId",
             parameters: [{ name: "@bizEventId", value: bizEventId }]
         })
-        .fetchNext();
+        .fetchAll();
 }
 
 async function createDocumentInErrorReceiptsDatastore(document) {

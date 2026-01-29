@@ -6,7 +6,7 @@ const { putMessageOnPoisonQueue, putMessageOnReceiptQueue } = require("./receipt
 const { receiptPDFExist } = require("./receipts_blob_storage_client");
 const {
     getDocumentByIdFromCartDatastore, deleteDocumentFromCartsDatastoreById, createDocumentInCartDatastore,
-    getDocumentByBizEventIdFromErrorCartDatastore, createDocumentInErrorCartDatastore, deleteDocumentFromErrorCartDatastore
+    getDocumentByBizEventIdFromErrorCartDatastore, createDocumentInErrorCartDatastore, deleteDocumentFromErrorCartDatastore, deleteAllHelpdeskDocumentFromErrorCartDatastore
 } = require("./cart_datastore_client");
 const {
     createDocumentInBizEventsDatastore,
@@ -56,6 +56,7 @@ After(async function () {
             await deleteDocumentFromBizEventsDatastore(id);
         }
     }
+    deleteAllHelpdeskDocumentFromErrorCartDatastore();
 
     this.eventId = null;
     this.responseToCheck = null;

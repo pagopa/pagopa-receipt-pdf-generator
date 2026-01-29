@@ -1,10 +1,10 @@
 const { CosmosClient } = require("@azure/cosmos");
 const { createCart } = require("./common");
 
-const cosmos_db_conn_string     = process.env.RECEIPTS_COSMOS_CONN_STRING || "";
-const databaseId                = process.env.RECEIPT_COSMOS_DB_NAME;
-const cartContainerId           = process.env.CART_COSMOS_DB_CONTAINER_NAME;
-const errorCartContainerId      = process.env.CART_MESSAGE_ERRORS_COSMOS_DB_CONTAINER_NAME;
+const cosmos_db_conn_string = process.env.RECEIPTS_COSMOS_CONN_STRING || "";
+const databaseId = process.env.RECEIPT_COSMOS_DB_NAME;
+const cartContainerId = process.env.CART_COSMOS_DB_CONTAINER_NAME;
+const errorCartContainerId = process.env.CART_MESSAGE_ERRORS_COSMOS_DB_CONTAINER_NAME;
 
 
 const client = new CosmosClient(cosmos_db_conn_string);
@@ -21,7 +21,7 @@ async function getDocumentByIdFromCartDatastore(id) {
         .fetchNext();
 }
 
-async function deleteDocumentFromCartsDatastoreById(id){
+async function deleteDocumentFromCartsDatastoreById(id) {
     let documents = await getDocumentByIdFromCartDatastore(id);
     documents?.resources?.forEach(el => {
         deleteDocumentFromCartDatastore(el.id, el.cartId);
@@ -55,6 +55,18 @@ async function getDocumentByBizEventIdFromErrorCartDatastore(id) {
         .fetchNext();
 }
 
+async function deleteAllHelpdeskDocumentFromErrorCartDatastore() {
+    let documents = await errorCartContainer.items
+        .query({
+            query: "SELECT * from c WHERE c.eventId LIKE 'receipt-cart-helpdesk-int-test-id%'"
+        })
+        .fetchAll();
+
+    documents?.resources?.forEach(el => {
+        deleteDocumentFromErrorCartDatastore(el.id, el.cartId);
+    })
+}
+
 async function createDocumentInErrorCartDatastore(document) {
     try {
         return await errorCartContainer.items.create(document);
@@ -76,5 +88,6 @@ async function deleteDocumentFromErrorCartDatastore(id) {
 
 module.exports = {
     getDocumentByIdFromCartDatastore, deleteDocumentFromCartsDatastoreById, createDocumentInCartDatastore,
-    getDocumentByBizEventIdFromErrorCartDatastore, createDocumentInErrorCartDatastore, deleteDocumentFromErrorCartDatastore
+    getDocumentByBizEventIdFromErrorCartDatastore, createDocumentInErrorCartDatastore, deleteDocumentFromErrorCartDatastore,
+    deleteAllHelpdeskDocumentFromErrorCartDatastore
 }
