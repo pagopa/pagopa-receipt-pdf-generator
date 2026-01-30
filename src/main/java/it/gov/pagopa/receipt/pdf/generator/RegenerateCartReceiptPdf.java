@@ -154,8 +154,8 @@ public class RegenerateCartReceiptPdf {
                 );
             }
         } catch (CartReceiptGenerationNotToRetryException e) {
-            logger.error("[{}] Not retryable error occurred while generating the cart receipt with event id {}",
-                    context.getFunctionName(), cart.getEventId(), e);
+            logger.error("[{}] Not retryable error occurred while generating the cart receipt with cart id {}",
+                    context.getFunctionName(), cart.getCartId(), e);
             return buildErrorResponse(
                     request,
                     HttpStatus.INTERNAL_SERVER_ERROR,

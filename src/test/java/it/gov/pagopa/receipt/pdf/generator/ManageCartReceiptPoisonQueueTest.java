@@ -50,8 +50,8 @@ class ManageCartReceiptPoisonQueueTest {
     private final String VALID_CONTENT_NOT_TO_RETRY = buildQueueBizEventList(1, true);
     private final String VALID_CONTENT_MULTIPLE_ITEMS_NOT_TO_RETRY = buildQueueBizEventList(5, true);
     private final String INVALID_MESSAGE = "invalid message";
-    private final CartForReceipt VALID_RECEIPT = CartForReceipt.builder().eventId(BIZ_EVENT_ID).status(CartStatusType.INSERTED).build();
-    private final CartForReceipt VALID_MULTIPLE_ITEM_RECEIPT = CartForReceipt.builder().eventId(String.valueOf(ID_TRANSACTION)).status(CartStatusType.INSERTED).build();
+    private final CartForReceipt VALID_RECEIPT = CartForReceipt.builder().cartId(BIZ_EVENT_ID).status(CartStatusType.INSERTED).build();
+    private final CartForReceipt VALID_MULTIPLE_ITEM_RECEIPT = CartForReceipt.builder().cartId(String.valueOf(ID_TRANSACTION)).status(CartStatusType.INSERTED).build();
 
     private ManageCartReceiptPoisonQueue function;
 
@@ -118,7 +118,7 @@ class ManageCartReceiptPoisonQueueTest {
 
         verify(receiptOutput).setValue(cartReceiptCaptor.capture());
         CartForReceipt receiptCaptor = this.cartReceiptCaptor.getValue();
-        assertEquals(BIZ_EVENT_ID, receiptCaptor.getEventId());
+        assertEquals(BIZ_EVENT_ID, receiptCaptor.getCartId());
         assertEquals(CartStatusType.TO_REVIEW, receiptCaptor.getStatus());
     }
 
@@ -167,7 +167,7 @@ class ManageCartReceiptPoisonQueueTest {
 
         verify(receiptOutput).setValue(cartReceiptCaptor.capture());
         CartForReceipt receiptCaptor = this.cartReceiptCaptor.getValue();
-        assertEquals(BIZ_EVENT_ID, receiptCaptor.getEventId());
+        assertEquals(BIZ_EVENT_ID, receiptCaptor.getCartId());
         assertEquals(CartStatusType.TO_REVIEW, receiptCaptor.getStatus());
     }
 
@@ -222,7 +222,7 @@ class ManageCartReceiptPoisonQueueTest {
 
         verify(receiptOutput).setValue(cartReceiptCaptor.capture());
         CartForReceipt receiptCaptor = this.cartReceiptCaptor.getValue();
-        assertEquals(ID_TRANSACTION, receiptCaptor.getEventId());
+        assertEquals(ID_TRANSACTION, receiptCaptor.getCartId());
         assertEquals(CartStatusType.TO_REVIEW, receiptCaptor.getStatus());
     }
 

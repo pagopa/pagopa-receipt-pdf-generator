@@ -15,8 +15,6 @@ if (process.env.canary) {
 
 // --- GENERIC HELPER FOR POSTS ---
 async function performPost(path) {
-    console.log("URL:", process.env.HELPDESK_URL);
-    console.log("SubKey length:", (process.env.HELPDESK_SUBKEY || "").length);
     try {
         return await helpdeskClient.post(path, {});
     } catch (error) {

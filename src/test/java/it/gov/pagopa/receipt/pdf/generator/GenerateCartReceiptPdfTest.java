@@ -105,7 +105,7 @@ class GenerateCartReceiptPdfTest {
         assertNotEquals(ORIGINAL_GENERATED_AT, cart.getGenerated_at());
         assertEquals(numRetry, cart.getNumRetry());
         assertNull(cart.getReasonErr());
-        assertEquals(ID_TRANSACTION, cart.getEventId());
+        assertEquals(ID_TRANSACTION, cart.getCartId());
 
         verify(cartReceiptCosmosServiceMock).getCartForReceipt(anyString());
         verify(generateCartReceiptPdfServiceMock).generateCartReceipts(any(), any(), any());
@@ -229,7 +229,7 @@ class GenerateCartReceiptPdfTest {
 
         assertEquals(CartStatusType.FAILED, cart.getStatus());
         assertEquals(ORIGINAL_GENERATED_AT, cart.getGenerated_at());
-        assertEquals(ID_TRANSACTION, cart.getEventId());
+        assertEquals(ID_TRANSACTION, cart.getCartId());
         assertNotNull(cart.getReasonErr());
         assertNotNull(cart.getReasonErr().getMessage());
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR.value(), cart.getReasonErr().getCode());
@@ -258,7 +258,7 @@ class GenerateCartReceiptPdfTest {
 
         assertEquals(CartStatusType.FAILED, cart.getStatus());
         assertEquals(ORIGINAL_GENERATED_AT, cart.getGenerated_at());
-        assertEquals(ID_TRANSACTION, cart.getEventId());
+        assertEquals(ID_TRANSACTION, cart.getCartId());
         assertNotNull(cart.getReasonErr());
         assertNotNull(cart.getReasonErr().getMessage());
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR.value(), cart.getReasonErr().getCode());
@@ -413,7 +413,7 @@ class GenerateCartReceiptPdfTest {
         }
 
         return CartForReceipt.builder()
-                .eventId(ID_TRANSACTION)
+                .cartId(ID_TRANSACTION)
                 .payload(
                         Payload.builder()
                                 .payerFiscalCode(payerFiscalCode)

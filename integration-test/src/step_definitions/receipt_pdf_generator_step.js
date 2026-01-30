@@ -6,7 +6,7 @@ const { putMessageOnPoisonQueue, putMessageOnReceiptQueue } = require("./receipt
 const { receiptPDFExist } = require("./receipts_blob_storage_client");
 const {
     getDocumentByIdFromCartDatastore, deleteDocumentFromCartsDatastoreById, createDocumentInCartDatastore,
-    getDocumentByBizEventIdFromErrorCartDatastore, createDocumentInErrorCartDatastore, deleteDocumentFromErrorCartDatastore
+    getDocumentByBizEventIdFromErrorCartDatastore, createDocumentInErrorCartDatastore, deleteDocumentFromErrorCartDatastore, deleteAllHelpdeskDocumentFromErrorCartDatastore
 } = require("./cart_datastore_client");
 const {
     createDocumentInBizEventsDatastore,
@@ -56,6 +56,7 @@ After(async function () {
             await deleteDocumentFromBizEventsDatastore(id);
         }
     }
+    deleteAllHelpdeskDocumentFromErrorCartDatastore();
 
     this.eventId = null;
     this.responseToCheck = null;
@@ -144,6 +145,10 @@ Then('the receipt has eventId {string}', function (targetId) {
     assert.strictEqual(this.responseToCheck.resources[0].eventId, targetId);
 });
 
+Then('the cart receipt has cartId {string}', function (targetId) {
+    assert.strictEqual(this.responseToCheck.resources[0].cartId, targetId);
+});
+
 Then('the receipt has not the status {string}', function (targetStatus) {
     assert.notStrictEqual(this.responseToCheck.resources[0].status, targetStatus);
 });
@@ -230,14 +235,14 @@ When('the error receipt has been properly stored on receipt-message-error datast
     this.responseToCheck = await getDocumentByBizEventIdFromErrorReceiptsDatastore(this.errorReceiptId);
 });
 
-Given('a cart with id {string} and eventId {string} and status {string} stored into cart datastore', async function (cartId, eventId, status) {
-    this.cartId = cartId;
-    this.transactionId = eventId;
+Given('a cart with id {string} and cartId {string} and status {string} stored into cart datastore', async function (id, cartId, status) {
+    this.cartId = id;
+    this.transactionId = cartId;
 
     // prior cancellation to avoid dirty cases
-    await deleteDocumentFromCartsDatastoreById(eventId);
+    await deleteDocumentFromCartsDatastoreById(cartId);
 
-    let cart = createCart(cartId, eventId, status);
+    let cart = createCart(id, cartId, status);
     let cartStoreResponse = await createDocumentInCartDatastore(cart);
     assert.strictEqual(cartStoreResponse.statusCode, 201);
 });

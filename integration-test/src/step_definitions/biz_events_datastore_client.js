@@ -1,5 +1,4 @@
 const { CosmosClient } = require("@azure/cosmos");
-const { createEvent } = require("./common");
 
 const cosmos_db_conn_string = process.env.BIZ_EVENTS_COSMOS_CONN_STRING;
 const databaseId = process.env.BIZ_EVENT_COSMOS_DB_NAME;  // es. db

@@ -96,7 +96,7 @@ public class HelpdeskServiceImpl implements HelpdeskService {
         BigDecimal amount = getCartAmount(bizEvent);
         return CartForReceipt.builder()
                 .id(transactionId)
-                .eventId(transactionId)
+                .cartId(transactionId)
                 .version("1") // this is the first version of this document
                 .payload(Payload.builder()
                         .payerFiscalCode(tokenizerPayerFiscalCode(bizEvent))

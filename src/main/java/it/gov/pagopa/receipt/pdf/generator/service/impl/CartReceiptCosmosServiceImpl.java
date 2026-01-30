@@ -35,11 +35,11 @@ public class CartReceiptCosmosServiceImpl implements CartReceiptCosmosService {
             statusCode = response.getStatusCode();
         } catch (Exception e) {
             statusCode = HttpStatus.SC_INTERNAL_SERVER_ERROR;
-            logger.error(String.format("Save cart receipt with eventId %s on cosmos failed", cartForReceipt.getEventId()), e);
+            logger.error(String.format("Save cart with id %s on cosmos failed", cartForReceipt.getCartId()), e);
         }
 
         if (statusCode != com.microsoft.azure.functions.HttpStatus.OK.value()) {
-            String errorMsg = String.format("Save cart receipt with eventId %s on cosmos failed with status %s", cartForReceipt.getEventId(), statusCode);
+            String errorMsg = String.format("Save cart with id %s on cosmos failed with status %s", cartForReceipt.getCartId(), statusCode);
             throw new UnableToSaveException(errorMsg);
         }
     }
