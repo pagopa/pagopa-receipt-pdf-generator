@@ -19,7 +19,7 @@ module "apim_api_helpdesk_api_v1" {
   name                = format("%s-receipts-generator-helpdesk-api", var.env_short)
   api_management_name = local.apim.name
   resource_group_name = local.apim.rg
-  product_ids         = [local.apim.helpdesk_api_product_id]
+  product_ids         = [local.apim.helpdesk_api_product_id, local.apim.receipts_internal_api_product_id]
 
   subscription_required = true
   version_set_id        = azurerm_api_management_api_version_set.api_helpdesk_api.id
