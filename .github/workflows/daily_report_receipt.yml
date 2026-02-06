@@ -110,5 +110,5 @@ jobs:
         with:
           payload-file-path: "./report/src/report.json"
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL_REPORT }}
           SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK

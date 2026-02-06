@@ -115,3 +115,10 @@ resource "github_actions_secret" "secret_slack_webhook_deploy" {
   secret_name     = "SLACK_WEBHOOK_URL_DEPLOY"
   plaintext_value = data.azurerm_key_vault_secret.key_vault_deploy_webhook_slack.value
 }
+#tfsec:ignore:github-actions-no-plain-text-action-secrets # not real secret
+resource "github_actions_secret" "secret_slack_webhook_report" {
+
+  repository      = local.github.repository
+  secret_name     = "SLACK_WEBHOOK_URL_REPORT"
+  plaintext_value = data.azurerm_key_vault_secret.key_vault_report_webhook_slack.value
+}
