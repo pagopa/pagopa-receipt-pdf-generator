@@ -89,6 +89,7 @@ data "azurerm_user_assigned_identity" "identity_cd_01" {
 }
 
 data "azurerm_key_vault_secret" "key_vault_integration_test_subkey" {
+  count        = var.env_short != "p" ? 1 : 0
   name         = "receipt-generator-helpdesk-integration-test-subkey" # "integration-test-subkey"
   key_vault_id = data.azurerm_key_vault.key_vault_domain.id
 }

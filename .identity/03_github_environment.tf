@@ -35,7 +35,7 @@ locals {
     "BIZ_COSMOS_TIMEOUT": var.biz_cosmos_timeout,
     "AES_SALT": data.azurerm_key_vault_secret.key_vault_integration_test_aes_salt.value,
     "AES_SECRET_KEY": data.azurerm_key_vault_secret.key_vault_integration_test_aes_key.value,
-    "HELPDESK_SUBKEY" : data.azurerm_key_vault_secret.key_vault_integration_test_subkey.value,
+    "HELPDESK_SUBKEY" : var.env_short != "p" ? data.azurerm_key_vault_secret.key_vault_integration_test_subkey[0].value : ""
   }
   env_variables = {
     "CONTAINER_APP_ENVIRONMENT_NAME" : local.container_app_environment.name,
