@@ -111,7 +111,7 @@ jobs:
 
       - name: Send notification to Slack
         id: slack
-        if: ${{ (success() || failure()) && (github.event.inputs == null || inputs.notify)}}
+        if: ${{ success() && (github.event.inputs == null || inputs.notify)}}
         uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a #v2.1.1
         with:
           payload-file-path: "./report/src/report.json"
