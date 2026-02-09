@@ -112,9 +112,9 @@ jobs:
       - name: Send notification to Slack
         id: slack
         if: ${{ (success() || failure()) && (github.event.inputs == null || inputs.notify)}}
-        uses: slackapi/slack-github-action@e28cf165c92ffef168d23c5c9000cffc8a25e117 #v1.24.0
+        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a #v2.1.1
         with:
           payload-file-path: "./report/src/report.json"
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL_REPORT }}
-          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+          payload-templated: false
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL_REPORT }}
+          webhook-type: incoming-webhook
