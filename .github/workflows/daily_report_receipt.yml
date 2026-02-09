@@ -72,13 +72,19 @@ jobs:
       - name: Run reports
         shell: bash
         env:
-          RECEIPTS_COSMOS_ENDPOINT: ${{ secrets.RECEIPTS_COSMOS_ENDPOINT }}
-          RECEIPTS_COSMOS_KEY: ${{ secrets.RECEIPTS_COSMOS_KEY }}
-          RECEIPTS_COSMOS_TIMEOUT: ${{ secrets.RECEIPTS_COSMOS_TIMEOUT }}
-          BIZ_COSMOS_ENDPOINT: ${{ secrets.BIZ_COSMOS_ENDPOINT }}
-          BIZ_COSMOS_KEY: ${{ secrets.BIZ_COSMOS_KEY }}
-          BIZ_COSMOS_TIMEOUT: ${{ secrets.BIZ_COSMOS_TIMEOUT }}
+          RECEIPTS_COSMOS_ENDPOINT_ENV: ${{ secrets.RECEIPTS_COSMOS_ENDPOINT }}
+          RECEIPTS_COSMOS_KEY_ENV: ${{ secrets.RECEIPTS_COSMOS_KEY }}
+          RECEIPTS_COSMOS_TIMEOUT_ENV: ${{ secrets.RECEIPTS_COSMOS_TIMEOUT }}
+          BIZ_COSMOS_ENDPOINT_ENV: ${{ secrets.BIZ_COSMOS_ENDPOINT }}
+          BIZ_COSMOS_KEY_ENV: ${{ secrets.BIZ_COSMOS_KEY }}
+          BIZ_COSMOS_TIMEOUT_ENV: ${{ secrets.BIZ_COSMOS_TIMEOUT }}
         run: |
+          export RECEIPTS_COSMOS_ENDPOINT="$RECEIPTS_COSMOS_ENDPOINT_ENV"
+          export RECEIPTS_COSMOS_KEY="$RECEIPTS_COSMOS_KEY_ENV"
+          export RECEIPTS_COSMOS_TIMEOUT="$RECEIPTS_COSMOS_TIMEOUT_ENV"
+          export BIZ_COSMOS_ENDPOINT="$BIZ_COSMOS_ENDPOINT_ENV"
+          export BIZ_COSMOS_KEY="$BIZ_COSMOS_KEY_ENV"
+          export BIZ_COSMOS_TIMEOUT="$BIZ_COSMOS_TIMEOUT_ENV"
           export DATE_RANGE=${{(github.event.inputs == null && 'weekly') || inputs.time_range }}
           export CUSTOM_START_DATE=${{(github.event.inputs == null && '0') || inputs.custom_start_date }}
           export CUSTOM_END_DATE=${{(github.event.inputs == null && '0') || inputs.custom_end_date }}
