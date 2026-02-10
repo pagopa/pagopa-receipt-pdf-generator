@@ -59,9 +59,11 @@ const STATUS_GROUPS_SINGLE = {
   error: [
     "NOT_QUEUE_SENT",
     "FAILED",
+    "TO_REVIEW"
+  ],
+  notifyError: [
     "IO_ERROR_TO_NOTIFY",
-    "UNABLE_TO_SEND",
-    "TO_REVIEW",
+    "UNABLE_TO_SEND"
   ],
 };
 
@@ -93,28 +95,34 @@ function line(icon, label, value, total) {
 function buildSection(title, map, groups) {
   const total = Object.values(map).reduce((a, b) => a + b, 0);
 
-  let text = `*\n${title}*\n`;
+  let text = `*${title}*\n`;
   text += line(
     "🟢",
-    "Ricevute inviate su IO",
+    "Ricevute generate e notificate su IO",
     sumStatuses(map, groups.notified),
     total
   );
   text += line(
     "⚪️",
-    "Ricevute di debitori/pagatori non presenti su IO",
+    "Ricevute generate ma non notificate su IO",
     sumStatuses(map, groups.notNotified),
     total
   );
   text += line(
     "🟡",
-    "Ricevute in attesa di essere inviate",
+    "Ricevute in attesa di essere processate",
     sumStatuses(map, groups.pending),
     total
   );
   text += line(
+    "🟤",
+    "Ricevute generate ma non notificate a causa di errore",
+    sumStatuses(map, groups.notifyError),
+    total
+  );
+  text += line(
     "🔴",
-    "Ricevute non inviate a causa di errore",
+    "Ricevute non generate a causa di errore",
     sumStatuses(map, groups.error),
     total
   );
@@ -134,6 +142,7 @@ async function start() {
   ]);
 
   const totBiz = bizRes.resources[0]?.num || 0;
+  console.log("biz", totBiz);
 
   const singleMap = toMap(singleRes.resources);
   const cartMap = toMap(cartRes.resources);
@@ -153,18 +162,16 @@ async function start() {
   const report = {
     text:
       `📈 _Riepilogo dal_ *${minDate_}* _al_ *${yesterday_}*\n` +
-      `-\n` +
+      `\n` +
       `Pagamenti registrati sul nodo 🪢 \`${totBiz.toLocaleString(
         "it-IT"
-      )}\` (di cui \`${singleSection.total.toLocaleString(
-        "it-IT"
-      )}\` con CF debitore e/o pagatore noto)\n` +
-      `-\n` +
+      )}\`\n` +
+      `\n` +
       singleSection.text +
       `Totale ricevute singole: \`${singleSection.total.toLocaleString(
         "it-IT"
       )}\`\n` +
-      `-\n` +
+      `\n` +
       cartSection.text +
       `Totale ricevute carrello: \`${cartSection.total.toLocaleString(
         "it-IT"
