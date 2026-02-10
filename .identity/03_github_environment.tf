@@ -28,7 +28,7 @@ locals {
     "RECEIPTS_COSMOS_CONN_STRING" : "AccountEndpoint=https://pagopa-${var.env_short}-${local.location_short}-${local.domain}-ds-cosmos-account.documents.azure.com:443/;AccountKey=${data.azurerm_cosmosdb_account.receipts_cosmos.primary_key};",
     "BIZ_EVENTS_COSMOS_CONN_STRING" : "AccountEndpoint=https://pagopa-${var.env_short}-${local.location_short}-bizevents-ds-cosmos-account.documents.azure.com:443/;AccountKey=${data.azurerm_cosmosdb_account.biz_cosmos.primary_key};",
     "RECEIPTS_COSMOS_ENDPOINT" : "https://pagopa-${var.env_short}-${local.location_short}-${local.domain}-ds-cosmos-account.documents.azure.com:443",
-    "BIZ_COSMOS_ENDPOINT" : "https://pagopa-${var.env_short}-${local.location_short}-${local.domain}-ds-cosmos-account.documents.azure.com:443",
+    "BIZ_COSMOS_ENDPOINT" : "https://pagopa-${var.env_short}-${local.location_short}-bizevents-ds-cosmos-account.documents.azure.com:443",
     "RECEIPTS_COSMOS_KEY": data.azurerm_cosmosdb_account.receipts_cosmos.primary_readonly_key,
     "BIZ_COSMOS_KEY": data.azurerm_cosmosdb_account.biz_cosmos.primary_readonly_key,
     "RECEIPTS_COSMOS_TIMEOUT": var.receipt_cosmos_timeout,
