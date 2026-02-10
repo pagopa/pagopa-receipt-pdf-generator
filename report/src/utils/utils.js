@@ -8,8 +8,6 @@ const { CosmosClient } = require("@azure/cosmos");
 const preferredLocations = ["North Europe"];
 
 function createClient(endpoint, key, timeout) {
-    console.log("endpoint", endpoint);
-    console.log("key", key);
     return new CosmosClient({
         endpoint,
         key,
