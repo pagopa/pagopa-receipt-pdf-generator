@@ -51,7 +51,14 @@ public class HelpdeskUtils {
                     .build();
         }
 
-        if (!BizEventStatusType.DONE.equals(bizEvent.getEventStatus())) {
+        if (!(BizEventStatusType.DONE.equals(bizEvent.getEventStatus())
+                // Include INGESTED events to enable reprocessing and recovery
+                // of biz events handled by the LAP ingestion process.
+                // See https://pagopa.atlassian.net/browse/PIDM-1509?focusedCommentId=291795 for additional context.
+                // This change is not applied to the receipt-pdf-datastore service,
+                // as no new biz events are expected in this status.
+                || BizEventStatusType.INGESTED.equals(bizEvent.getEventStatus()))
+        ) {
             return BizEventValidityCheck.builder()
                     .invalid(true)
                     .error(String.format("Biz event is in invalid status %s", bizEvent.getEventStatus()))

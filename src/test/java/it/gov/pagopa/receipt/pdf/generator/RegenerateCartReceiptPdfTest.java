@@ -197,7 +197,7 @@ class RegenerateCartReceiptPdfTest {
     }
 
     @ParameterizedTest
-    @EnumSource(value = BizEventStatusType.class, names = {"DONE"}, mode = EnumSource.Mode.EXCLUDE)
+    @EnumSource(value = BizEventStatusType.class, names = {"DONE", "INGESTED"}, mode = EnumSource.Mode.EXCLUDE)
     @SneakyThrows
     void regeneratePDFFailBizEventStatusNotValid(BizEventStatusType status) {
         List<BizEvent> bizEventList = buildBizEvents();
