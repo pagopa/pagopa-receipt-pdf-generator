@@ -30,7 +30,7 @@ public class HelpdeskUtils {
             "AUTHENTICATED_CHANNELS", "IO,CHECKOUT,WISP,CHECKOUT_CART").split(","));
     private static final List<String> UNWANTED_REMITTANCE_INFO = Arrays.asList(System.getenv().getOrDefault(
             "UNWANTED_REMITTANCE_INFO", "pagamento multibeneficiario,pagamento bpay").split(","));
-    private static final String ECOMMERCE = "CHECKOUT";
+    private static final List<String> ECOMMERCE = Arrays.asList("CHECKOUT", "CHECKOUT_CART");
 
     private HelpdeskUtils() {
     }
@@ -68,7 +68,7 @@ public class HelpdeskUtils {
         if (Boolean.TRUE.equals(ECOMMERCE_FILTER_ENABLED)
                 && bizEvent.getTransactionDetails() != null
                 && bizEvent.getTransactionDetails().getInfo() != null
-                && ECOMMERCE.equals(bizEvent.getTransactionDetails().getInfo().getClientId())
+                && ECOMMERCE.contains(bizEvent.getTransactionDetails().getInfo().getClientId())
         ) {
             return BizEventValidityCheck.builder()
                     .invalid(true)
@@ -243,31 +243,32 @@ public class HelpdeskUtils {
     }
 
     public static boolean isValidChannelOrigin(BizEvent bizEvent) {
-        if (bizEvent.getTransactionDetails() == null) {
+        var details = bizEvent.getTransactionDetails();
+        if (details == null) {
             return false;
         }
 
-        var transactionDetails = bizEvent.getTransactionDetails();
-        var transaction = transactionDetails.getTransaction();
-        var info = transactionDetails.getInfo();
-        var user = transactionDetails.getUser();
+        String origin = details.getTransaction() != null
+                ? details.getTransaction().getOrigin()
+                : null;
 
-        String origin = (transaction != null) ? transaction.getOrigin() : null;
-        String clientId = (info != null) ? info.getClientId() : null;
-        UserType userType = (user != null) ? user.getType() : null;
+        String clientId = details.getInfo() != null
+                ? details.getInfo().getClientId()
+                : null;
 
-        boolean originMatches = origin != null && AUTHENTICATED_CHANNELS.contains(origin);
-        boolean clientIdMatches = clientId != null && AUTHENTICATED_CHANNELS.contains(clientId);
+        UserType userType = details.getUser() != null
+                ? details.getUser().getType()
+                : null;
 
-        boolean isCheckoutOrigin = ECOMMERCE.equalsIgnoreCase(origin);
-        boolean isCheckoutClientId = ECOMMERCE.equalsIgnoreCase(clientId);
+        boolean isAuthenticated = AUTHENTICATED_CHANNELS.contains(origin) || AUTHENTICATED_CHANNELS.contains(clientId);
+        boolean isCheckout = ECOMMERCE.contains(origin) || ECOMMERCE.contains(clientId);
         boolean isRegisteredUser = UserType.REGISTERED.equals(userType);
 
-        if ((isCheckoutOrigin || isCheckoutClientId) && !isRegisteredUser) {
+        if (isCheckout && !isRegisteredUser) {
             return false;
         }
 
-        return originMatches || clientIdMatches;
+        return isAuthenticated;
     }
 
     public static String getTransactionCreationDate(BizEvent bizEvent) {

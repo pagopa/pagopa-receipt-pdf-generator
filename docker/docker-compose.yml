@@ -11,6 +11,15 @@ services:
     environment:
       BRAND_LOGO_MAP: '{"MASTERCARD":"assets/mastercard.png","VISA":"assets/visa.png","AMEX":"assets/amex.png","MAESTRO":"assets/maestro.png","JCB":"assets/jcb.png","OTHER":"","DINERS":"assets/diners.png","DISCOVER":"assets/discover.png","UNIONPAY":"assets/unionpay.png"}'
       PSP_INFO_MAP: '{"60000000001":{"logo":"assets/nexi-logo.png","name":"Nexi","companyName":"Nexi Payments S.p.A.","address":"Corso Sempione","buildingNumber":"55","postalCode":"20149","city":"Milano","province":"MI","fee":{"amount":"2,00"}}}'
+      # override helm environment variables to enable all functions
+      AzureWebJobs.GenerateReceiptProcess.Disabled: "false"
+      AzureWebJobs.ManageReceiptPoisonQueueProcessor.Disabled: "false"
+      AzureWebJobs.RetryReviewedPoisonMessagesProcessor.Disabled: "false"
+      AzureWebJobs.GenerateCartReceiptProcess.Disabled: "false"
+      AzureWebJobs.ManageCartReceiptPoisonQueueProcessor.Disabled: "false"
+      AzureWebJobs.RetryReviewedCartPoisonMessagesProcessor.Disabled: "false"
+      AzureWebJobs.RegenerateReceiptFunc.Disabled: "false"
+      AzureWebJobs.RegenerateCartReceiptFunc.Disabled: "false"
     env_file:
       - ./.env
     ports:
