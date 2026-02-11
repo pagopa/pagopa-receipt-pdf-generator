@@ -104,18 +104,18 @@ function buildSection(title, map, groups) {
   );
   text += line(
     "⚪️",
-    "Ricevute generate ma non notificate su IO",
+    "Ricevute generate ma non notificabili su IO",
     sumStatuses(map, groups.notNotified),
     total
   );
   text += line(
     "🟡",
-    "Ricevute in attesa di essere processate",
+    "Ricevute in elaborazione",
     sumStatuses(map, groups.pending),
     total
   );
   text += line(
-    "🟤",
+    "🟠",
     "Ricevute generate ma non notificate a causa di errore",
     sumStatuses(map, groups.notifyError),
     total
