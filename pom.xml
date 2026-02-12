@@ -5,7 +5,7 @@
 
     <groupId>it.gov.pagopa.receipt</groupId>
     <artifactId>receipt-pdf-generator</artifactId>
-    <version>1.17.7</version>
+    <version>1.17.7-1-PIDM-1509-enable-regenerate-for-ingested-biz</version>
     <packaging>jar</packaging>
 
     <name>pagopa-receipt-pdf-generator</name>
