@@ -28,14 +28,14 @@ locals {
     "RECEIPTS_COSMOS_CONN_STRING" : "AccountEndpoint=https://pagopa-${var.env_short}-${local.location_short}-${local.domain}-ds-cosmos-account.documents.azure.com:443/;AccountKey=${data.azurerm_cosmosdb_account.receipts_cosmos.primary_key};",
     "BIZ_EVENTS_COSMOS_CONN_STRING" : "AccountEndpoint=https://pagopa-${var.env_short}-${local.location_short}-bizevents-ds-cosmos-account.documents.azure.com:443/;AccountKey=${data.azurerm_cosmosdb_account.biz_cosmos.primary_key};",
     "RECEIPTS_COSMOS_ENDPOINT" : "https://pagopa-${var.env_short}-${local.location_short}-${local.domain}-ds-cosmos-account.documents.azure.com:443",
-    "BIZ_COSMOS_ENDPOINT" : "https://pagopa-${var.env_short}-${local.location_short}-${local.domain}-ds-cosmos-account.documents.azure.com:443",
-    "RECEIPTS_COSMOS_KEY": "${data.azurerm_cosmosdb_account.receipts_cosmos.primary_readonly_key}",
-    "BIZ_COSMOS_KEY": "${data.azurerm_cosmosdb_account.biz_cosmos.primary_readonly_key}",
+    "BIZ_COSMOS_ENDPOINT" : "https://pagopa-${var.env_short}-${local.location_short}-bizevents-ds-cosmos-account.documents.azure.com:443",
+    "RECEIPTS_COSMOS_KEY": data.azurerm_cosmosdb_account.receipts_cosmos.primary_readonly_key,
+    "BIZ_COSMOS_KEY": data.azurerm_cosmosdb_account.biz_cosmos.primary_readonly_key,
     "RECEIPTS_COSMOS_TIMEOUT": var.receipt_cosmos_timeout,
     "BIZ_COSMOS_TIMEOUT": var.biz_cosmos_timeout,
     "AES_SALT": data.azurerm_key_vault_secret.key_vault_integration_test_aes_salt.value,
     "AES_SECRET_KEY": data.azurerm_key_vault_secret.key_vault_integration_test_aes_key.value,
-    "HELPDESK_SUBKEY" : data.azurerm_key_vault_secret.key_vault_integration_test_subkey.value,
+    "HELPDESK_SUBKEY" : var.env_short != "p" ? data.azurerm_key_vault_secret.key_vault_integration_test_subkey[0].value : ""
   }
   env_variables = {
     "CONTAINER_APP_ENVIRONMENT_NAME" : local.container_app_environment.name,
@@ -114,4 +114,11 @@ resource "github_actions_secret" "secret_slack_webhook_deploy" {
   repository      = local.github.repository
   secret_name     = "SLACK_WEBHOOK_URL_DEPLOY"
   plaintext_value = data.azurerm_key_vault_secret.key_vault_deploy_webhook_slack.value
+}
+#tfsec:ignore:github-actions-no-plain-text-action-secrets # not real secret
+resource "github_actions_secret" "secret_slack_webhook_report" {
+
+  repository      = local.github.repository
+  secret_name     = "SLACK_WEBHOOK_URL_REPORT"
+  plaintext_value = data.azurerm_key_vault_secret.key_vault_report_webhook_slack.value
 }
