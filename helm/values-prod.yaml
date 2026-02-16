@@ -228,7 +228,6 @@ pagopa-receipt-pdf-generator-cart:
     !!merge <<: *resources
   autoscaling:
     !!merge <<: *autoscaling
-    minReplica: 3
   externalConfigMapValues:
     !!merge <<: *externalConfigMapValues
   envConfig:
