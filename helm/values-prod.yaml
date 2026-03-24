@@ -11,14 +11,14 @@ microservice-chart: &microservice-chart
     httpGet:
       path: /health
       port: 8080
-    initialDelaySeconds: 60
+    initialDelaySeconds: 15
     failureThreshold: 6
     periodSeconds: 10
   readinessProbe:
     httpGet:
       path: /health
       port: 8080
-    initialDelaySeconds: 60
+    initialDelaySeconds: 15
     failureThreshold: 6
     periodSeconds: 10
   deployment: &deployment
@@ -228,6 +228,7 @@ pagopa-receipt-pdf-generator-cart:
     !!merge <<: *resources
   autoscaling:
     !!merge <<: *autoscaling
+    minReplica: 3
   externalConfigMapValues:
     !!merge <<: *externalConfigMapValues
   envConfig:
