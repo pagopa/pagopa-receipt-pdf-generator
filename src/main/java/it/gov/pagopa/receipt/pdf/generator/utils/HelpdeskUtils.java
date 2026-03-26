@@ -4,6 +4,9 @@ import com.microsoft.azure.functions.ExecutionContext;
 import it.gov.pagopa.receipt.pdf.generator.entity.cart.CartForReceipt;
 import it.gov.pagopa.receipt.pdf.generator.entity.cart.CartStatusType;
 import it.gov.pagopa.receipt.pdf.generator.entity.event.BizEvent;
+import it.gov.pagopa.receipt.pdf.generator.entity.event.Debtor;
+import it.gov.pagopa.receipt.pdf.generator.entity.event.Payer;
+import it.gov.pagopa.receipt.pdf.generator.entity.event.TransactionDetails;
 import it.gov.pagopa.receipt.pdf.generator.entity.event.Transfer;
 import it.gov.pagopa.receipt.pdf.generator.entity.event.enumeration.BizEventStatusType;
 import it.gov.pagopa.receipt.pdf.generator.entity.event.enumeration.UserType;
@@ -71,7 +74,7 @@ public class HelpdeskUtils {
                     .build();
         }
 
-        if (!hasValidFiscalCode(bizEvent)) {
+        if (!hasAtLeastAValidFiscalCode(bizEvent)) {
             return BizEventValidityCheck.builder()
                     .invalid(true)
                     .error("Biz event is in invalid because debtor's and payer's identifiers are missing or not valid")
@@ -103,22 +106,32 @@ public class HelpdeskUtils {
     public record BizEventValidityCheck(boolean invalid, String error) {
     }
 
-    private static boolean hasValidFiscalCode(BizEvent bizEvent) {
-        boolean isValidDebtor = false;
-        boolean isValidPayer = false;
-
-        if (bizEvent.getDebtor() != null && isValidFiscalCode(bizEvent.getDebtor().getEntityUniqueIdentifierValue())) {
-            isValidDebtor = true;
+    private static boolean hasAtLeastAValidFiscalCode(BizEvent bizEvent) {
+        if (isBizEventDebtorFiscalCodeValid(bizEvent.getDebtor())) {
+            return true;
         }
         if (isValidChannelOrigin(bizEvent)) {
-            if (bizEvent.getTransactionDetails() != null && bizEvent.getTransactionDetails().getUser() != null && isValidFiscalCode(bizEvent.getTransactionDetails().getUser().getFiscalCode())) {
-                isValidPayer = true;
+            if (isBizEventUserFiscalCodeValid(bizEvent.getTransactionDetails())) {
+                return true;
             }
-            if (bizEvent.getPayer() != null && isValidFiscalCode(bizEvent.getPayer().getEntityUniqueIdentifierValue())) {
-                isValidPayer = true;
-            }
+
+            return isBizEventPayerFiscalCodeValid(bizEvent.getPayer());
         }
-        return isValidDebtor || isValidPayer;
+        return false;
+    }
+
+    public static boolean isBizEventDebtorFiscalCodeValid(Debtor debtor) {
+        return debtor != null && isValidFiscalCode(debtor.getEntityUniqueIdentifierValue());
+    }
+
+    public static boolean isBizEventPayerFiscalCodeValid(Payer payer) {
+        return payer != null && isValidFiscalCode(payer.getEntityUniqueIdentifierValue());
+    }
+
+    public static boolean isBizEventUserFiscalCodeValid(TransactionDetails transactionDetails) {
+        return transactionDetails != null
+                && transactionDetails.getUser() != null
+                && isValidFiscalCode(transactionDetails.getUser().getFiscalCode());
     }
 
     public static Integer getTotalNotice(BizEvent bizEvent, ExecutionContext context, Logger logger) {
