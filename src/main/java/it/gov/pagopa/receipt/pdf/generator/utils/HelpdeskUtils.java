@@ -247,7 +247,7 @@ public class HelpdeskUtils {
     }
 
     /**
-     * Method to check if the content comes from a legacy cart model (see https://pagopa.atlassian.net/browse/VAS-1167)
+     * Method to check if the content comes from a legacy cart model (see <a href="https://pagopa.atlassian.net/browse/VAS-1167">VAS-1167</a>)
      *
      * @param bizEvent bizEvent to validate
      * @return flag to determine if it is a manageable cart, or otherwise, will return false if
