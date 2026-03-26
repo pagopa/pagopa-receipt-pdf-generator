@@ -24,7 +24,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
-import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.ANONIMO;
+import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.FISCAL_CODE_ANONYMOUS;
 import static it.gov.pagopa.receipt.pdf.generator.utils.HelpdeskUtils.formatAmount;
 import static it.gov.pagopa.receipt.pdf.generator.utils.HelpdeskUtils.getAmount;
 import static it.gov.pagopa.receipt.pdf.generator.utils.HelpdeskUtils.getCartAmount;
@@ -141,7 +141,7 @@ public class HelpdeskServiceImpl implements HelpdeskService {
     private String tokenizerDebtorFiscalCode(BizEvent bizEvent) throws PDVTokenizerException, JsonProcessingException {
         return bizEvent.getDebtor() != null && isValidFiscalCode(bizEvent.getDebtor().getEntityUniqueIdentifierValue()) ?
                 this.pdvTokenizerService.generateTokenForFiscalCodeWithRetry(bizEvent.getDebtor().getEntityUniqueIdentifierValue()) :
-                ANONIMO;
+                FISCAL_CODE_ANONYMOUS;
     }
 
     private String tokenizerPayerFiscalCode(BizEvent bizEvent) throws PDVTokenizerException, JsonProcessingException {

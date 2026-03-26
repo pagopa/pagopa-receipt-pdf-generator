@@ -24,7 +24,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.ALREADY_CREATED;
-import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.ANONIMO;
+import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.FISCAL_CODE_ANONYMOUS;
 import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.BLOB_NAME_DATE_PATTERN;
 import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.DEBTOR_TEMPLATE_SUFFIX;
 import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.PAYER_TEMPLATE_SUFFIX;
@@ -94,7 +94,7 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
         //Generate debtor's partial PDF
         if (receiptAlreadyCreated(receipt.getMdAttach())) {
             pdfGeneration.setDebtorMetadata(PdfMetadata.builder().statusCode(ALREADY_CREATED).build());
-        } else if (!ANONIMO.equals(debtorCF)) {
+        } else if (!FISCAL_CODE_ANONYMOUS.equals(debtorCF)) {
             PdfMetadata generationResult = generateAndSavePDFReceipt(bizEvent, receipt, DEBTOR_TEMPLATE_SUFFIX, true, workingDirPath);
             pdfGeneration.setDebtorMetadata(generationResult);
         }
@@ -173,7 +173,7 @@ public class GenerateReceiptPdfServiceImpl implements GenerateReceiptPdfService 
     }
 
     private boolean isDebtorFiscalCodeValid(Receipt receipt) {
-        return receipt.getEventData() != null && !ANONIMO.equals(receipt.getEventData().getDebtorFiscalCode());
+        return receipt.getEventData() != null && !FISCAL_CODE_ANONYMOUS.equals(receipt.getEventData().getDebtorFiscalCode());
     }
 
     private PdfMetadata generateAndSavePDFReceipt(
