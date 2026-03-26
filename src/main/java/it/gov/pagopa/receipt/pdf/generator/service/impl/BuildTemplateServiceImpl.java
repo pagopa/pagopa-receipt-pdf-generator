@@ -34,6 +34,8 @@ import java.util.regex.Pattern;
 public class BuildTemplateServiceImpl implements BuildTemplateService {
 
 
+    private static final Pattern INVALID_FULL_NAME_PATTERN = Pattern.compile("^[\\d\\s\\W_]+$", Pattern.CASE_INSENSITIVE);
+    private static final Pattern INVALID_CHARACTERS_IN_FULL_NAME_PATTERN = Pattern.compile("[,;:/]+");
     private static final String REF_TYPE_NOTICE = "codiceAvviso";
     private static final String REF_TYPE_IUV = "IUV";
 
@@ -528,13 +530,11 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
             return null;
         }
 
-        Pattern pattern = Pattern.compile("^[\\d\\s\\W_]+$", Pattern.CASE_INSENSITIVE);
-        Matcher matcher = pattern.matcher(fullName);
-        if (matcher.find()) {
+        if (INVALID_FULL_NAME_PATTERN.matcher(fullName).matches()) {
             return null;
         }
 
-        return fullName.replaceAll("[,;:/]+", " ");
+        return INVALID_CHARACTERS_IN_FULL_NAME_PATTERN.matcher(fullName).replaceAll(" ");
     }
 
 }
