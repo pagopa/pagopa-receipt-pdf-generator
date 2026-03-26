@@ -1,8 +1,6 @@
 package it.gov.pagopa.receipt.pdf.generator.utils;
 
 import com.microsoft.azure.functions.ExecutionContext;
-import it.gov.pagopa.receipt.pdf.generator.entity.cart.CartForReceipt;
-import it.gov.pagopa.receipt.pdf.generator.entity.cart.CartStatusType;
 import it.gov.pagopa.receipt.pdf.generator.entity.event.BizEvent;
 import it.gov.pagopa.receipt.pdf.generator.entity.event.Debtor;
 import it.gov.pagopa.receipt.pdf.generator.entity.event.Payer;
@@ -233,10 +231,6 @@ public class HelpdeskUtils {
 
     public static boolean isReceiptStatusValid(Receipt receipt) {
         return receipt.getStatus() != ReceiptStatusType.FAILED && receipt.getStatus() != ReceiptStatusType.NOT_QUEUE_SENT;
-    }
-
-    public static boolean isCartStatusValid(CartForReceipt cartForReceipt) {
-        return cartForReceipt.getStatus() != CartStatusType.FAILED && cartForReceipt.getStatus() != CartStatusType.NOT_QUEUE_SENT;
     }
 
     public static boolean isValidFiscalCode(String fiscalCode) {
