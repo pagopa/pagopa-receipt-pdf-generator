@@ -1,7 +1,7 @@
 const assert = require('assert');
 const { After, Given, When, Then, setDefaultTimeout } = require('@cucumber/cucumber');
 const { sleep, createEventsForQueue, createEventsForPoisonQueue, createErrorCart, createErrorReceipt, createEventsForCartQueue, createEvent, createCart, createCartForRegenerate } = require("./common");
-const { getDocumentByIdFromReceiptsDatastore, deleteDocumentFromErrorReceiptsDatastoreByBizEventId, deleteDocumentFromReceiptsDatastore, createDocumentInReceiptsDatastore, createDocumentInErrorReceiptsDatastore, deleteDocumentFromErrorReceiptsDatastore, getDocumentByBizEventIdFromErrorReceiptsDatastore } = require("./receipts_datastore_client");
+const { getDocumentByIdFromReceiptsDatastore, deleteDocumentFromErrorReceiptsDatastoreByBizEventId, deleteDocumentFromReceiptsDatastoreByEventId, createDocumentInReceiptsDatastore, createDocumentInErrorReceiptsDatastore, deleteDocumentFromErrorReceiptsDatastore, getDocumentByBizEventIdFromErrorReceiptsDatastore } = require("./receipts_datastore_client");
 const { putMessageOnPoisonQueue, putMessageOnReceiptQueue } = require("./receipts_queue_client");
 const { receiptPDFExist } = require("./receipts_blob_storage_client");
 const {
@@ -37,7 +37,7 @@ this.receiptPdfFileNameList = [];
 After(async function () {
     // remove documents
     if (this.receiptId != null) {
-        await deleteDocumentFromReceiptsDatastore(this.receiptId);
+        await deleteDocumentFromReceiptsDatastoreByEventId(this.receiptId);
     }
     if (this.errorReceiptId != null) {
         await deleteDocumentFromErrorReceiptsDatastore(this.errorReceiptId);
@@ -75,7 +75,7 @@ After(async function () {
 Given('a receipt with id {string} and status {string} stored into receipt datastore', async function (id, status) {
     this.eventId = id;
     // prior cancellation to avoid dirty cases
-    await deleteDocumentFromReceiptsDatastore(this.eventId);
+    await deleteDocumentFromReceiptsDatastoreByEventId(this.eventId);
 
     let receiptsStoreResponse = await createDocumentInReceiptsDatastore(this.eventId, status);
     this.receiptId = this.eventId;
