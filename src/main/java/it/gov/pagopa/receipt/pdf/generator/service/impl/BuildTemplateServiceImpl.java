@@ -51,7 +51,7 @@ import java.util.regex.Pattern;
 public class BuildTemplateServiceImpl implements BuildTemplateService {
 
 
-    private static final Pattern INVALID_FULL_NAME_PATTERN = Pattern.compile("^[\\d\\s\\W_]+$", Pattern.CASE_INSENSITIVE);
+    private static final Pattern INVALID_FULL_NAME_PATTERN = Pattern.compile("^[^A-Za-z]+$");
     private static final Pattern INVALID_CHARACTERS_IN_FULL_NAME_PATTERN = Pattern.compile("[,;:/]+");
     private static final String REF_TYPE_NOTICE = "codiceAvviso";
     private static final String REF_TYPE_IUV = "IUV";
