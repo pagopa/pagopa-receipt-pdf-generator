@@ -12,7 +12,18 @@ import it.gov.pagopa.receipt.pdf.generator.exception.PdfJsonMappingException;
 import it.gov.pagopa.receipt.pdf.generator.exception.TemplateDataMappingException;
 import it.gov.pagopa.receipt.pdf.generator.model.CartInfo;
 import it.gov.pagopa.receipt.pdf.generator.model.enumeration.TemplateDatasource;
-import it.gov.pagopa.receipt.pdf.generator.model.template.*;
+import it.gov.pagopa.receipt.pdf.generator.model.template.Cart;
+import it.gov.pagopa.receipt.pdf.generator.model.template.Debtor;
+import it.gov.pagopa.receipt.pdf.generator.model.template.Item;
+import it.gov.pagopa.receipt.pdf.generator.model.template.PSP;
+import it.gov.pagopa.receipt.pdf.generator.model.template.PSPFee;
+import it.gov.pagopa.receipt.pdf.generator.model.template.Payee;
+import it.gov.pagopa.receipt.pdf.generator.model.template.PaymentMethod;
+import it.gov.pagopa.receipt.pdf.generator.model.template.ReceiptPDFTemplate;
+import it.gov.pagopa.receipt.pdf.generator.model.template.RefNumber;
+import it.gov.pagopa.receipt.pdf.generator.model.template.Transaction;
+import it.gov.pagopa.receipt.pdf.generator.model.template.User;
+import it.gov.pagopa.receipt.pdf.generator.model.template.UserData;
 import it.gov.pagopa.receipt.pdf.generator.service.BuildTemplateService;
 import it.gov.pagopa.receipt.pdf.generator.utils.ObjectMapperUtils;
 import it.gov.pagopa.receipt.pdf.generator.utils.TemplateDataField;
@@ -26,14 +37,22 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
-import java.util.*;
-import java.util.regex.Matcher;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.TimeZone;
 import java.util.regex.Pattern;
 
 
 public class BuildTemplateServiceImpl implements BuildTemplateService {
 
 
+    private static final Pattern INVALID_FULL_NAME_PATTERN = Pattern.compile("^[^A-Za-z]+$");
+    private static final Pattern INVALID_CHARACTERS_IN_FULL_NAME_PATTERN = Pattern.compile("[,;:/]+");
     private static final String REF_TYPE_NOTICE = "codiceAvviso";
     private static final String REF_TYPE_IUV = "IUV";
 
@@ -528,13 +547,11 @@ public class BuildTemplateServiceImpl implements BuildTemplateService {
             return null;
         }
 
-        Pattern pattern = Pattern.compile("^[\\d\\s\\W_]+$", Pattern.CASE_INSENSITIVE);
-        Matcher matcher = pattern.matcher(fullName);
-        if (matcher.find()) {
+        if (INVALID_FULL_NAME_PATTERN.matcher(fullName).matches()) {
             return null;
         }
 
-        return fullName.replaceAll("[,;:/]+", " ");
+        return INVALID_CHARACTERS_IN_FULL_NAME_PATTERN.matcher(fullName).replaceAll(" ");
     }
 
 }

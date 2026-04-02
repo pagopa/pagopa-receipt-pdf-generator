@@ -7,7 +7,7 @@ public class Constants {
     public static final String PAYER_TEMPLATE_SUFFIX = "p";
     public static final String DEBTOR_TEMPLATE_SUFFIX = "d";
     public static final String BLOB_NAME_DATE_PATTERN = "yyMMdd";
-    public static final String ANONIMO = "ANONIMO";
+    public static final String FISCAL_CODE_ANONYMOUS = "ANONIMO";
     public static final int ALREADY_CREATED = 208;
 
     private Constants() {

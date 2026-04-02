@@ -14,7 +14,6 @@ import it.gov.pagopa.receipt.pdf.generator.entity.receipt.enumeration.ReceiptSta
 import it.gov.pagopa.receipt.pdf.generator.exception.PDVTokenizerException;
 import it.gov.pagopa.receipt.pdf.generator.service.helpdesk.HelpdeskService;
 import it.gov.pagopa.receipt.pdf.generator.service.helpdesk.PDVTokenizerServiceRetryWrapper;
-import it.gov.pagopa.receipt.pdf.generator.utils.HelpdeskUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,14 +23,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
-import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.ANONIMO;
-import static it.gov.pagopa.receipt.pdf.generator.utils.HelpdeskUtils.formatAmount;
-import static it.gov.pagopa.receipt.pdf.generator.utils.HelpdeskUtils.getAmount;
-import static it.gov.pagopa.receipt.pdf.generator.utils.HelpdeskUtils.getCartAmount;
-import static it.gov.pagopa.receipt.pdf.generator.utils.HelpdeskUtils.getItemSubject;
-import static it.gov.pagopa.receipt.pdf.generator.utils.HelpdeskUtils.getTransactionCreationDate;
-import static it.gov.pagopa.receipt.pdf.generator.utils.HelpdeskUtils.isValidChannelOrigin;
-import static it.gov.pagopa.receipt.pdf.generator.utils.HelpdeskUtils.isValidFiscalCode;
+import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.FISCAL_CODE_ANONYMOUS;
+import static it.gov.pagopa.receipt.pdf.generator.utils.HelpdeskUtils.*;
 
 public class HelpdeskServiceImpl implements HelpdeskService {
 
@@ -139,23 +132,23 @@ public class HelpdeskServiceImpl implements HelpdeskService {
     }
 
     private String tokenizerDebtorFiscalCode(BizEvent bizEvent) throws PDVTokenizerException, JsonProcessingException {
-        return bizEvent.getDebtor() != null && isValidFiscalCode(bizEvent.getDebtor().getEntityUniqueIdentifierValue()) ?
-                this.pdvTokenizerService.generateTokenForFiscalCodeWithRetry(bizEvent.getDebtor().getEntityUniqueIdentifierValue()) :
-                ANONIMO;
+        if (isBizEventDebtorFiscalCodeValid(bizEvent.getDebtor())) {
+            String debtorFiscalCodeUpperCase = bizEvent.getDebtor().getEntityUniqueIdentifierValue().toUpperCase();
+            return this.pdvTokenizerService.generateTokenForFiscalCodeWithRetry(debtorFiscalCodeUpperCase);
+        }
+        return FISCAL_CODE_ANONYMOUS;
     }
 
     private String tokenizerPayerFiscalCode(BizEvent bizEvent) throws PDVTokenizerException, JsonProcessingException {
         //Tokenize Payer
         if (isValidChannelOrigin(bizEvent)) {
-            if (bizEvent.getTransactionDetails() != null &&
-                    bizEvent.getTransactionDetails().getUser() != null &&
-                    HelpdeskUtils.isValidFiscalCode(bizEvent.getTransactionDetails().getUser().getFiscalCode())
-            ) {
-                return this.pdvTokenizerService
-                        .generateTokenForFiscalCodeWithRetry(bizEvent.getTransactionDetails().getUser().getFiscalCode());
-            } else if (bizEvent.getPayer() != null && HelpdeskUtils.isValidFiscalCode(bizEvent.getPayer().getEntityUniqueIdentifierValue())) {
-                return this.pdvTokenizerService
-                        .generateTokenForFiscalCodeWithRetry(bizEvent.getPayer().getEntityUniqueIdentifierValue());
+            if (isBizEventUserFiscalCodeValid(bizEvent.getTransactionDetails())) {
+                String userFiscalCodeUpperCase = bizEvent.getTransactionDetails().getUser().getFiscalCode().toUpperCase();
+                return this.pdvTokenizerService.generateTokenForFiscalCodeWithRetry(userFiscalCodeUpperCase);
+            }
+            if (isBizEventPayerFiscalCodeValid(bizEvent.getPayer())) {
+                String payerFiscalCodeUpperCase = bizEvent.getPayer().getEntityUniqueIdentifierValue().toUpperCase();
+                return this.pdvTokenizerService.generateTokenForFiscalCodeWithRetry(payerFiscalCodeUpperCase);
             }
         }
         return null;
