@@ -32,7 +32,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.ALREADY_CREATED;
-import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.ANONIMO;
+import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.FISCAL_CODE_ANONYMOUS;
 import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.BLOB_NAME_DATE_PATTERN;
 import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.DEBTOR_TEMPLATE_SUFFIX;
 import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.PAYER_TEMPLATE_SUFFIX;
@@ -42,13 +42,6 @@ import static it.gov.pagopa.receipt.pdf.generator.utils.ReceiptGeneratorUtils.re
 public class GenerateCartReceiptPdfServiceImpl implements GenerateCartReceiptPdfService {
 
     private final Logger logger = LoggerFactory.getLogger(GenerateCartReceiptPdfServiceImpl.class);
-
-    private static final String TEMPLATE_PREFIX = "pagopa-ricevuta";
-    private static final String PAYER_TEMPLATE_SUFFIX = "p";
-    private static final String DEBTOR_TEMPLATE_SUFFIX = "d";
-    private static final String ANONIMO = "ANONIMO";
-
-    public static final int ALREADY_CREATED = 208;
 
     private final PdfEngineService pdfEngineService;
     private final ReceiptBlobStorageService receiptBlobStorageService;
@@ -107,7 +100,7 @@ public class GenerateCartReceiptPdfServiceImpl implements GenerateCartReceiptPdf
 
         cart.forEach(cartPayment -> {
             String debtorFiscalCode = cartPayment.getDebtorFiscalCode();
-            if (ANONIMO.equals(debtorFiscalCode) || debtorFiscalCode.equals(payerCF)) {
+            if (FISCAL_CODE_ANONYMOUS.equals(debtorFiscalCode) || debtorFiscalCode.equals(payerCF)) {
                 return;
             }
             String bizEventId = cartPayment.getBizEventId();
@@ -238,7 +231,7 @@ public class GenerateCartReceiptPdfServiceImpl implements GenerateCartReceiptPdf
     }
 
     private boolean isDebtorFiscalCodeToIgnore(String debtorFiscalCode, Payload payload) {
-        return ANONIMO.equals(debtorFiscalCode) || debtorFiscalCode.equals(payload.getPayerFiscalCode());
+        return FISCAL_CODE_ANONYMOUS.equals(debtorFiscalCode) || debtorFiscalCode.equals(payload.getPayerFiscalCode());
     }
 
     private ReceiptMetadata buildReceiptMetadata(PdfMetadata payerMetadata) {
