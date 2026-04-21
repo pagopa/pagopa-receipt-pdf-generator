@@ -76,7 +76,7 @@ public class ManageReceiptPoisonQueue {
             @CosmosDBOutput(
                     name = "ReceiptDatastore",
                     databaseName = "db",
-                    containerName = "receipts",
+                    containerName = "receipts-pk",
                     connection = "COSMOS_RECEIPTS_CONN_STRING")
             OutputBinding<Receipt> receiptsOutputBinding,
             @CosmosDBOutput(
