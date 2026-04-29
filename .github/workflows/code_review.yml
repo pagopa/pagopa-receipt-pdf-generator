@@ -51,7 +51,8 @@ jobs:
       contents: read
       deployments: write
     name: Smoke Test
-    runs-on: ubuntu-latest
+#    runs-on: ubuntu-latest
+    runs-on: [ self-hosted-job, "dev" ]
     environment:
       name: dev
     steps:
