@@ -83,6 +83,11 @@ microservice-chart: &microservice-chart
     pollingInterval: 10 # seconds
     cooldownPeriod: 50 # seconds
     triggers:
+      - type: azure-queue
+        metadata:
+          queueName: "pagopa-p-weu-receipts-queue-receipt-waiting-4-gen"
+          accountName: "pagopapweureceiptsfnsa"
+          queueLength: "10"
       - type: cpu
         metadata:
           # Required
