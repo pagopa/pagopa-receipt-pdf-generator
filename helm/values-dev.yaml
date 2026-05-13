@@ -187,7 +187,6 @@ pagopa-receipt-pdf-generator:
       - type: azure-queue
         metadata:
           queueName: "pagopa-d-weu-receipts-queue-receipt-waiting-4-gen"
-          accountName: "pagopadweureceiptsfnsa"
           queueLength: "50"
           connectionFromEnv: "RECEIPTS_STORAGE_CONN_STRING"
       - type: cpu
@@ -232,7 +231,6 @@ pagopa-receipt-pdf-generator-cart:
       - type: azure-queue
         metadata:
           queueName: "pagopa-d-weu-receipts-queue-cart-receipt-waiting-4-gen"
-          accountName: "pagopadweureceiptsfnsa"
           queueLength: "50"
           connectionFromEnv: "RECEIPTS_STORAGE_CONN_STRING"
       - type: cpu
