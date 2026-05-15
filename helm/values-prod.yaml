@@ -191,7 +191,22 @@ pagopa-receipt-pdf-generator:
     minReplica: 3
     maxReplica: 20
     pollingInterval: 10 # seconds
-    cooldownPeriod: 50 # seconds
+    cooldownPeriod: 300 # seconds
+    advanced:
+      horizontalPodAutoscalerConfig:
+        behavior:
+          scaleUp:
+            stabilizationWindowSeconds: 0
+            policies:
+              - type: Percent
+                value: 100
+                periodSeconds: 30
+          scaleDown:
+            stabilizationWindowSeconds: 600
+            policies:
+              - type: Pods
+                value: 2
+                periodSeconds: 60
     triggers:
       - type: azure-queue
         metadata:
@@ -235,12 +250,27 @@ pagopa-receipt-pdf-generator-cart:
     minReplica: 3
     maxReplica: 10
     pollingInterval: 10 # seconds
-    cooldownPeriod: 50 # seconds
+    cooldownPeriod: 300 # seconds
+    advanced:
+      horizontalPodAutoscalerConfig:
+        behavior:
+          scaleUp:
+            stabilizationWindowSeconds: 0
+            policies:
+              - type: Percent
+                value: 100
+                periodSeconds: 30
+          scaleDown:
+            stabilizationWindowSeconds: 300
+            policies:
+              - type: Pods
+                value: 1
+                periodSeconds: 60
     triggers:
       - type: azure-queue
         metadata:
           queueName: "pagopa-p-weu-receipts-queue-cart-receipt-waiting-4-gen"
-          queueLength: "5000"
+          queueLength: "1000"
           connectionFromEnv: "RECEIPTS_STORAGE_CONN_STRING"
       - type: cpu
         metadata:
