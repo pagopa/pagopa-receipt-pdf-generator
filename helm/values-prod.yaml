@@ -189,14 +189,14 @@ pagopa-receipt-pdf-generator:
   autoscaling:
     enable: true
     minReplica: 3
-    maxReplica: 10
+    maxReplica: 20
     pollingInterval: 10 # seconds
     cooldownPeriod: 50 # seconds
     triggers:
       - type: azure-queue
         metadata:
           queueName: "pagopa-p-weu-receipts-queue-receipt-waiting-4-gen"
-          queueLength: "250"
+          queueLength: "5000"
           connectionFromEnv: "RECEIPTS_STORAGE_CONN_STRING"
       - type: cpu
         metadata:
@@ -233,14 +233,14 @@ pagopa-receipt-pdf-generator-cart:
   autoscaling:
     enable: true
     minReplica: 3
-    maxReplica: 3
+    maxReplica: 10
     pollingInterval: 10 # seconds
     cooldownPeriod: 50 # seconds
     triggers:
       - type: azure-queue
         metadata:
           queueName: "pagopa-p-weu-receipts-queue-cart-receipt-waiting-4-gen"
-          queueLength: "250"
+          queueLength: "5000"
           connectionFromEnv: "RECEIPTS_STORAGE_CONN_STRING"
       - type: cpu
         metadata:
