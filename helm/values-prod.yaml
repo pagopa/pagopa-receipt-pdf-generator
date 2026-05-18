@@ -213,6 +213,12 @@ pagopa-receipt-pdf-generator:
           queueName: "pagopa-p-weu-receipts-queue-receipt-waiting-4-gen"
           queueLength: "5000"
           connectionFromEnv: "RECEIPTS_STORAGE_CONN_STRING"
+      - type: cron
+        metadata:
+          timezone: "Europe/Rome"
+          start: "25 8 * * 1-5"
+          end: "0 14 * * 1-5"
+          desiredReplicas: "10"
       - type: cpu
         metadata:
           # Required
