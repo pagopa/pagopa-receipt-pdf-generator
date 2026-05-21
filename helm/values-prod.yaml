@@ -188,7 +188,7 @@ pagopa-receipt-pdf-generator:
     !!merge <<: *resources
     requests:
       memory: "2400Mi" # ~ 2.3 GB
-      cpu: "0.6"
+      cpu: "0.5"
     limits:
       memory: "3Gi"
       cpu: "0.8"
@@ -229,7 +229,7 @@ pagopa-receipt-pdf-generator:
         metadata:
           # Required
           type: Utilization # Allowed types are 'Utilization' or 'AverageValue'
-          value: "80"
+          value: "100"
       - type: memory
         metadata:
           type: Utilization # Allowed types are 'Utilization' or 'AverageValue'
