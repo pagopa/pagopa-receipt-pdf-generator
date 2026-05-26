@@ -57,8 +57,8 @@ microservice-chart: &microservice-chart
     seccompProfile:
       type: RuntimeDefault
   securityContext:
-    readOnlyRootFilesystem: false # https://github.com/pagopa/aks-microservice-chart-blueprint/blob/main/MIGRATION_GUIDE.md#from-v2x-to-v53
-    allowPrivilegeEscalation: false # https://learn.microsoft.com/it-it/azure/aks/developer-best-practices-pod-security
+    readOnlyRootFilesystem: false # https://github.com/pagopa/aks-microservice-chart-blueprint/blob/main/MIGRATION_GUIDE.md#from-v2x-to-v53
+    allowPrivilegeEscalation: false # https://learn.microsoft.com/it-it/azure/aks/developer-best-practices-pod-security
     capabilities:
       drop:
         - all
@@ -223,7 +223,7 @@ pagopa-receipt-pdf-generator:
         metadata:
           # Required
           type: Utilization # Allowed types are 'Utilization' or 'AverageValue'
-          value: "80"
+          value: "100"
       - type: memory
         metadata:
           type: Utilization # Allowed types are 'Utilization' or 'AverageValue'
