@@ -205,18 +205,18 @@ pagopa-receipt-pdf-generator:
             stabilizationWindowSeconds: 600
             policies:
               - type: Pods
-                value: 2
+                value: 1
                 periodSeconds: 60
     triggers:
       - type: azure-queue
         metadata:
           queueName: "pagopa-p-weu-receipts-queue-receipt-waiting-4-gen"
-          queueLength: "5000"
+          queueLength: "3000"
           connectionFromEnv: "RECEIPTS_STORAGE_CONN_STRING"
       - type: cron
         metadata:
           timezone: "Europe/Rome"
-          start: "25 8 * * 1-5"
+          start: "25 7 * * 1-5"
           end: "0 14 * * 1-5"
           desiredReplicas: "10"
       - type: cpu
