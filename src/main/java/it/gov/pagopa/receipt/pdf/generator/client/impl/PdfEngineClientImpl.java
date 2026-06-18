@@ -22,6 +22,7 @@ import org.apache.http.util.EntityUtils;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 
@@ -39,6 +40,9 @@ public class PdfEngineClientImpl implements PdfEngineClient {
     private static final String HEADER_AUTH_KEY = "Ocp-Apim-Subscription-Key";
     private static final String TEMPLATE_KEY = "template";
     private static final String DATA_KEY = "data";
+
+    private static final URL TEMPLATE_STREAM = PdfEngineClientImpl.class.getClassLoader().getResource(ZIP_FILE_NAME);
+
 
     private final CloseableHttpClient client;
 
@@ -67,7 +71,7 @@ public class PdfEngineClientImpl implements PdfEngineClient {
     @Override
     public PdfEngineResponse generatePDF(PdfEngineRequest pdfEngineRequest, Path workingDirPath) {
         //Generate client
-        try (InputStream templateStream = pdfEngineRequest.getTemplate().openStream()) {
+        try (InputStream templateStream = TEMPLATE_STREAM.openStream()) {
             //Encode template and data
             HttpPost request = buildMultipartRequest(pdfEngineRequest, templateStream);
 

@@ -40,9 +40,7 @@ public class PdfEngineServiceImpl implements PdfEngineService {
     ) throws PDFReceiptGenerationException {
         PdfEngineRequest request = new PdfEngineRequest();
 
-        URL templateStream = GenerateCartReceiptPdfServiceImpl.class.getClassLoader().getResource(ZIP_FILE_NAME);
         //Build the request
-        request.setTemplate(templateStream);
         request.setData(parseTemplateDataToString(template));
         request.setApplySignature(false);
 

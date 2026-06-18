@@ -18,7 +18,6 @@ import java.net.URL;
 @NoArgsConstructor
 public class PdfEngineRequest {
 
-    private URL template;
     private String data;
     private boolean applySignature;
 }
