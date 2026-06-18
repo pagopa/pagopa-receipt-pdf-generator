@@ -33,8 +33,6 @@ import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.ZIP_FILE_NAME;
 @Slf4j
 public class PdfEngineClientImpl implements PdfEngineClient {
 
-    private static PdfEngineClientImpl instance = null;
-
     private final String pdfEngineEndpoint = System.getenv().getOrDefault("PDF_ENGINE_ENDPOINT", "");
     private final String ocpAimSubKey = System.getenv().getOrDefault("OCP_APIM_SUBSCRIPTION_KEY", "");
 
@@ -52,12 +50,12 @@ public class PdfEngineClientImpl implements PdfEngineClient {
         this.client = client;
     }
 
-    public static PdfEngineClientImpl getInstance() {
-        if (instance == null) {
-            instance = new PdfEngineClientImpl();
-        }
+    private static class SingletonHelper {
+        private static final PdfEngineClientImpl PDF_ENGINE_CLIENT_SINGLETON_INSTANCE = new PdfEngineClientImpl();
+    }
 
-        return instance;
+    public static PdfEngineClientImpl getInstance() {
+        return PdfEngineClientImpl.SingletonHelper.PDF_ENGINE_CLIENT_SINGLETON_INSTANCE;
     }
 
     /**
