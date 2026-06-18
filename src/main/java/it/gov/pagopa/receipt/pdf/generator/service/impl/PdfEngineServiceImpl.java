@@ -13,10 +13,7 @@ import it.gov.pagopa.receipt.pdf.generator.service.PdfEngineService;
 import it.gov.pagopa.receipt.pdf.generator.utils.ObjectMapperUtils;
 import org.apache.http.HttpStatus;
 
-import java.net.URL;
 import java.nio.file.Path;
-
-import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.ZIP_FILE_NAME;
 
 public class PdfEngineServiceImpl implements PdfEngineService {
 
