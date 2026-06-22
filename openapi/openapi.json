@@ -4,7 +4,7 @@
     "title": "Receipts Generator Helpdesk",
     "description": "Microservice for exposing REST APIs about receipts helpdesk.",
     "termsOfService": "https://www.pagopa.gov.it/",
-    "version": "1.17.16"
+    "version": "1.17.16-1-PIDM-2050-fix-singleton-add-retry-pdfengine"
   },
   "servers": [
     {
