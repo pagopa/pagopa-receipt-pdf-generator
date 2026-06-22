@@ -182,7 +182,22 @@ pagopa-receipt-pdf-generator:
     minReplica: 10
     maxReplica: 20
     pollingInterval: 10 # seconds
-    cooldownPeriod: 50 # seconds
+    cooldownPeriod: 300 # seconds
+    advanced:
+      horizontalPodAutoscalerConfig:
+        behavior:
+          scaleUp:
+            stabilizationWindowSeconds: 0
+            policies:
+              - type: Percent
+                value: 100
+                periodSeconds: 30
+          scaleDown:
+            stabilizationWindowSeconds: 600
+            policies:
+              - type: Pods
+                value: 2
+                periodSeconds: 60
     triggers:
       - type: azure-queue
         metadata:
