@@ -7,6 +7,8 @@ import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosDatabase;
 import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.CosmosQueryRequestOptions;
+import com.azure.cosmos.models.SqlParameter;
+import com.azure.cosmos.models.SqlQuerySpec;
 import com.azure.cosmos.util.CosmosPagedIterable;
 import it.gov.pagopa.receipt.pdf.generator.client.CartReceiptsCosmosClient;
 import it.gov.pagopa.receipt.pdf.generator.entity.cart.CartForReceipt;
@@ -57,11 +59,16 @@ public class CartReceiptsCosmosClientImpl implements CartReceiptsCosmosClient {
         CosmosContainer cosmosContainer = cosmosDatabase.getContainer(cartForReceiptContainerName);
 
         //Build query
-        String query = "SELECT * FROM c WHERE c.cartId = '%s'".formatted(cartId);
+        SqlQuerySpec querySpec = new SqlQuerySpec(
+                "SELECT * FROM c WHERE c.cartId = @cartId",
+                List.of(
+                        new SqlParameter("@cartId", cartId)
+                )
+        );
 
         //Query the container
         CosmosPagedIterable<CartForReceipt> queryResponse = cosmosContainer
-                .queryItems(query, new CosmosQueryRequestOptions(), CartForReceipt.class);
+                .queryItems(querySpec, new CosmosQueryRequestOptions(), CartForReceipt.class);
 
         if (queryResponse.iterator().hasNext()) {
             return queryResponse.iterator().next();

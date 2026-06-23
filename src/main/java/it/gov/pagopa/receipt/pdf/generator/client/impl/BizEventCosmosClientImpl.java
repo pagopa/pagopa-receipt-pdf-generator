@@ -5,12 +5,15 @@ import com.azure.cosmos.CosmosClientBuilder;
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosDatabase;
 import com.azure.cosmos.models.CosmosQueryRequestOptions;
+import com.azure.cosmos.models.SqlParameter;
+import com.azure.cosmos.models.SqlQuerySpec;
 import com.azure.cosmos.util.CosmosPagedIterable;
 import it.gov.pagopa.receipt.pdf.generator.client.BizEventCosmosClient;
 import it.gov.pagopa.receipt.pdf.generator.entity.event.BizEvent;
 import it.gov.pagopa.receipt.pdf.generator.entity.event.enumeration.BizEventStatusType;
 import it.gov.pagopa.receipt.pdf.generator.exception.BizEventNotFoundException;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -57,16 +60,20 @@ public class BizEventCosmosClientImpl implements BizEventCosmosClient {
         CosmosContainer cosmosContainer = cosmosDatabase.getContainer(containerId);
 
         //Build query
-        String query = String.format(
-                "SELECT * FROM c WHERE c.eventStatus IN ('%s','%s') AND c.id = '%s'",
-                BizEventStatusType.DONE,
-                BizEventStatusType.INGESTED,
-                eventId
+        SqlQuerySpec querySpec = new SqlQuerySpec(
+                "SELECT * FROM c " +
+                        "WHERE c.eventStatus IN (@statusDone, @statusIngested) " +
+                        "  AND c.id >= @@id ",
+                Arrays.asList(
+                        new SqlParameter("@statusDone", BizEventStatusType.DONE),
+                        new SqlParameter("@statusIngested", BizEventStatusType.INGESTED),
+                        new SqlParameter("@id", eventId)
+                )
         );
 
         //Query the container
         CosmosPagedIterable<BizEvent> queryResponse = cosmosContainer
-                .queryItems(query, new CosmosQueryRequestOptions(), BizEvent.class);
+                .queryItems(querySpec, new CosmosQueryRequestOptions(), BizEvent.class);
 
         if (queryResponse.iterator().hasNext()) {
             return queryResponse.iterator().next();
@@ -83,12 +90,16 @@ public class BizEventCosmosClientImpl implements BizEventCosmosClient {
         CosmosContainer cosmosContainer = cosmosDatabase.getContainer(containerId);
 
         //Build query
-        String query = String.format("SELECT * FROM c WHERE c.transactionDetails.transaction.transactionId = '%s'",
-                transactionId);
+        SqlQuerySpec querySpec = new SqlQuerySpec(
+                "SELECT * FROM c WHERE c.transactionDetails.transaction.transactionId = @transactionId",
+                List.of(
+                        new SqlParameter("@transactionId", transactionId)
+                )
+        );
 
         //Query the container
         return cosmosContainer
-                .queryItems(query, new CosmosQueryRequestOptions(), BizEvent.class)
+                .queryItems(querySpec, new CosmosQueryRequestOptions(), BizEvent.class)
                 .stream().limit(6)
                 .toList();
     }

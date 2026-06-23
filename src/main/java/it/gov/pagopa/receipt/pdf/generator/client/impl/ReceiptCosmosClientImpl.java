@@ -6,6 +6,8 @@ import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosDatabase;
 import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.CosmosQueryRequestOptions;
+import com.azure.cosmos.models.SqlParameter;
+import com.azure.cosmos.models.SqlQuerySpec;
 import com.azure.cosmos.util.CosmosPagedIterable;
 import it.gov.pagopa.receipt.pdf.generator.client.ReceiptCosmosClient;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.Receipt;
@@ -59,11 +61,16 @@ public class ReceiptCosmosClientImpl implements ReceiptCosmosClient {
         CosmosContainer cosmosContainer = cosmosDatabase.getContainer(containerId);
 
         //Build query
-        String query = "SELECT * FROM c WHERE c.eventId = " + "'" + eventId + "'";
+        SqlQuerySpec querySpec = new SqlQuerySpec(
+                "SELECT * FROM c WHERE c.eventId = @eventId",
+                List.of(
+                        new SqlParameter("@eventId", eventId)
+                )
+        );
 
         //Query the container
         CosmosPagedIterable<Receipt> queryResponse = cosmosContainer
-                .queryItems(query, new CosmosQueryRequestOptions(), Receipt.class);
+                .queryItems(querySpec, new CosmosQueryRequestOptions(), Receipt.class);
 
         if (queryResponse.iterator().hasNext()) {
             return queryResponse.iterator().next();
