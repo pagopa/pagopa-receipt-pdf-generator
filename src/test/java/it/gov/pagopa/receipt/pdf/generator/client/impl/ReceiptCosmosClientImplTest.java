@@ -3,6 +3,7 @@ package it.gov.pagopa.receipt.pdf.generator.client.impl;
 import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosDatabase;
+import com.azure.cosmos.models.SqlQuerySpec;
 import com.azure.cosmos.util.CosmosPagedIterable;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.generator.exception.ReceiptNotFoundException;
@@ -60,7 +61,7 @@ class ReceiptCosmosClientImplTest {
 
         when(cosmosClientMock.getDatabase(any())).thenReturn(mockDatabase);
         when(mockDatabase.getContainer(any())).thenReturn(mockContainer);
-        when(mockContainer.queryItems(anyString(), any(), eq(Receipt.class))).thenReturn(mockIterable);
+        when(mockContainer.queryItems(any(SqlQuerySpec.class), any(), eq(Receipt.class))).thenReturn(mockIterable);
         when(mockIterable.iterator()).thenReturn(mockIterator);
         when(mockIterator.hasNext()).thenReturn(true);
         when(mockIterator.next()).thenReturn(receipt);
@@ -74,7 +75,7 @@ class ReceiptCosmosClientImplTest {
     void runKo() {
         when(cosmosClientMock.getDatabase(any())).thenReturn(mockDatabase);
         when(mockDatabase.getContainer(any())).thenReturn(mockContainer);
-        when(mockContainer.queryItems(anyString(), any(), eq(Receipt.class))).thenReturn(mockIterable);
+        when(mockContainer.queryItems(any(SqlQuerySpec.class), any(), eq(Receipt.class))).thenReturn(mockIterable);
         when(mockIterable.iterator()).thenReturn(mockIterator);
         when(mockIterator.hasNext()).thenReturn(false);
 

@@ -3,6 +3,7 @@ package it.gov.pagopa.receipt.pdf.generator.client.impl;
 import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosDatabase;
+import com.azure.cosmos.models.SqlQuerySpec;
 import com.azure.cosmos.util.CosmosPagedIterable;
 import it.gov.pagopa.receipt.pdf.generator.entity.cart.CartForReceipt;
 import it.gov.pagopa.receipt.pdf.generator.exception.CartNotFoundException;
@@ -62,7 +63,7 @@ class CartReceiptsCosmosClientImplTest {
 
         when(cosmosClientMock.getDatabase(any())).thenReturn(mockDatabase);
         when(mockDatabase.getContainer(any())).thenReturn(mockContainer);
-        when(mockContainer.queryItems(anyString(), any(), eq(CartForReceipt.class)))
+        when(mockContainer.queryItems(any(SqlQuerySpec.class), any(), eq(CartForReceipt.class)))
                 .thenReturn(mockIterable);
         when(mockIterable.iterator()).thenReturn(mockIterator);
         when(mockIterator.hasNext()).thenReturn(true);
@@ -77,7 +78,7 @@ class CartReceiptsCosmosClientImplTest {
     void getCartItemFail() {
         when(cosmosClientMock.getDatabase(any())).thenReturn(mockDatabase);
         when(mockDatabase.getContainer(any())).thenReturn(mockContainer);
-        when(mockContainer.queryItems(anyString(), any(), eq(CartForReceipt.class)))
+        when(mockContainer.queryItems(any(SqlQuerySpec.class), any(), eq(CartForReceipt.class)))
                 .thenReturn(mockIterable);
         when(mockIterable.iterator()).thenReturn(mockIterator);
         when(mockIterator.hasNext()).thenReturn(false);
