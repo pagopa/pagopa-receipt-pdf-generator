@@ -63,7 +63,7 @@ public class BizEventCosmosClientImpl implements BizEventCosmosClient {
         SqlQuerySpec querySpec = new SqlQuerySpec(
                 "SELECT * FROM c " +
                         "WHERE c.eventStatus IN (@statusDone, @statusIngested) " +
-                        "  AND c.id >= @@id ",
+                        "  AND c.id = @id ",
                 Arrays.asList(
                         new SqlParameter("@statusDone", BizEventStatusType.DONE),
                         new SqlParameter("@statusIngested", BizEventStatusType.INGESTED),
