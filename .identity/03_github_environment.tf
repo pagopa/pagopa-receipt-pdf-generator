@@ -45,7 +45,46 @@ locals {
     "DOMAIN" : local.domain,
     "NAMESPACE" : local.domain,
     "WORKLOAD_IDENTITY_ID": data.azurerm_user_assigned_identity.workload_identity_clientid.client_id
+  },
+  special_repo_secrets = {
+    "CLIENT_ID" : {
+      "key" : "${upper(var.env)}_CLIENT_ID",
+      "value" : data.azurerm_user_assigned_identity.identity_cd_01.client_id
+    },
+    "TENANT_ID" : {
+      "key" : "${upper(var.env)}_TENANT_ID",
+      "value" : data.azurerm_client_config.current.tenant_id
+    },
+    "SUBSCRIPTION_ID" : {
+      "key" : "${upper(var.env)}_SUBSCRIPTION_ID",
+      "value" : data.azurerm_subscription.current.subscription_id
+    },
+    "RECEIPTS_COSMOS_ENDPOINT" : {
+      "key" : "${upper(var.env)}_RECEIPTS_COSMOS_ENDPOINT",
+      "value" : "https://pagopa-${var.env_short}-${local.location_short}-${local.domain}-ds-cosmos-account.documents.azure.com:443"
+    },
+    "RECEIPTS_COSMOS_KEY" : {
+      "key" : "${upper(var.env)}_RECEIPTS_COSMOS_KEY",
+      "value" : data.azurerm_cosmosdb_account.receipts_cosmos.primary_readonly_key
+    },
+    "RECEIPTS_COSMOS_TIMEOUT" : {
+      "key" : "${upper(var.env)}_RECEIPTS_COSMOS_TIMEOUT",
+      "value" : var.receipt_cosmos_timeout
+    },
+    "BIZ_COSMOS_ENDPOINT" : {
+      "key" : "${upper(var.env)}_BIZ_COSMOS_ENDPOINT",
+      "value" : "https://pagopa-${var.env_short}-${local.location_short}-bizevents-ds-cosmos-account.documents.azure.com:443"
+    },
+    "BIZ_COSMOS_KEY" : {
+      "key" : "${upper(var.env)}_BIZ_COSMOS_KEY",
+      "value" : data.azurerm_cosmosdb_account.biz_cosmos.primary_readonly_key
+    },
+    "BIZ_COSMOS_TIMEOUT" : {
+      "key" : "${upper(var.env)}_BIZ_COSMOS_TIMEOUT",
+      "value" : var.biz_cosmos_timeout
+    },
   }
+
 }
 
 ###############
@@ -121,4 +160,11 @@ resource "github_actions_secret" "secret_slack_webhook_report" {
   repository      = local.github.repository
   secret_name     = "SLACK_WEBHOOK_URL_REPORT"
   plaintext_value = data.azurerm_key_vault_secret.key_vault_report_webhook_slack.value
+}
+
+resource "github_actions_secret" "special_repo_secrets" {
+  for_each        = local.special_repo_secrets
+  repository      = local.github.repository
+  secret_name     = each.value.key
+  plaintext_value = each.value.value
 }

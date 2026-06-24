@@ -53,7 +53,7 @@ jobs:
   report_script:
     name: Report ${{(github.event.inputs == null && 'prod') || inputs.environment }}
     runs-on: [ self-hosted-job, "${{(github.event.inputs == null && 'prod') || inputs.environment }}" ]
-    environment: ${{(github.event.inputs == null && 'prod') || inputs.environment }}
+    environment: dev
     steps:
 
       - name: Checkout
@@ -65,19 +65,19 @@ jobs:
         # from https://github.com/Azure/login/commits/master
         uses: azure/login@92a5484dfaf04ca78a94597f4f19fea633851fa2
         with:
-          client-id: ${{ secrets.CLIENT_ID }}
-          tenant-id: ${{ secrets.TENANT_ID }}
-          subscription-id: ${{ secrets.SUBSCRIPTION_ID }}
+          client-id: ${{ secrets.PROD_CLIENT_ID }}
+          tenant-id: ${{ secrets.PROD_TENANT_ID }}
+          subscription-id: ${{ secrets.PROD_SUBSCRIPTION_ID }}
 
       - name: Run reports
         shell: bash
         env:
-          RECEIPTS_COSMOS_ENDPOINT: ${{ secrets.RECEIPTS_COSMOS_ENDPOINT }}
-          RECEIPTS_COSMOS_KEY: ${{ secrets.RECEIPTS_COSMOS_KEY }}
-          RECEIPTS_COSMOS_TIMEOUT: ${{ secrets.RECEIPTS_COSMOS_TIMEOUT }}
-          BIZ_COSMOS_ENDPOINT: ${{ secrets.BIZ_COSMOS_ENDPOINT }}
-          BIZ_COSMOS_KEY: ${{ secrets.BIZ_COSMOS_KEY }}
-          BIZ_COSMOS_TIMEOUT: ${{ secrets.BIZ_COSMOS_TIMEOUT }}
+          RECEIPTS_COSMOS_ENDPOINT: ${{ secrets.PROD_RECEIPTS_COSMOS_ENDPOINT }}
+          RECEIPTS_COSMOS_KEY: ${{ secrets.PROD_RECEIPTS_COSMOS_KEY }}
+          RECEIPTS_COSMOS_TIMEOUT: ${{ secrets.PROD_RECEIPTS_COSMOS_TIMEOUT }}
+          BIZ_COSMOS_ENDPOINT: ${{ secrets.PROD_BIZ_COSMOS_ENDPOINT }}
+          BIZ_COSMOS_KEY: ${{ secrets.PROD_BIZ_COSMOS_KEY }}
+          BIZ_COSMOS_TIMEOUT: ${{ secrets.PROD_BIZ_COSMOS_TIMEOUT }}
         run: |
           export DATE_RANGE=${{(github.event.inputs == null && 'weekly') || inputs.time_range }}
           export CUSTOM_START_DATE=${{(github.event.inputs == null && '0') || inputs.custom_start_date }}
