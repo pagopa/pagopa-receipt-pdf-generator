@@ -5,11 +5,9 @@ import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosClientBuilder;
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosDatabase;
+import com.azure.cosmos.implementation.NotFoundException;
 import com.azure.cosmos.models.CosmosItemResponse;
-import com.azure.cosmos.models.CosmosQueryRequestOptions;
-import com.azure.cosmos.models.SqlParameter;
-import com.azure.cosmos.models.SqlQuerySpec;
-import com.azure.cosmos.util.CosmosPagedIterable;
+import com.azure.cosmos.models.PartitionKey;
 import it.gov.pagopa.receipt.pdf.generator.client.CartReceiptsCosmosClient;
 import it.gov.pagopa.receipt.pdf.generator.entity.cart.CartForReceipt;
 import it.gov.pagopa.receipt.pdf.generator.exception.CartNotFoundException;
@@ -55,24 +53,14 @@ public class CartReceiptsCosmosClientImpl implements CartReceiptsCosmosClient {
     @Override
     public CartForReceipt getCartItem(String cartId) throws CartNotFoundException {
         CosmosDatabase cosmosDatabase = this.cosmosClient.getDatabase(databaseId);
-
         CosmosContainer cosmosContainer = cosmosDatabase.getContainer(cartForReceiptContainerName);
 
-        //Build query
-        SqlQuerySpec querySpec = new SqlQuerySpec(
-                "SELECT * FROM c WHERE c.cartId = @cartId",
-                List.of(
-                        new SqlParameter("@cartId", cartId)
-                )
-        );
-
         //Query the container
-        CosmosPagedIterable<CartForReceipt> queryResponse = cosmosContainer
-                .queryItems(querySpec, new CosmosQueryRequestOptions(), CartForReceipt.class);
-
-        if (queryResponse.iterator().hasNext()) {
-            return queryResponse.iterator().next();
-        } else {
+        try {
+            return cosmosContainer
+                    .readItem(cartId, new PartitionKey(cartId), CartForReceipt.class)
+                    .getItem();
+        } catch (NotFoundException e) {
             throw new CartNotFoundException("Document not found in the defined container");
         }
     }
