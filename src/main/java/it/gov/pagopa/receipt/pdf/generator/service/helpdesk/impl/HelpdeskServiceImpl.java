@@ -21,7 +21,6 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 
 import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.FISCAL_CODE_ANONYMOUS;
 import static it.gov.pagopa.receipt.pdf.generator.utils.HelpdeskUtils.*;
