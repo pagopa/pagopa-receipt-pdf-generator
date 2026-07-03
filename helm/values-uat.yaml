@@ -23,7 +23,7 @@ microservice-chart: &microservice-chart
     periodSeconds: 10
   deployment: &deployment
     create: true
-    replicas: 10
+    replicas: 1
     strategy:
       type: RollingUpdate
       rollingUpdate:
@@ -71,11 +71,11 @@ microservice-chart: &microservice-chart
   #       mountPath: /temp
   resources: &resources
     requests:
-      memory: "2400Mi" # ~ 2.3 GB
-      cpu: "0.5"
+      memory: "1024Mi"
+      cpu: "0.40"
     limits:
-      memory: "3Gi"
-      cpu: "0.7"
+      memory: "1512Mi
+      cpu: "0.75"
   fileConfig: {}
   envConfig: &envConfig
     TZ: "Europe/Rome"
@@ -96,7 +96,7 @@ microservice-chart: &microservice-chart
     COSMOS_RECEIPT_READ_REGION: "West Europe"
     COSMOS_RECEIPT_DB_NAME: "db"
     COSMOS_BIZ_EVENT_DB_NAME: "db"
-    COSMOS_RECEIPT_CONTAINER_NAME: "receipts-index"
+    COSMOS_RECEIPT_CONTAINER_NAME: "receipts"
     CART_FOR_RECEIPT_CONTAINER_NAME: "cart-for-receipts"
     COSMOS_BIZ_EVENT_CONTAINER_NAME: "biz-events"
     CART_RECEIPT_QUEUE_TOPIC: "pagopa-u-weu-receipts-queue-cart-receipt-waiting-4-gen"
@@ -179,21 +179,21 @@ pagopa-receipt-pdf-generator:
     !!merge <<: *resources
   autoscaling:
     enable: true
-    minReplica: 10
-    maxReplica: 20
+    minReplica: 1
+    maxReplica: 1
     pollingInterval: 10 # seconds
     cooldownPeriod: 50 # seconds
     triggers:
       - type: azure-queue
         metadata:
           queueName: "pagopa-u-weu-receipts-queue-receipt-waiting-4-gen"
-          queueLength: "5000"
+          queueLength: "1000"
           connectionFromEnv: "RECEIPTS_STORAGE_CONN_STRING"
       - type: cpu
         metadata:
           # Required
           type: Utilization # Allowed types are 'Utilization' or 'AverageValue'
-          value: "100"
+          value: "80"
       - type: memory
         metadata:
           type: Utilization # Allowed types are 'Utilization' or 'AverageValue'
@@ -226,7 +226,7 @@ pagopa-receipt-pdf-generator-cart:
     minReplica: 1
     maxReplica: 1
     pollingInterval: 10 # seconds
-    cooldownPeriod: 300 # seconds
+    cooldownPeriod: 50 # seconds
     triggers:
       - type: azure-queue
         metadata:
