@@ -1,11 +1,9 @@
 package it.gov.pagopa.receipt.pdf.generator.client.impl;
 
-import com.azure.cosmos.CosmosClient;
-import com.azure.cosmos.CosmosClientBuilder;
-import com.azure.cosmos.CosmosContainer;
-import com.azure.cosmos.CosmosDatabase;
+import com.azure.cosmos.*;
 import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.CosmosQueryRequestOptions;
+import com.azure.cosmos.models.PartitionKey;
 import com.azure.cosmos.util.CosmosPagedIterable;
 import it.gov.pagopa.receipt.pdf.generator.client.ReceiptCosmosClient;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.Receipt;
@@ -51,13 +49,25 @@ public class ReceiptCosmosClientImpl implements ReceiptCosmosClient {
      * {@inheritDoc}
      */
     @Override
-    public Receipt getReceiptDocument(String eventId) throws ReceiptNotFoundException {
+    public Receipt getReceiptDocument(String id) throws ReceiptNotFoundException {
         CosmosDatabase cosmosDatabase = this.cosmosClient.getDatabase(databaseId);
-
         CosmosContainer cosmosContainer = cosmosDatabase.getContainer(containerId);
 
+        try{
+            CosmosItemResponse<Receipt> itemResponse = cosmosContainer
+                    .readItem(id, new PartitionKey(id), Receipt.class);
+            if (itemResponse != null) {
+                return itemResponse.getItem();
+            }
+        } catch (CosmosException ce) {
+            if (ce.getStatusCode() != 404) {
+                // if not found use fallback query
+                throw ce;
+            }
+        }
+
         //Build query
-        String query = "SELECT * FROM c WHERE c.eventId = " + "'" + eventId + "'";
+        String query = "SELECT * FROM c WHERE c.eventId = " + "'" + id + "'";
 
         //Query the container
         CosmosPagedIterable<Receipt> queryResponse = cosmosContainer
