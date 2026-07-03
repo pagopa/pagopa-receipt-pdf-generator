@@ -18,8 +18,6 @@ import java.util.List;
  */
 public class ReceiptCosmosClientImpl implements ReceiptCosmosClient {
 
-    private static ReceiptCosmosClientImpl instance;
-
     private final String databaseId = System.getenv("COSMOS_RECEIPT_DB_NAME");
     private final String containerId = System.getenv("COSMOS_RECEIPT_CONTAINER_NAME");
 
@@ -41,12 +39,12 @@ public class ReceiptCosmosClientImpl implements ReceiptCosmosClient {
         this.cosmosClient = cosmosClient;
     }
 
-    public static ReceiptCosmosClientImpl getInstance() {
-        if (instance == null) {
-            instance = new ReceiptCosmosClientImpl();
-        }
+    private static class SingletonHelper {
+        private static final ReceiptCosmosClientImpl RECEIPT_COSMOS_CLIENT_SINGLETON_INSTANCE = new ReceiptCosmosClientImpl();
+    }
 
-        return instance;
+    public static ReceiptCosmosClientImpl getInstance() {
+        return ReceiptCosmosClientImpl.SingletonHelper.RECEIPT_COSMOS_CLIENT_SINGLETON_INSTANCE;
     }
 
     /**

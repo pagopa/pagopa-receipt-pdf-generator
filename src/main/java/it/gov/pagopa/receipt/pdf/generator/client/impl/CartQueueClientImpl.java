@@ -14,8 +14,6 @@ import java.time.temporal.ChronoUnit;
  */
 public class CartQueueClientImpl implements CartQueueClient {
 
-    private static CartQueueClientImpl instance;
-
     private final int cartQueueDelay = Integer.parseInt(System.getenv().getOrDefault("CART_RECEIPT_QUEUE_DELAY", "1"));
 
     private final QueueClient cartQueueClient;
@@ -34,12 +32,12 @@ public class CartQueueClientImpl implements CartQueueClient {
         this.cartQueueClient = cartQueueClient;
     }
 
-    public static CartQueueClientImpl getInstance() {
-        if (instance == null) {
-            instance = new CartQueueClientImpl();
-        }
+    private static class SingletonHelper {
+        private static final CartQueueClientImpl CART_QUEUE_CLIENT_SINGLETON_INSTANCE = new CartQueueClientImpl();
+    }
 
-        return instance;
+    public static CartQueueClientImpl getInstance() {
+        return SingletonHelper.CART_QUEUE_CLIENT_SINGLETON_INSTANCE;
     }
 
     /**

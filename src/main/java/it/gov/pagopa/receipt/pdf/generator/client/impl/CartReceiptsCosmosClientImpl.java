@@ -16,7 +16,6 @@ import java.util.List;
 
 public class CartReceiptsCosmosClientImpl implements CartReceiptsCosmosClient {
 
-    private static CartReceiptsCosmosClientImpl instance;
     private final String databaseId = System.getenv("COSMOS_RECEIPT_DB_NAME");
     private final String cartForReceiptContainerName = System.getenv("CART_FOR_RECEIPT_CONTAINER_NAME");
 
@@ -39,14 +38,13 @@ public class CartReceiptsCosmosClientImpl implements CartReceiptsCosmosClient {
         this.cosmosClient = cosmosClient;
     }
 
-    public static CartReceiptsCosmosClientImpl getInstance() {
-        if (instance == null) {
-            instance = new CartReceiptsCosmosClientImpl();
-        }
-
-        return instance;
+    private static class SingletonHelper {
+        private static final CartReceiptsCosmosClientImpl CART_RECEIPT_COSMOS_CLIENT_SINGLETON_INSTANCE = new CartReceiptsCosmosClientImpl();
     }
 
+    public static CartReceiptsCosmosClientImpl getInstance() {
+        return CartReceiptsCosmosClientImpl.SingletonHelper.CART_RECEIPT_COSMOS_CLIENT_SINGLETON_INSTANCE;
+    }
     /**
      * {@inheritDoc}
      */

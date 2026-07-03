@@ -22,6 +22,7 @@ import org.apache.http.util.EntityUtils;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 
@@ -33,14 +34,15 @@ import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.ZIP_FILE_NAME;
 @Slf4j
 public class PdfEngineClientImpl implements PdfEngineClient {
 
-    private static PdfEngineClientImpl instance = null;
-
     private final String pdfEngineEndpoint = System.getenv().getOrDefault("PDF_ENGINE_ENDPOINT", "");
     private final String ocpAimSubKey = System.getenv().getOrDefault("OCP_APIM_SUBSCRIPTION_KEY", "");
 
     private static final String HEADER_AUTH_KEY = "Ocp-Apim-Subscription-Key";
     private static final String TEMPLATE_KEY = "template";
     private static final String DATA_KEY = "data";
+
+    private static final URL TEMPLATE_STREAM = PdfEngineClientImpl.class.getClassLoader().getResource(ZIP_FILE_NAME);
+
 
     private final CloseableHttpClient client;
 
@@ -52,12 +54,12 @@ public class PdfEngineClientImpl implements PdfEngineClient {
         this.client = client;
     }
 
-    public static PdfEngineClientImpl getInstance() {
-        if (instance == null) {
-            instance = new PdfEngineClientImpl();
-        }
+    private static class SingletonHelper {
+        private static final PdfEngineClientImpl PDF_ENGINE_CLIENT_SINGLETON_INSTANCE = new PdfEngineClientImpl();
+    }
 
-        return instance;
+    public static PdfEngineClientImpl getInstance() {
+        return PdfEngineClientImpl.SingletonHelper.PDF_ENGINE_CLIENT_SINGLETON_INSTANCE;
     }
 
     /**
@@ -69,7 +71,7 @@ public class PdfEngineClientImpl implements PdfEngineClient {
     @Override
     public PdfEngineResponse generatePDF(PdfEngineRequest pdfEngineRequest, Path workingDirPath) {
         //Generate client
-        try (InputStream templateStream = pdfEngineRequest.getTemplate().openStream()) {
+        try (InputStream templateStream = TEMPLATE_STREAM.openStream()) {
             //Encode template and data
             HttpPost request = buildMultipartRequest(pdfEngineRequest, templateStream);
 

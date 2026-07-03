@@ -18,8 +18,6 @@ import java.io.InputStream;
  */
 public class ReceiptBlobClientImpl implements ReceiptBlobClient {
 
-    private static ReceiptBlobClientImpl instance;
-
     private final String containerName = System.getenv("BLOB_STORAGE_CONTAINER_NAME");
 
     private static final String FILE_EXTENSION = ".pdf";
@@ -40,12 +38,12 @@ public class ReceiptBlobClientImpl implements ReceiptBlobClient {
         this.blobServiceClient = serviceClient;
     }
 
-    public static ReceiptBlobClientImpl getInstance() {
-        if (instance == null) {
-            instance = new ReceiptBlobClientImpl();
-        }
+    private static class SingletonHelper {
+        private static final ReceiptBlobClientImpl RECEIPT_BLOB_CLIENT_SINGLETON_INSTANCE = new ReceiptBlobClientImpl();
+    }
 
-        return instance;
+    public static ReceiptBlobClientImpl getInstance() {
+        return ReceiptBlobClientImpl.SingletonHelper.RECEIPT_BLOB_CLIENT_SINGLETON_INSTANCE;
     }
 
     /**
