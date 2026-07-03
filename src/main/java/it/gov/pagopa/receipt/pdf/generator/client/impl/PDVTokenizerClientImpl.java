@@ -31,15 +31,6 @@ public class PDVTokenizerClientImpl implements PDVTokenizerClient {
 
     private final HttpClient client;
 
-    private static PDVTokenizerClientImpl instance;
-
-    public static PDVTokenizerClientImpl getInstance() {
-        if (instance == null) {
-            instance = new PDVTokenizerClientImpl();
-        }
-        return instance;
-    }
-
     private PDVTokenizerClientImpl() {
         this.client = HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_2)
@@ -48,6 +39,14 @@ public class PDVTokenizerClientImpl implements PDVTokenizerClient {
 
     PDVTokenizerClientImpl(HttpClient client) {
         this.client = client;
+    }
+
+    private static class SingletonHelper {
+        private static final PDVTokenizerClientImpl PDV_TOKENIZER_CLIENT_SINGLETON_INSTANCE = new PDVTokenizerClientImpl();
+    }
+
+    public static PDVTokenizerClientImpl getInstance() {
+        return PDVTokenizerClientImpl.SingletonHelper.PDV_TOKENIZER_CLIENT_SINGLETON_INSTANCE;
     }
 
     /**

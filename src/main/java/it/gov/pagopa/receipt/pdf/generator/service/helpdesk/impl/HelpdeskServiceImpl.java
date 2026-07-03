@@ -21,7 +21,6 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 
 import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.FISCAL_CODE_ANONYMOUS;
 import static it.gov.pagopa.receipt.pdf.generator.utils.HelpdeskUtils.*;
@@ -48,7 +47,7 @@ public class HelpdeskServiceImpl implements HelpdeskService {
         Receipt receipt = new Receipt();
 
         // Insert biz-event data into receipt
-        receipt.setId(bizEvent.getId() + UUID.randomUUID());
+        receipt.setId(bizEvent.getId());
         receipt.setEventId(bizEvent.getId());
 
         EventData eventData = new EventData();

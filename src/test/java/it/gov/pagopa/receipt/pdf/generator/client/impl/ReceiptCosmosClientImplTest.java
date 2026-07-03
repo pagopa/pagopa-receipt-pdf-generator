@@ -49,7 +49,7 @@ class ReceiptCosmosClientImplTest {
                 "COSMOS_RECEIPT_KEY", mockKey,
                 "COSMOS_RECEIPT_SERVICE_ENDPOINT", "",
                 "COSMOS_RECEIPT_READ_REGION", ""
-        ).execute(() -> Assertions.assertThrows(IllegalArgumentException.class, ReceiptCosmosClientImpl::getInstance)
+        ).execute(() -> Assertions.assertThrows(ExceptionInInitializerError.class, ReceiptCosmosClientImpl::getInstance)
         );
     }
 

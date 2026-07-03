@@ -5,7 +5,7 @@
 
     <groupId>it.gov.pagopa.receipt</groupId>
     <artifactId>receipt-pdf-generator</artifactId>
-    <version>1.17.16</version>
+    <version>1.17.16-2-PAGOPA-3659-generator</version>
     <packaging>jar</packaging>
 
     <name>pagopa-receipt-pdf-generator</name>

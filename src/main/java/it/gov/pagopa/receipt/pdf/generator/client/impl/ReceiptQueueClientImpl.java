@@ -14,8 +14,6 @@ import java.time.temporal.ChronoUnit;
  */
 public class ReceiptQueueClientImpl implements ReceiptQueueClient {
 
-    private static ReceiptQueueClientImpl instance;
-
     private final int receiptQueueDelay = Integer.parseInt(System.getenv().getOrDefault("RECEIPT_QUEUE_DELAY", "1"));
 
     private final QueueClient queueClient;
@@ -34,12 +32,12 @@ public class ReceiptQueueClientImpl implements ReceiptQueueClient {
         this.queueClient = queueClient;
     }
 
-    public static ReceiptQueueClientImpl getInstance() {
-        if (instance == null) {
-            instance = new ReceiptQueueClientImpl();
-        }
+    private static class SingletonHelper {
+        private static final ReceiptQueueClientImpl RECEIPT_QUEUE_CLIENT_SINGLETON_INSTANCE = new ReceiptQueueClientImpl();
+    }
 
-        return instance;
+    public static ReceiptQueueClientImpl getInstance() {
+        return ReceiptQueueClientImpl.SingletonHelper.RECEIPT_QUEUE_CLIENT_SINGLETON_INSTANCE;
     }
 
     /**

@@ -18,8 +18,6 @@ import java.util.List;
  */
 public class BizEventCosmosClientImpl implements BizEventCosmosClient {
 
-    private static BizEventCosmosClientImpl instance;
-
     private final String databaseId = System.getenv("COSMOS_BIZ_EVENT_DB_NAME");
     private final String containerId = System.getenv("COSMOS_BIZ_EVENT_CONTAINER_NAME");
 
@@ -41,11 +39,12 @@ public class BizEventCosmosClientImpl implements BizEventCosmosClient {
         this.cosmosClient = cosmosClient;
     }
 
+    private static class SingletonHelper {
+        private static final BizEventCosmosClientImpl BIZEVENT_COSMOS_CLIENT_SINGLETON_INSTANCE = new BizEventCosmosClientImpl();
+    }
+
     public static BizEventCosmosClientImpl getInstance() {
-        if (instance == null) {
-            instance = new BizEventCosmosClientImpl();
-        }
-        return instance;
+        return BizEventCosmosClientImpl.SingletonHelper.BIZEVENT_COSMOS_CLIENT_SINGLETON_INSTANCE;
     }
 
     /**

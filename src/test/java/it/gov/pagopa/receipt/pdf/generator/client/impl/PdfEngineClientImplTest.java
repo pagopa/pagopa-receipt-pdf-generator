@@ -193,7 +193,6 @@ class PdfEngineClientImplTest {
 
     private PdfEngineRequest buildPdfEngineRequest() throws MalformedURLException, JsonProcessingException {
         return PdfEngineRequest.builder()
-                .template(tempFile.toURI().toURL())
                 .data(objectMapper.writeValueAsString(new ReceiptPDFTemplate()))
                 .build();
     }
