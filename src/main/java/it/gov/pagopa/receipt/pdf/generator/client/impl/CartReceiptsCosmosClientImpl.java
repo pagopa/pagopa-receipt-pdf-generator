@@ -5,8 +5,10 @@ import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosClientBuilder;
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosDatabase;
+import com.azure.cosmos.implementation.NotFoundException;
 import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.CosmosQueryRequestOptions;
+import com.azure.cosmos.models.PartitionKey;
 import com.azure.cosmos.util.CosmosPagedIterable;
 import it.gov.pagopa.receipt.pdf.generator.client.CartReceiptsCosmosClient;
 import it.gov.pagopa.receipt.pdf.generator.entity.cart.CartForReceipt;
@@ -51,19 +53,13 @@ public class CartReceiptsCosmosClientImpl implements CartReceiptsCosmosClient {
     @Override
     public CartForReceipt getCartItem(String cartId) throws CartNotFoundException {
         CosmosDatabase cosmosDatabase = this.cosmosClient.getDatabase(databaseId);
-
         CosmosContainer cosmosContainer = cosmosDatabase.getContainer(cartForReceiptContainerName);
 
-        //Build query
-        String query = "SELECT * FROM c WHERE c.cartId = '%s'".formatted(cartId);
-
-        //Query the container
-        CosmosPagedIterable<CartForReceipt> queryResponse = cosmosContainer
-                .queryItems(query, new CosmosQueryRequestOptions(), CartForReceipt.class);
-
-        if (queryResponse.iterator().hasNext()) {
-            return queryResponse.iterator().next();
-        } else {
+        try {
+            return cosmosContainer
+                    .readItem(cartId, new PartitionKey(cartId), CartForReceipt.class)
+                    .getItem();
+        } catch (NotFoundException e) {
             throw new CartNotFoundException("Document not found in the defined container");
         }
     }
