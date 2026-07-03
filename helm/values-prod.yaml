@@ -216,9 +216,9 @@ pagopa-receipt-pdf-generator:
       - type: cron
         metadata:
           timezone: "Europe/Rome"
-          start: "25 8 * * 1-5"
+          start: "00 8 * * 1-5"
           end: "0 14 * * 1-5"
-          desiredReplicas: "10"
+          desiredReplicas: "15"
       - type: cpu
         metadata:
           # Required
