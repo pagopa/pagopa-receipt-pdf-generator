@@ -8,6 +8,7 @@ import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.CosmosQueryRequestOptions;
 import com.azure.cosmos.models.SqlParameter;
 import com.azure.cosmos.models.SqlQuerySpec;
+import com.azure.cosmos.models.PartitionKey;
 import com.azure.cosmos.util.CosmosPagedIterable;
 import it.gov.pagopa.receipt.pdf.generator.client.ReceiptCosmosClient;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.Receipt;
@@ -19,8 +20,6 @@ import java.util.List;
  * Client for the CosmosDB database
  */
 public class ReceiptCosmosClientImpl implements ReceiptCosmosClient {
-
-    private static ReceiptCosmosClientImpl instance;
 
     private final String databaseId = System.getenv("COSMOS_RECEIPT_DB_NAME");
     private final String containerId = System.getenv("COSMOS_RECEIPT_CONTAINER_NAME");
@@ -43,12 +42,12 @@ public class ReceiptCosmosClientImpl implements ReceiptCosmosClient {
         this.cosmosClient = cosmosClient;
     }
 
-    public static ReceiptCosmosClientImpl getInstance() {
-        if (instance == null) {
-            instance = new ReceiptCosmosClientImpl();
-        }
+    private static class SingletonHelper {
+        private static final ReceiptCosmosClientImpl RECEIPT_COSMOS_CLIENT_SINGLETON_INSTANCE = new ReceiptCosmosClientImpl();
+    }
 
-        return instance;
+    public static ReceiptCosmosClientImpl getInstance() {
+        return ReceiptCosmosClientImpl.SingletonHelper.RECEIPT_COSMOS_CLIENT_SINGLETON_INSTANCE;
     }
 
     /**
@@ -57,8 +56,20 @@ public class ReceiptCosmosClientImpl implements ReceiptCosmosClient {
     @Override
     public Receipt getReceiptDocument(String eventId) throws ReceiptNotFoundException {
         CosmosDatabase cosmosDatabase = this.cosmosClient.getDatabase(databaseId);
-
         CosmosContainer cosmosContainer = cosmosDatabase.getContainer(containerId);
+
+        try{
+            CosmosItemResponse<Receipt> itemResponse = cosmosContainer
+                    .readItem(id, new PartitionKey(id), Receipt.class);
+            if (itemResponse != null) {
+                return itemResponse.getItem();
+            }
+        } catch (CosmosException ce) {
+            if (ce.getStatusCode() != 404) {
+                // if not found use fallback query
+                throw ce;
+            }
+        }
 
         //Build query
         SqlQuerySpec querySpec = new SqlQuerySpec(

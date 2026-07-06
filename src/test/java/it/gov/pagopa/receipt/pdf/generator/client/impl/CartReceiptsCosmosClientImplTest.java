@@ -5,6 +5,7 @@ import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosDatabase;
 import com.azure.cosmos.implementation.NotFoundException;
 import com.azure.cosmos.models.CosmosItemResponse;
+import com.azure.cosmos.models.PartitionKey;
 import it.gov.pagopa.receipt.pdf.generator.entity.cart.CartForReceipt;
 import it.gov.pagopa.receipt.pdf.generator.exception.CartNotFoundException;
 import org.junit.jupiter.api.Test;
@@ -15,10 +16,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static uk.org.webcompere.systemstubs.SystemStubs.withEnvironmentVariables;
@@ -48,7 +52,7 @@ class CartReceiptsCosmosClientImplTest {
                 "COSMOS_RECEIPT_KEY", mockKey,
                 "COSMOS_RECEIPT_SERVICE_ENDPOINT", "",
                 "COSMOS_RECEIPT_READ_REGION", ""
-        ).execute(() -> assertThrows(IllegalArgumentException.class, CartReceiptsCosmosClientImpl::getInstance)
+        ).execute(() -> assertThrows(ExceptionInInitializerError.class, CartReceiptsCosmosClientImpl::getInstance)
         );
     }
 
@@ -65,7 +69,9 @@ class CartReceiptsCosmosClientImplTest {
 
         CartForReceipt result = assertDoesNotThrow(() -> sut.getCartItem(CART_ID));
 
+        assertNotNull(result);
         assertEquals(CART_ID, result.getId());
+        verify(mockContainer).readItem(eq(CART_ID), any(PartitionKey.class), any());
     }
 
     @Test
@@ -81,11 +87,18 @@ class CartReceiptsCosmosClientImplTest {
 
     @Test
     void updateCartSuccess() {
+        CartForReceipt cartForReceipt = new CartForReceipt();
+        cartForReceipt.setId(CART_ID);
+
         when(cosmosClientMock.getDatabase(any())).thenReturn(mockDatabase);
         when(mockDatabase.getContainer(any())).thenReturn(mockContainer);
+        doReturn(mockItemResponse).when(mockContainer).upsertItem(any());
 
-        assertDoesNotThrow(() -> sut.updateCart(any()));
+        CosmosItemResponse<CartForReceipt> result = assertDoesNotThrow(() -> sut.updateCart(cartForReceipt));
 
-        verify(mockContainer).upsertItem(any());
+        assertNotNull(result);
+        assertEquals(mockItemResponse, result);
+        verify(mockContainer).upsertItem(eq(cartForReceipt));
     }
 }
+
