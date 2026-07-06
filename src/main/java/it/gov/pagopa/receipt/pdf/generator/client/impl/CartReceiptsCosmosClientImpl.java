@@ -5,11 +5,9 @@ import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosClientBuilder;
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosDatabase;
-import com.azure.cosmos.implementation.NotFoundException;
+import com.azure.cosmos.CosmosException;
 import com.azure.cosmos.models.CosmosItemResponse;
-import com.azure.cosmos.models.CosmosQueryRequestOptions;
 import com.azure.cosmos.models.PartitionKey;
-import com.azure.cosmos.util.CosmosPagedIterable;
 import it.gov.pagopa.receipt.pdf.generator.client.CartReceiptsCosmosClient;
 import it.gov.pagopa.receipt.pdf.generator.entity.cart.CartForReceipt;
 import it.gov.pagopa.receipt.pdf.generator.exception.CartNotFoundException;
@@ -40,13 +38,18 @@ public class CartReceiptsCosmosClientImpl implements CartReceiptsCosmosClient {
         this.cosmosClient = cosmosClient;
     }
 
+    /**
+     * Bill Pugh singleton holder: the JVM guarantees that the class is loaded
+     * (and therefore INSTANCE initialized) lazily and in a thread-safe way.
+     */
     private static class SingletonHelper {
-        private static final CartReceiptsCosmosClientImpl CART_RECEIPT_COSMOS_CLIENT_SINGLETON_INSTANCE = new CartReceiptsCosmosClientImpl();
+        private static final CartReceiptsCosmosClientImpl INSTANCE = new CartReceiptsCosmosClientImpl();
     }
 
     public static CartReceiptsCosmosClientImpl getInstance() {
-        return CartReceiptsCosmosClientImpl.SingletonHelper.CART_RECEIPT_COSMOS_CLIENT_SINGLETON_INSTANCE;
+        return SingletonHelper.INSTANCE;
     }
+
     /**
      * {@inheritDoc}
      */
@@ -60,8 +63,11 @@ public class CartReceiptsCosmosClientImpl implements CartReceiptsCosmosClient {
             return cosmosContainer
                     .readItem(cartId, new PartitionKey(cartId), CartForReceipt.class)
                     .getItem();
-        } catch (NotFoundException e) {
-            throw new CartNotFoundException("Document not found in the defined container");
+        } catch (CosmosException e) {
+            if (e.getStatusCode() == 404) {
+                throw new CartNotFoundException("Document not found in the defined container", e);
+            }
+            throw e;
         }
     }
 
