@@ -101,7 +101,6 @@ microservice-chart: &microservice-chart
     COSMOS_BIZ_EVENT_CONTAINER_NAME: "biz-events"
     CART_RECEIPT_QUEUE_TOPIC: "pagopa-u-weu-receipts-queue-cart-receipt-waiting-4-gen"
     CART_RECEIPT_QUEUE_TOPIC_POISON: "pagopa-u-weu-receipts-queue-cart-receipt-waiting-4-gen-poison"
-    BLOB_STORAGE_ACCOUNT_ENDPOINT: "https://pagopauweureceiptsfnsa.blob.core.windows.net"
     BLOB_STORAGE_CONTAINER_NAME: "pagopa-u-weu-receipts-azure-blob-receipt-st-attach"
     WORKING_DIRECTORY_PATH: "/temp"
     MIN_PDF_LENGTH: "10000"
