@@ -1,8 +1,6 @@
 package it.gov.pagopa.receipt.pdf.generator.client.impl;
 
-import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosContainer;
-import com.azure.cosmos.CosmosDatabase;
 import com.azure.cosmos.CosmosException;
 import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.PartitionKey;
@@ -38,10 +36,6 @@ class ReceiptCosmosClientImplTest {
     public static final String RECEIPT_ID = "a valid receipt id";
 
     @Mock
-    private CosmosClient cosmosClientMock;
-    @Mock
-    private CosmosDatabase mockDatabase;
-    @Mock
     private CosmosContainer mockContainer;
     @Mock
     private CosmosPagedIterable<Receipt> mockIterable;
@@ -70,8 +64,6 @@ class ReceiptCosmosClientImplTest {
         Receipt receipt = new Receipt();
         receipt.setId(RECEIPT_ID);
 
-        when(cosmosClientMock.getDatabase(any())).thenReturn(mockDatabase);
-        when(mockDatabase.getContainer(any())).thenReturn(mockContainer);
         when(mockContainer.readItem(anyString(), any(PartitionKey.class), eq(Receipt.class))).thenReturn(mockItemResponse);
         when(mockItemResponse.getItem()).thenReturn(receipt);
 
@@ -88,8 +80,6 @@ class ReceiptCosmosClientImplTest {
         Receipt receipt = new Receipt();
         receipt.setId(RECEIPT_ID);
 
-        when(cosmosClientMock.getDatabase(any())).thenReturn(mockDatabase);
-        when(mockDatabase.getContainer(any())).thenReturn(mockContainer);
         when(mockCosmosException.getStatusCode()).thenReturn(404);
         when(mockContainer.readItem(anyString(), any(PartitionKey.class), eq(Receipt.class))).thenThrow(mockCosmosException);
         when(mockContainer.queryItems(any(SqlQuerySpec.class), any(), eq(Receipt.class))).thenReturn(mockIterable);
@@ -103,8 +93,6 @@ class ReceiptCosmosClientImplTest {
 
     @Test
     void getReceiptDocument_readItemNullFallbackToQuery_notFound_throwsReceiptNotFoundException() {
-        when(cosmosClientMock.getDatabase(any())).thenReturn(mockDatabase);
-        when(mockDatabase.getContainer(any())).thenReturn(mockContainer);
         when(mockCosmosException.getStatusCode()).thenReturn(404);
         when(mockContainer.readItem(anyString(), any(PartitionKey.class), eq(Receipt.class))).thenThrow(mockCosmosException);
         when(mockContainer.queryItems(any(SqlQuerySpec.class), any(), eq(Receipt.class))).thenReturn(mockIterable);
@@ -116,8 +104,6 @@ class ReceiptCosmosClientImplTest {
 
     @Test
     void getReceiptDocument_readItemNon404CosmosException_rethrows() {
-        when(cosmosClientMock.getDatabase(any())).thenReturn(mockDatabase);
-        when(mockDatabase.getContainer(any())).thenReturn(mockContainer);
         when(mockCosmosException.getStatusCode()).thenReturn(500);
         when(mockContainer.readItem(anyString(), any(PartitionKey.class), eq(Receipt.class))).thenThrow(mockCosmosException);
 

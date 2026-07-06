@@ -1,6 +1,5 @@
 package it.gov.pagopa.receipt.pdf.generator.client.impl;
 
-import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosClientBuilder;
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosDatabase;
@@ -20,25 +19,33 @@ import java.util.List;
  */
 public class BizEventCosmosClientImpl implements BizEventCosmosClient {
 
-    private final String databaseId = System.getenv("COSMOS_BIZ_EVENT_DB_NAME");
-    private final String containerId = System.getenv("COSMOS_BIZ_EVENT_CONTAINER_NAME");
+    private final CosmosContainer bizEventContainer;
 
-    private final CosmosClient cosmosClient;
-
+    @SuppressWarnings("resource") // CosmosClient lifecycle == singleton lifecycle; never closed on purpose
     private BizEventCosmosClientImpl() {
         String azureKey = System.getenv("COSMOS_BIZ_EVENT_KEY");
         String serviceEndpoint = System.getenv("COSMOS_BIZ_EVENT_SERVICE_ENDPOINT");
         String readRegion = System.getenv("COSMOS_BIZ_EVENT_READ_REGION");
 
-        this.cosmosClient = new CosmosClientBuilder()
+        String databaseId = System.getenv("COSMOS_BIZ_EVENT_DB_NAME");
+        String containerId = System.getenv("COSMOS_BIZ_EVENT_CONTAINER_NAME");
+
+        CosmosDatabase database = new CosmosClientBuilder()
                 .endpoint(serviceEndpoint)
                 .key(azureKey)
                 .preferredRegions(List.of(readRegion))
-                .buildClient();
+                .buildClient()
+                .getDatabase(databaseId);
+
+        this.bizEventContainer = database.getContainer(containerId);
     }
 
-    public BizEventCosmosClientImpl(CosmosClient cosmosClient) {
-        this.cosmosClient = cosmosClient;
+    /**
+     * Test-only constructor. Package-private visibility so it is only reachable from tests
+     * in the same package.
+     */
+    BizEventCosmosClientImpl(CosmosContainer bizEventContainer) {
+        this.bizEventContainer = bizEventContainer;
     }
 
     /**
@@ -58,11 +65,8 @@ public class BizEventCosmosClientImpl implements BizEventCosmosClient {
      */
     @Override
     public BizEvent getBizEventDocument(String eventId) throws BizEventNotFoundException {
-        CosmosDatabase cosmosDatabase = this.cosmosClient.getDatabase(databaseId);
-        CosmosContainer cosmosContainer = cosmosDatabase.getContainer(containerId);
-
         try {
-            return cosmosContainer.readItem(eventId, new PartitionKey(eventId), BizEvent.class).getItem();
+            return bizEventContainer.readItem(eventId, new PartitionKey(eventId), BizEvent.class).getItem();
         } catch (CosmosException e) {
             if (e.getStatusCode() == 404) {
                 throw new BizEventNotFoundException("Document not found in the defined container", e);
@@ -76,9 +80,6 @@ public class BizEventCosmosClientImpl implements BizEventCosmosClient {
      */
     @Override
     public List<BizEvent> getAllCartBizEventDocument(String transactionId) {
-        CosmosDatabase cosmosDatabase = this.cosmosClient.getDatabase(databaseId);
-        CosmosContainer cosmosContainer = cosmosDatabase.getContainer(containerId);
-
         //Build query
         SqlQuerySpec querySpec = new SqlQuerySpec(
                 "SELECT * FROM c WHERE c.transactionDetails.transaction.transactionId = @transactionId",
@@ -88,7 +89,7 @@ public class BizEventCosmosClientImpl implements BizEventCosmosClient {
         );
 
         //Query the container
-        return cosmosContainer
+        return bizEventContainer
                 .queryItems(querySpec, new CosmosQueryRequestOptions(), BizEvent.class)
                 .stream().limit(6)
                 .toList();

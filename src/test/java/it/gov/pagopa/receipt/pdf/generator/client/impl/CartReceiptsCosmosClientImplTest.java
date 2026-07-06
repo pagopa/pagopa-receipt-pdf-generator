@@ -1,8 +1,6 @@
 package it.gov.pagopa.receipt.pdf.generator.client.impl;
 
-import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosContainer;
-import com.azure.cosmos.CosmosDatabase;
 import com.azure.cosmos.CosmosException;
 import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.PartitionKey;
@@ -32,11 +30,6 @@ class CartReceiptsCosmosClientImplTest {
     private static final String CART_ID = "1";
 
     @Mock
-    private CosmosClient cosmosClientMock;
-
-    @Mock
-    private CosmosDatabase mockDatabase;
-    @Mock
     private CosmosContainer mockContainer;
     @Mock
     private CosmosItemResponse<CartForReceipt> mockItemResponse;
@@ -62,8 +55,6 @@ class CartReceiptsCosmosClientImplTest {
         CartForReceipt cartForReceipt = new CartForReceipt();
         cartForReceipt.setId(CART_ID);
 
-        when(cosmosClientMock.getDatabase(any())).thenReturn(mockDatabase);
-        when(mockDatabase.getContainer(any())).thenReturn(mockContainer);
         when(mockContainer.readItem(anyString(), any(), eq(CartForReceipt.class)))
                 .thenReturn(mockItemResponse);
         when(mockItemResponse.getItem()).thenReturn(cartForReceipt);
@@ -77,8 +68,6 @@ class CartReceiptsCosmosClientImplTest {
 
     @Test
     void getCartItem_KO_notFound() {
-        when(cosmosClientMock.getDatabase(any())).thenReturn(mockDatabase);
-        when(mockDatabase.getContainer(any())).thenReturn(mockContainer);
         when(mockCosmosException.getStatusCode()).thenReturn(404);
         when(mockContainer.readItem(anyString(), any(), eq(CartForReceipt.class)))
                 .thenThrow(mockCosmosException);
@@ -88,8 +77,6 @@ class CartReceiptsCosmosClientImplTest {
 
     @Test
     void getCartItem_KO_error() {
-        when(cosmosClientMock.getDatabase(any())).thenReturn(mockDatabase);
-        when(mockDatabase.getContainer(any())).thenReturn(mockContainer);
         when(mockCosmosException.getStatusCode()).thenReturn(500);
         when(mockContainer.readItem(anyString(), any(), eq(CartForReceipt.class)))
                 .thenThrow(mockCosmosException);
@@ -102,15 +89,13 @@ class CartReceiptsCosmosClientImplTest {
         CartForReceipt cartForReceipt = new CartForReceipt();
         cartForReceipt.setId(CART_ID);
 
-        when(cosmosClientMock.getDatabase(any())).thenReturn(mockDatabase);
-        when(mockDatabase.getContainer(any())).thenReturn(mockContainer);
         doReturn(mockItemResponse).when(mockContainer).upsertItem(any());
 
         CosmosItemResponse<CartForReceipt> result = assertDoesNotThrow(() -> sut.updateCart(cartForReceipt));
 
         assertNotNull(result);
         assertEquals(mockItemResponse, result);
-        verify(mockContainer).upsertItem(eq(cartForReceipt));
+        verify(mockContainer).upsertItem(cartForReceipt);
     }
 }
 

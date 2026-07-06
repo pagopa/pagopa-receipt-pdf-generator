@@ -1,6 +1,5 @@
 package it.gov.pagopa.receipt.pdf.generator.client.impl;
 
-import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosClientBuilder;
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosDatabase;
@@ -21,25 +20,33 @@ import java.util.List;
  */
 public class ReceiptCosmosClientImpl implements ReceiptCosmosClient {
 
-    private final String databaseId = System.getenv("COSMOS_RECEIPT_DB_NAME");
-    private final String containerId = System.getenv("COSMOS_RECEIPT_CONTAINER_NAME");
+    private final CosmosContainer receiptContainer;
 
-    private final CosmosClient cosmosClient;
-
+    @SuppressWarnings("resource") // CosmosClient lifecycle == singleton lifecycle; never closed on purpose
     private ReceiptCosmosClientImpl() {
         String azureKey = System.getenv("COSMOS_RECEIPT_KEY");
         String serviceEndpoint = System.getenv("COSMOS_RECEIPT_SERVICE_ENDPOINT");
         String readRegion = System.getenv("COSMOS_RECEIPT_READ_REGION");
 
-        this.cosmosClient = new CosmosClientBuilder()
+        String databaseId = System.getenv("COSMOS_RECEIPT_DB_NAME");
+        String containerId = System.getenv("COSMOS_RECEIPT_CONTAINER_NAME");
+
+        CosmosDatabase database = new CosmosClientBuilder()
                 .endpoint(serviceEndpoint)
                 .key(azureKey)
                 .preferredRegions(List.of(readRegion))
-                .buildClient();
+                .buildClient()
+                .getDatabase(databaseId);
+
+        this.receiptContainer = database.getContainer(containerId);
     }
 
-    ReceiptCosmosClientImpl(CosmosClient cosmosClient) {
-        this.cosmosClient = cosmosClient;
+    /**
+     * Test-only constructor. Package-private visibility so it is only reachable from tests
+     * in the same package.
+     */
+    ReceiptCosmosClientImpl(CosmosContainer receiptContainer) {
+        this.receiptContainer = receiptContainer;
     }
 
     /**
@@ -59,11 +66,8 @@ public class ReceiptCosmosClientImpl implements ReceiptCosmosClient {
      */
     @Override
     public Receipt getReceiptDocument(String eventId) throws ReceiptNotFoundException {
-        CosmosDatabase cosmosDatabase = this.cosmosClient.getDatabase(databaseId);
-        CosmosContainer cosmosContainer = cosmosDatabase.getContainer(containerId);
-
         try {
-            return cosmosContainer
+            return receiptContainer
                     .readItem(eventId, new PartitionKey(eventId), Receipt.class)
                     .getItem();
         } catch (CosmosException e) {
@@ -79,7 +83,7 @@ public class ReceiptCosmosClientImpl implements ReceiptCosmosClient {
         );
 
         //Query the container
-        return cosmosContainer
+        return receiptContainer
                 .queryItems(querySpec, new CosmosQueryRequestOptions(), Receipt.class)
                 .stream()
                 .findFirst()
@@ -91,9 +95,6 @@ public class ReceiptCosmosClientImpl implements ReceiptCosmosClient {
      */
     @Override
     public CosmosItemResponse<Receipt> updateReceipt(Receipt receipt) {
-        CosmosDatabase cosmosDatabase = this.cosmosClient.getDatabase(databaseId);
-        CosmosContainer cosmosContainer = cosmosDatabase.getContainer(containerId);
-
-        return cosmosContainer.upsertItem(receipt);
+        return receiptContainer.upsertItem(receipt);
     }
 }
