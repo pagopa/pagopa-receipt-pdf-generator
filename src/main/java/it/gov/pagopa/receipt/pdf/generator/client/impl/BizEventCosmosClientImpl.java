@@ -4,16 +4,15 @@ import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosClientBuilder;
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosDatabase;
+import com.azure.cosmos.CosmosException;
 import com.azure.cosmos.models.CosmosQueryRequestOptions;
+import com.azure.cosmos.models.PartitionKey;
 import com.azure.cosmos.models.SqlParameter;
 import com.azure.cosmos.models.SqlQuerySpec;
-import com.azure.cosmos.util.CosmosPagedIterable;
 import it.gov.pagopa.receipt.pdf.generator.client.BizEventCosmosClient;
 import it.gov.pagopa.receipt.pdf.generator.entity.event.BizEvent;
-import it.gov.pagopa.receipt.pdf.generator.entity.event.enumeration.BizEventStatusType;
 import it.gov.pagopa.receipt.pdf.generator.exception.BizEventNotFoundException;
 
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -42,12 +41,16 @@ public class BizEventCosmosClientImpl implements BizEventCosmosClient {
         this.cosmosClient = cosmosClient;
     }
 
+    /**
+     * Bill Pugh singleton holder: the JVM guarantees that the class is loaded
+     * (and therefore INSTANCE initialized) lazily and in a thread-safe way.
+     */
     private static class SingletonHelper {
-        private static final BizEventCosmosClientImpl BIZEVENT_COSMOS_CLIENT_SINGLETON_INSTANCE = new BizEventCosmosClientImpl();
+        private static final BizEventCosmosClientImpl INSTANCE = new BizEventCosmosClientImpl();
     }
 
     public static BizEventCosmosClientImpl getInstance() {
-        return BizEventCosmosClientImpl.SingletonHelper.BIZEVENT_COSMOS_CLIENT_SINGLETON_INSTANCE;
+        return SingletonHelper.INSTANCE;
     }
 
     /**
@@ -58,26 +61,14 @@ public class BizEventCosmosClientImpl implements BizEventCosmosClient {
         CosmosDatabase cosmosDatabase = this.cosmosClient.getDatabase(databaseId);
         CosmosContainer cosmosContainer = cosmosDatabase.getContainer(containerId);
 
-        //Build query
-        SqlQuerySpec querySpec = new SqlQuerySpec(
-                "SELECT * FROM c " +
-                        "WHERE c.eventStatus IN (@statusDone, @statusIngested) " +
-                        "  AND c.id = @id ",
-                Arrays.asList(
-                        new SqlParameter("@statusDone", BizEventStatusType.DONE),
-                        new SqlParameter("@statusIngested", BizEventStatusType.INGESTED),
-                        new SqlParameter("@id", eventId)
-                )
-        );
-
-        //Query the container
-        CosmosPagedIterable<BizEvent> queryResponse = cosmosContainer
-                .queryItems(querySpec, new CosmosQueryRequestOptions(), BizEvent.class);
-
-        if (queryResponse.iterator().hasNext()) {
-            return queryResponse.iterator().next();
+        try {
+            return cosmosContainer.readItem(eventId, new PartitionKey(eventId), BizEvent.class).getItem();
+        } catch (CosmosException e) {
+            if (e.getStatusCode() == 404) {
+                throw new BizEventNotFoundException("Document not found in the defined container", e);
+            }
+            throw e;
         }
-        throw new BizEventNotFoundException("Document not found in the defined container");
     }
 
     /**
