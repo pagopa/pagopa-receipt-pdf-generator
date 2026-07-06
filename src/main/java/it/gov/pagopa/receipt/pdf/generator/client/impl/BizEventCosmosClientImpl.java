@@ -94,5 +94,4 @@ public class BizEventCosmosClientImpl implements BizEventCosmosClient {
                 .stream().limit(6)
                 .toList();
     }
-
 }

@@ -32,12 +32,16 @@ public class CartQueueClientImpl implements CartQueueClient {
         this.cartQueueClient = cartQueueClient;
     }
 
+    /**
+     * Bill Pugh singleton holder: the JVM guarantees that the class is loaded
+     * (and therefore INSTANCE initialized) lazily and in a thread-safe way.
+     */
     private static class SingletonHelper {
-        private static final CartQueueClientImpl CART_QUEUE_CLIENT_SINGLETON_INSTANCE = new CartQueueClientImpl();
+        private static final CartQueueClientImpl INSTANCE = new CartQueueClientImpl();
     }
 
     public static CartQueueClientImpl getInstance() {
-        return SingletonHelper.CART_QUEUE_CLIENT_SINGLETON_INSTANCE;
+        return SingletonHelper.INSTANCE;
     }
 
     /**

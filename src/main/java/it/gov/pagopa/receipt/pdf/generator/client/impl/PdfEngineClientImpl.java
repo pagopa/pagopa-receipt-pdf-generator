@@ -54,12 +54,16 @@ public class PdfEngineClientImpl implements PdfEngineClient {
         this.client = client;
     }
 
+    /**
+     * Bill Pugh singleton holder: the JVM guarantees that the class is loaded
+     * (and therefore INSTANCE initialized) lazily and in a thread-safe way.
+     */
     private static class SingletonHelper {
-        private static final PdfEngineClientImpl PDF_ENGINE_CLIENT_SINGLETON_INSTANCE = new PdfEngineClientImpl();
+        private static final PdfEngineClientImpl INSTANCE = new PdfEngineClientImpl();
     }
 
     public static PdfEngineClientImpl getInstance() {
-        return PdfEngineClientImpl.SingletonHelper.PDF_ENGINE_CLIENT_SINGLETON_INSTANCE;
+        return SingletonHelper.INSTANCE;
     }
 
     /**

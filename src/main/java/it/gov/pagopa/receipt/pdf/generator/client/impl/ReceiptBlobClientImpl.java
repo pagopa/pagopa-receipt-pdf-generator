@@ -38,12 +38,16 @@ public class ReceiptBlobClientImpl implements ReceiptBlobClient {
         this.blobServiceClient = serviceClient;
     }
 
+    /**
+     * Bill Pugh singleton holder: the JVM guarantees that the class is loaded
+     * (and therefore INSTANCE initialized) lazily and in a thread-safe way.
+     */
     private static class SingletonHelper {
-        private static final ReceiptBlobClientImpl RECEIPT_BLOB_CLIENT_SINGLETON_INSTANCE = new ReceiptBlobClientImpl();
+        private static final ReceiptBlobClientImpl INSTANCE = new ReceiptBlobClientImpl();
     }
 
     public static ReceiptBlobClientImpl getInstance() {
-        return ReceiptBlobClientImpl.SingletonHelper.RECEIPT_BLOB_CLIENT_SINGLETON_INSTANCE;
+        return ReceiptBlobClientImpl.SingletonHelper.INSTANCE;
     }
 
     /**
