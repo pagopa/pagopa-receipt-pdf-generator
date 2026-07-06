@@ -4,12 +4,12 @@ import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosClientBuilder;
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosDatabase;
+import com.azure.cosmos.CosmosException;
 import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.CosmosQueryRequestOptions;
+import com.azure.cosmos.models.PartitionKey;
 import com.azure.cosmos.models.SqlParameter;
 import com.azure.cosmos.models.SqlQuerySpec;
-import com.azure.cosmos.models.PartitionKey;
-import com.azure.cosmos.util.CosmosPagedIterable;
 import it.gov.pagopa.receipt.pdf.generator.client.ReceiptCosmosClient;
 import it.gov.pagopa.receipt.pdf.generator.entity.receipt.Receipt;
 import it.gov.pagopa.receipt.pdf.generator.exception.ReceiptNotFoundException;
@@ -42,12 +42,16 @@ public class ReceiptCosmosClientImpl implements ReceiptCosmosClient {
         this.cosmosClient = cosmosClient;
     }
 
+    /**
+     * Bill Pugh singleton holder: the JVM guarantees that the class is loaded
+     * (and therefore INSTANCE initialized) lazily and in a thread-safe way.
+     */
     private static class SingletonHelper {
-        private static final ReceiptCosmosClientImpl RECEIPT_COSMOS_CLIENT_SINGLETON_INSTANCE = new ReceiptCosmosClientImpl();
+        private static final ReceiptCosmosClientImpl INSTANCE = new ReceiptCosmosClientImpl();
     }
 
     public static ReceiptCosmosClientImpl getInstance() {
-        return ReceiptCosmosClientImpl.SingletonHelper.RECEIPT_COSMOS_CLIENT_SINGLETON_INSTANCE;
+        return SingletonHelper.INSTANCE;
     }
 
     /**
@@ -58,37 +62,28 @@ public class ReceiptCosmosClientImpl implements ReceiptCosmosClient {
         CosmosDatabase cosmosDatabase = this.cosmosClient.getDatabase(databaseId);
         CosmosContainer cosmosContainer = cosmosDatabase.getContainer(containerId);
 
-        try{
-            CosmosItemResponse<Receipt> itemResponse = cosmosContainer
-                    .readItem(id, new PartitionKey(id), Receipt.class);
-            if (itemResponse != null) {
-                return itemResponse.getItem();
-            }
-        } catch (CosmosException ce) {
-            if (ce.getStatusCode() != 404) {
-                // if not found use fallback query
-                throw ce;
+        try {
+            return cosmosContainer
+                    .readItem(eventId, new PartitionKey(eventId), Receipt.class)
+                    .getItem();
+        } catch (CosmosException e) {
+            if (e.getStatusCode() != 404) {
+                throw e;
             }
         }
 
         //Build query
         SqlQuerySpec querySpec = new SqlQuerySpec(
                 "SELECT * FROM c WHERE c.eventId = @eventId",
-                List.of(
-                        new SqlParameter("@eventId", eventId)
-                )
+                List.of(new SqlParameter("@eventId", eventId))
         );
 
         //Query the container
-        CosmosPagedIterable<Receipt> queryResponse = cosmosContainer
-                .queryItems(querySpec, new CosmosQueryRequestOptions(), Receipt.class);
-
-        if (queryResponse.iterator().hasNext()) {
-            return queryResponse.iterator().next();
-        } else {
-            throw new ReceiptNotFoundException("Document not found in the defined container");
-        }
-
+        return cosmosContainer
+                .queryItems(querySpec, new CosmosQueryRequestOptions(), Receipt.class)
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new ReceiptNotFoundException("Document not found in the defined container"));
     }
 
     /**
@@ -97,7 +92,6 @@ public class ReceiptCosmosClientImpl implements ReceiptCosmosClient {
     @Override
     public CosmosItemResponse<Receipt> updateReceipt(Receipt receipt) {
         CosmosDatabase cosmosDatabase = this.cosmosClient.getDatabase(databaseId);
-
         CosmosContainer cosmosContainer = cosmosDatabase.getContainer(containerId);
 
         return cosmosContainer.upsertItem(receipt);
