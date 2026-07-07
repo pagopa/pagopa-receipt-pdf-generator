@@ -2,8 +2,8 @@ apiVersion: v2
 name: pagopareceiptpdfgenerator
 description: Microservice description
 type: application
-version: 0.224.0
-appVersion: 1.17.18-1-PIDM-2050-optimize-cosmos-query
+version: 0.225.0
+appVersion: 1.17.18-2-PIDM-2050-optimize-cosmos-query
 dependencies:
   - name: microservice-chart
     version: 8.0.2
