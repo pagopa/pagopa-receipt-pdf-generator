@@ -30,7 +30,7 @@ jobs:
 
       - name: Checkout
         id: checkout
-        uses: actions/checkout@1f9a0c22da41e6ebfa534300ef656657ea2c6707
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
 
       - name: Login
         id: login
