@@ -2,7 +2,7 @@ Feature: Cart receipt generation triggered by a Queue message containing BizEven
 
   Scenario: Successful PDF generation and status update for an INSERTED cart receipt
     Given a cart with id "tr-success-1" and cartId "tr-success-1" and status "INSERTED" stored into cart datastore
-    And random biz events for cart with id "cart-receipt-success-1" and transaction id "tr-success-1" enqueued on cart queue
+    And random biz events for cart with id "tr-success-1" and transaction id "tr-success-1" enqueued on cart queue
     When the PDFs have been properly generate from cart after 30000 ms
     Then the cart datastore returns the cart
     And the cart receipt has cartId "tr-success-1"
@@ -12,7 +12,7 @@ Feature: Cart receipt generation triggered by a Queue message containing BizEven
 
   Scenario: Successful PDF generation and status update for a RETRY cart receipt
     Given a cart with id "tr-success-2" and cartId "tr-success-2" and status "RETRY" stored into cart datastore
-    And random biz events for cart with id "cart-receipt-success-2" and transaction id "tr-success-2" enqueued on cart queue
+    And random biz events for cart with id "tr-success-2" and transaction id "tr-success-2" enqueued on cart queue
     When the PDFs have been properly generate from cart after 30000 ms
     Then the cart datastore returns the cart
     And the cart receipt has cartId "tr-success-2"
@@ -22,7 +22,7 @@ Feature: Cart receipt generation triggered by a Queue message containing BizEven
 
   Scenario: Cart receipt is discarded if status is not INSERTED or RETRY
     Given a cart with id "tr-success-3" and cartId "tr-success-3" and status "FAILED" stored into cart datastore
-    And random biz events for cart with id "cart-receipt-success-3" and transaction id "tr-success-3" enqueued on cart queue
+    And random biz events for cart with id "tr-success-3" and transaction id "tr-success-3" enqueued on cart queue
     When the cart is discarded from generation after 30000 ms
     Then the cart datastore returns the cart
     And the cart receipt has cartId "tr-success-3"
@@ -30,7 +30,7 @@ Feature: Cart receipt generation triggered by a Queue message containing BizEven
 
   Scenario: a biz event stored on cart-receipts-message-error is enqueued on receipt queue that trigger the PDF receipt generation
     Given a cart with id "tr-retry-1" and cartId "tr-retry-1" and status "RETRY" stored into cart datastore
-    And a error cart with id "cart-receipt-retry-1" and transactionId "tr-retry-1" stored into cart-receipts-message-error datastore with status REVIEWED
+    And a error cart with id "tr-retry-1" and transactionId "tr-retry-1" stored into cart-receipts-message-error datastore with status REVIEWED
     When the PDFs have been properly generate from cart after 30000 ms
     Then the cart datastore returns the cart
     And the cart receipt has cartId "tr-retry-1"
