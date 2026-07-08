@@ -40,6 +40,9 @@ After(async function () {
         await deleteDocumentFromReceiptsDatastoreByEventId(this.receiptId);
     }
     if (this.errorReceiptId != null) {
+        // wipe every doc that shares the bizEventId, otherwise stale REQUEUED
+        // records with a different id would poison the next run on shared envs
+        await deleteDocumentFromErrorReceiptsDatastoreByBizEventId(this.errorReceiptId);
         await deleteDocumentFromErrorReceiptsDatastore(this.errorReceiptId);
     }
     if (this.errorCartId != null) {
@@ -215,6 +218,10 @@ Given('a error cart with id {string} and transactionId {string} stored into cart
 });
 
 Given('a error receipt with id {string} stored into receipt-message-error datastore with status REVIEWED', async function (id) {
+    // clean up ANY stale doc with the same bizEventId (not only exact id)
+    // to prevent flakiness in shared cloud env when previous runs left residual
+    // REQUEUED docs (e.g. created with a different id but same bizEventId).
+    await deleteDocumentFromErrorReceiptsDatastoreByBizEventId(id);
     await deleteDocumentFromErrorReceiptsDatastore(id);
 
     assert.strictEqual(this.eventId, id);
