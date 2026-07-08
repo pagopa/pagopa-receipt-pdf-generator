@@ -32,12 +32,16 @@ public class ReceiptQueueClientImpl implements ReceiptQueueClient {
         this.queueClient = queueClient;
     }
 
+    /**
+     * Bill Pugh singleton holder: the JVM guarantees that the class is loaded
+     * (and therefore INSTANCE initialized) lazily and in a thread-safe way.
+     */
     private static class SingletonHelper {
-        private static final ReceiptQueueClientImpl RECEIPT_QUEUE_CLIENT_SINGLETON_INSTANCE = new ReceiptQueueClientImpl();
+        private static final ReceiptQueueClientImpl INSTANCE = new ReceiptQueueClientImpl();
     }
 
     public static ReceiptQueueClientImpl getInstance() {
-        return ReceiptQueueClientImpl.SingletonHelper.RECEIPT_QUEUE_CLIENT_SINGLETON_INSTANCE;
+        return SingletonHelper.INSTANCE;
     }
 
     /**

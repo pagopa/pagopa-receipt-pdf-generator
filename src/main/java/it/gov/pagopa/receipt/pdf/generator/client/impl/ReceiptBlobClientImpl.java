@@ -3,8 +3,7 @@ package it.gov.pagopa.receipt.pdf.generator.client.impl;
 import com.azure.core.http.rest.Response;
 import com.azure.storage.blob.BlobClient;
 import com.azure.storage.blob.BlobContainerClient;
-import com.azure.storage.blob.BlobServiceClient;
-import com.azure.storage.blob.BlobServiceClientBuilder;
+import com.azure.storage.blob.BlobContainerClientBuilder;
 import com.azure.storage.blob.models.BlockBlobItem;
 import com.azure.storage.blob.options.BlobParallelUploadOptions;
 import com.microsoft.azure.functions.HttpStatus;
@@ -14,53 +13,49 @@ import it.gov.pagopa.receipt.pdf.generator.model.response.BlobStorageResponse;
 import java.io.InputStream;
 
 /**
- * Client for the Blob Storage
+ * {@inheritDoc}
  */
 public class ReceiptBlobClientImpl implements ReceiptBlobClient {
 
-    private final String containerName = System.getenv("BLOB_STORAGE_CONTAINER_NAME");
-
     private static final String FILE_EXTENSION = ".pdf";
 
-    private final BlobServiceClient blobServiceClient;
+    private final BlobContainerClient blobContainerClient;
 
     private ReceiptBlobClientImpl() {
         String connectionString = System.getenv("RECEIPTS_STORAGE_CONN_STRING");
-        String storageAccount = System.getenv("BLOB_STORAGE_ACCOUNT_ENDPOINT");
+        String containerName = System.getenv("BLOB_STORAGE_CONTAINER_NAME");
 
-        this.blobServiceClient = new BlobServiceClientBuilder()
-                .endpoint(storageAccount)
+        this.blobContainerClient = new BlobContainerClientBuilder()
                 .connectionString(connectionString)
+                .containerName(containerName)
                 .buildClient();
     }
 
-    ReceiptBlobClientImpl(BlobServiceClient serviceClient) {
-        this.blobServiceClient = serviceClient;
-    }
-
-    private static class SingletonHelper {
-        private static final ReceiptBlobClientImpl RECEIPT_BLOB_CLIENT_SINGLETON_INSTANCE = new ReceiptBlobClientImpl();
-    }
-
-    public static ReceiptBlobClientImpl getInstance() {
-        return ReceiptBlobClientImpl.SingletonHelper.RECEIPT_BLOB_CLIENT_SINGLETON_INSTANCE;
+    ReceiptBlobClientImpl(BlobContainerClient blobContainerClient) {
+        this.blobContainerClient = blobContainerClient;
     }
 
     /**
-     * Handles saving the PDF to the blob storage
-     *
-     * @param pdf      PDF file
-     * @param fileName Filename to save the PDF with
-     * @return blob storage response with PDF metadata or error message and status
+     * Bill Pugh singleton holder: the JVM guarantees that the class is loaded
+     * (and therefore INSTANCE initialized) lazily and in a thread-safe way.
      */
-    public BlobStorageResponse savePdfToBlobStorage(InputStream pdf, String fileName) {
+    private static class SingletonHelper {
+        private static final ReceiptBlobClientImpl INSTANCE = new ReceiptBlobClientImpl();
+    }
 
-        //Create the container and return a container client object
-        BlobContainerClient blobContainerClient = this.blobServiceClient.getBlobContainerClient(containerName);
+    public static ReceiptBlobClientImpl getInstance() {
+        return ReceiptBlobClientImpl.SingletonHelper.INSTANCE;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public BlobStorageResponse savePdfToBlobStorage(InputStream pdf, String fileName) {
         String fileNamePdf = fileName + FILE_EXTENSION;
 
         //Get a reference to a blob
-        BlobClient blobClient = blobContainerClient.getBlobClient(fileNamePdf);
+        BlobClient blobClient = this.blobContainerClient.getBlobClient(fileNamePdf);
 
         //Upload the blob
         Response<BlockBlobItem> blockBlobItemResponse = blobClient.uploadWithResponse(

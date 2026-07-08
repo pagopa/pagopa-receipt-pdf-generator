@@ -4,7 +4,7 @@ microservice-chart: &microservice-chart
   fullnameOverride: ""
   image:
     repository: ghcr.io/pagopa/pagopa-receipt-pdf-generator
-    tag: "1.17.18"
+    tag: "1.17.18-2-PIDM-2050-optimize-cosmos-query"
     pullPolicy: Always
   # https://github.com/Azure/azure-functions-host/blob/dev/src/WebJobs.Script.WebHost/Controllers/HostController.cs
   livenessProbe:
@@ -101,7 +101,6 @@ microservice-chart: &microservice-chart
     COSMOS_BIZ_EVENT_CONTAINER_NAME: "biz-events"
     CART_RECEIPT_QUEUE_TOPIC: "pagopa-p-weu-receipts-queue-cart-receipt-waiting-4-gen"
     CART_RECEIPT_QUEUE_TOPIC_POISON: "pagopa-p-weu-receipts-queue-cart-receipt-waiting-4-gen-poison"
-    BLOB_STORAGE_ACCOUNT_ENDPOINT: "https://pagopapweureceiptsfnsa.blob.core.windows.net"
     BLOB_STORAGE_CONTAINER_NAME: "pagopa-p-weu-receipts-azure-blob-receipt-st-attach"
     WORKING_DIRECTORY_PATH: "/temp"
     MIN_PDF_LENGTH: "10000"

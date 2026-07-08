@@ -1,9 +1,7 @@
 package it.gov.pagopa.receipt.pdf.generator.client.impl;
 
-import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosContainer;
-import com.azure.cosmos.CosmosDatabase;
-import com.azure.cosmos.implementation.NotFoundException;
+import com.azure.cosmos.CosmosException;
 import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.PartitionKey;
 import it.gov.pagopa.receipt.pdf.generator.entity.cart.CartForReceipt;
@@ -22,7 +20,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static uk.org.webcompere.systemstubs.SystemStubs.withEnvironmentVariables;
@@ -33,14 +30,11 @@ class CartReceiptsCosmosClientImplTest {
     private static final String CART_ID = "1";
 
     @Mock
-    private CosmosClient cosmosClientMock;
-
-    @Mock
-    private CosmosDatabase mockDatabase;
-    @Mock
     private CosmosContainer mockContainer;
     @Mock
     private CosmosItemResponse<CartForReceipt> mockItemResponse;
+    @Mock
+    private CosmosException mockCosmosException;
 
     @InjectMocks
     private CartReceiptsCosmosClientImpl sut;
@@ -57,13 +51,12 @@ class CartReceiptsCosmosClientImplTest {
     }
 
     @Test
-    void getCartItemSuccess() {
+    void getCartItem_OK() {
         CartForReceipt cartForReceipt = new CartForReceipt();
         cartForReceipt.setId(CART_ID);
 
-        when(cosmosClientMock.getDatabase(any())).thenReturn(mockDatabase);
-        when(mockDatabase.getContainer(any())).thenReturn(mockContainer);
-        doReturn(mockItemResponse).when(mockContainer).readItem(anyString(), any(PartitionKey.class), any());
+        when(mockContainer.readItem(anyString(), any(), eq(CartForReceipt.class)))
+                .thenReturn(mockItemResponse);
         when(mockItemResponse.getItem()).thenReturn(cartForReceipt);
 
         CartForReceipt result = assertDoesNotThrow(() -> sut.getCartItem(CART_ID));
@@ -74,12 +67,21 @@ class CartReceiptsCosmosClientImplTest {
     }
 
     @Test
-    void getCartItemFail() {
-        when(cosmosClientMock.getDatabase(any())).thenReturn(mockDatabase);
-        when(mockDatabase.getContainer(any())).thenReturn(mockContainer);
-        doThrow(new NotFoundException()).when(mockContainer).readItem(anyString(), any(PartitionKey.class), any());
+    void getCartItem_KO_notFound() {
+        when(mockCosmosException.getStatusCode()).thenReturn(404);
+        when(mockContainer.readItem(anyString(), any(), eq(CartForReceipt.class)))
+                .thenThrow(mockCosmosException);
 
         assertThrows(CartNotFoundException.class, () -> sut.getCartItem("an invalid receipt id"));
+    }
+
+    @Test
+    void getCartItem_KO_error() {
+        when(mockCosmosException.getStatusCode()).thenReturn(500);
+        when(mockContainer.readItem(anyString(), any(), eq(CartForReceipt.class)))
+                .thenThrow(mockCosmosException);
+
+        assertThrows(CosmosException.class, () -> sut.getCartItem("an invalid receipt id"));
     }
 
     @Test
@@ -87,15 +89,13 @@ class CartReceiptsCosmosClientImplTest {
         CartForReceipt cartForReceipt = new CartForReceipt();
         cartForReceipt.setId(CART_ID);
 
-        when(cosmosClientMock.getDatabase(any())).thenReturn(mockDatabase);
-        when(mockDatabase.getContainer(any())).thenReturn(mockContainer);
         doReturn(mockItemResponse).when(mockContainer).upsertItem(any());
 
         CosmosItemResponse<CartForReceipt> result = assertDoesNotThrow(() -> sut.updateCart(cartForReceipt));
 
         assertNotNull(result);
         assertEquals(mockItemResponse, result);
-        verify(mockContainer).upsertItem(eq(cartForReceipt));
+        verify(mockContainer).upsertItem(cartForReceipt);
     }
 }
 

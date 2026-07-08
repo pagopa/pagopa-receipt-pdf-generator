@@ -41,12 +41,16 @@ public class PDVTokenizerClientImpl implements PDVTokenizerClient {
         this.client = client;
     }
 
+    /**
+     * Bill Pugh singleton holder: the JVM guarantees that the class is loaded
+     * (and therefore INSTANCE initialized) lazily and in a thread-safe way.
+     */
     private static class SingletonHelper {
-        private static final PDVTokenizerClientImpl PDV_TOKENIZER_CLIENT_SINGLETON_INSTANCE = new PDVTokenizerClientImpl();
+        private static final PDVTokenizerClientImpl INSTANCE = new PDVTokenizerClientImpl();
     }
 
     public static PDVTokenizerClientImpl getInstance() {
-        return PDVTokenizerClientImpl.SingletonHelper.PDV_TOKENIZER_CLIENT_SINGLETON_INSTANCE;
+        return PDVTokenizerClientImpl.SingletonHelper.INSTANCE;
     }
 
     /**

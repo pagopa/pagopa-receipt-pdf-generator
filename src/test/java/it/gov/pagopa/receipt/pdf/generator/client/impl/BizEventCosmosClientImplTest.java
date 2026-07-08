@@ -1,9 +1,9 @@
 package it.gov.pagopa.receipt.pdf.generator.client.impl;
 
-import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosContainer;
-import com.azure.cosmos.CosmosDatabase;
-import com.azure.cosmos.models.FeedResponse;
+import com.azure.cosmos.CosmosException;
+import com.azure.cosmos.models.CosmosItemResponse;
+import com.azure.cosmos.models.SqlQuerySpec;
 import com.azure.cosmos.util.CosmosPagedIterable;
 import it.gov.pagopa.receipt.pdf.generator.entity.event.BizEvent;
 import it.gov.pagopa.receipt.pdf.generator.exception.BizEventNotFoundException;
@@ -13,7 +13,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -31,18 +30,13 @@ import static uk.org.webcompere.systemstubs.SystemStubs.withEnvironmentVariables
 class BizEventCosmosClientImplTest {
 
     @Mock
-    private CosmosClient cosmosClientMock;
-
-    @Mock
-    private CosmosDatabase mockDatabase;
-    @Mock
     private CosmosContainer mockContainer;
     @Mock
     private CosmosPagedIterable<BizEvent> mockIterable;
     @Mock
-    private Iterator<BizEvent> mockIterator;
+    private CosmosItemResponse<BizEvent> mockResponse;
     @Mock
-    private Iterable<FeedResponse<BizEvent>> mockFeedResponse;
+    private CosmosException mockCosmosException;
 
     @InjectMocks
     private BizEventCosmosClientImpl sut;
@@ -59,9 +53,7 @@ class BizEventCosmosClientImplTest {
 
     @Test
     void getAllCartBizEventDocumentsSuccess() {
-        when(cosmosClientMock.getDatabase(any())).thenReturn(mockDatabase);
-        when(mockDatabase.getContainer(any())).thenReturn(mockContainer);
-        when(mockContainer.queryItems(anyString(), any(), eq(BizEvent.class))).thenReturn(mockIterable);
+        when(mockContainer.queryItems(any(SqlQuerySpec.class), any(), eq(BizEvent.class))).thenReturn(mockIterable);
         when(mockIterable.stream()).thenReturn(Stream.of(new BizEvent()));
 
         List<BizEvent> result = assertDoesNotThrow(() -> sut.getAllCartBizEventDocument(""));
@@ -72,9 +64,7 @@ class BizEventCosmosClientImplTest {
 
     @Test
     void getAllCartBizEventDocumentsSuccessQueryResultTruncated() {
-        when(cosmosClientMock.getDatabase(any())).thenReturn(mockDatabase);
-        when(mockDatabase.getContainer(any())).thenReturn(mockContainer);
-        when(mockContainer.queryItems(anyString(), any(), eq(BizEvent.class))).thenReturn(mockIterable);
+        when(mockContainer.queryItems(any(SqlQuerySpec.class), any(), eq(BizEvent.class))).thenReturn(mockIterable);
         when(mockIterable.stream()).thenReturn(Stream.of(new BizEvent(), new BizEvent(), new BizEvent(), new BizEvent(), new BizEvent(), new BizEvent(), new BizEvent()));
 
         List<BizEvent> result = assertDoesNotThrow(() -> sut.getAllCartBizEventDocument(""));
@@ -87,23 +77,23 @@ class BizEventCosmosClientImplTest {
     void getBizEventDocumentSuccess() {
         BizEvent bizEvent = new BizEvent();
 
-        when(cosmosClientMock.getDatabase(any())).thenReturn(mockDatabase);
-        when(mockDatabase.getContainer(any())).thenReturn(mockContainer);
-        when(mockContainer.queryItems(anyString(), any(), eq(BizEvent.class))).thenReturn(mockIterable);
-        when(mockIterable.iterator()).thenReturn(mockIterator);
-        when(mockIterator.hasNext()).thenReturn(true);
-        when(mockIterator.next()).thenReturn(bizEvent);
+        when(mockContainer.readItem(anyString(), any(), eq(BizEvent.class))).thenReturn(mockResponse);
+        when(mockResponse.getItem()).thenReturn(bizEvent);
 
         assertDoesNotThrow(() -> sut.getBizEventDocument("1"));
     }
 
     @Test
     void getBizEventDocumentError() {
-        when(cosmosClientMock.getDatabase(any())).thenReturn(mockDatabase);
-        when(mockDatabase.getContainer(any())).thenReturn(mockContainer);
-        when(mockContainer.queryItems(anyString(), any(), eq(BizEvent.class))).thenReturn(mockIterable);
-        when(mockIterable.iterator()).thenReturn(mockIterator);
-        when(mockIterator.hasNext()).thenReturn(false);
+        when(mockContainer.readItem(anyString(), any(), eq(BizEvent.class))).thenThrow(CosmosException.class);
+
+        assertThrows(CosmosException.class, () -> sut.getBizEventDocument("1"));
+    }
+
+    @Test
+    void getBizEventDocumentNotFound() {
+        when(mockCosmosException.getStatusCode()).thenReturn(404);
+        when(mockContainer.readItem(anyString(), any(), eq(BizEvent.class))).thenThrow(mockCosmosException);
 
         assertThrows(BizEventNotFoundException.class, () -> sut.getBizEventDocument("1"));
     }
