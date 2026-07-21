@@ -177,7 +177,11 @@ public class GenerateReceiptPdf {
         try {
             success = this.generateReceiptPdfService.verifyAndUpdateReceipt(receipt, pdfGeneration);
             if (success) {
-                receipt.setStatus(ReceiptStatusType.GENERATED);
+                if (Boolean.FALSE.equals(receipt.getSendNotification())) {
+                    receipt.setStatus(ReceiptStatusType.NOT_TO_NOTIFY);
+                } else {
+                    receipt.setStatus(ReceiptStatusType.GENERATED);
+                }
                 receipt.setGenerated_at(System.currentTimeMillis());
                 logger.info("[{}] Receipt with id {} being saved with status {}",
                         context.getFunctionName(),
