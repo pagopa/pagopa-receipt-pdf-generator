@@ -4,7 +4,7 @@
     "title": "Receipts Generator Helpdesk",
     "description": "Microservice for exposing REST APIs about receipts helpdesk.",
     "termsOfService": "https://www.pagopa.gov.it/",
-    "version": "1.17.19"
+    "version": "1.17.20-PIDM-862-notify-appIO"
   },
   "servers": [
     {
