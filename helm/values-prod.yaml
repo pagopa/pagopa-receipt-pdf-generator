@@ -217,7 +217,7 @@ pagopa-receipt-pdf-generator:
           timezone: "Europe/Rome"
           start: "00 7 * * 1-5"
           end: "0 20 * * 1-5"
-          desiredReplicas: "15"
+          desiredReplicas: "18"
       - type: cpu
         metadata:
           # Required
