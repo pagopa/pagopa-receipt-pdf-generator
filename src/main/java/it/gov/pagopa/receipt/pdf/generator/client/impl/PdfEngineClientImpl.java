@@ -7,24 +7,37 @@ import it.gov.pagopa.receipt.pdf.generator.model.response.PdfEngineResponse;
 import it.gov.pagopa.receipt.pdf.generator.utils.ObjectMapperUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
+import org.apache.http.NoHttpResponseException;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.HttpMultipartMode;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.entity.mime.content.StringBody;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.DefaultHttpRequestRetryHandler;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.http.message.BasicHeader;
 import org.apache.http.util.EntityUtils;
 
+import javax.net.ssl.SSLException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InterruptedIOException;
+import java.net.SocketTimeoutException;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.ZIP_FILE_NAME;
 
@@ -34,36 +47,52 @@ import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.ZIP_FILE_NAME;
 @Slf4j
 public class PdfEngineClientImpl implements PdfEngineClient {
 
-    private final String pdfEngineEndpoint = System.getenv().getOrDefault("PDF_ENGINE_ENDPOINT", "");
-    private final String ocpAimSubKey = System.getenv().getOrDefault("OCP_APIM_SUBSCRIPTION_KEY", "");
-
     private static final String HEADER_AUTH_KEY = "Ocp-Apim-Subscription-Key";
     private static final String TEMPLATE_KEY = "template";
     private static final String DATA_KEY = "data";
 
     private static final URL TEMPLATE_STREAM = PdfEngineClientImpl.class.getClassLoader().getResource(ZIP_FILE_NAME);
 
+    private final String pdfEngineEndpoint = System.getenv().getOrDefault("PDF_ENGINE_ENDPOINT", "");
+    private final Header subKeyHeader = new BasicHeader(
+            HEADER_AUTH_KEY,
+            System.getenv().getOrDefault("OCP_APIM_SUBSCRIPTION_KEY", ""));
 
-    private final CloseableHttpClient client;
+    // ---------- HTTP timeouts (ms) ----------
+    private static final int CONNECT_TIMEOUT_MS = envInt("PDF_ENGINE_HTTP_CONNECT_TIMEOUT_MS", 5_000);
+    private static final int CONNECTION_REQUEST_TIMEOUT_MS = envInt("PDF_ENGINE_HTTP_CONN_REQUEST_TIMEOUT_MS", 2_000);
+    private static final int SOCKET_TIMEOUT_MS = envInt("PDF_ENGINE_HTTP_SOCKET_TIMEOUT_MS", 30_000);
+    private static final int RETRY_COUNT = envInt("PDF_ENGINE_HTTP_RETRY_COUNT", 2);
 
-    private PdfEngineClientImpl() {
-        this.client = HttpClientBuilder.create().build();
-    }
-
-    PdfEngineClientImpl(CloseableHttpClient client) {
-        this.client = client;
-    }
+    // ---------- Connection pool ----------
+    private static final int MAX_CONN_PER_ROUTE = envInt("PDF_ENGINE_HTTP_MAX_CONN_PER_ROUTE", 80);
+    private static final int MAX_CONN_TOTAL = envInt("PDF_ENGINE_HTTP_MAX_CONN_TOTAL", MAX_CONN_PER_ROUTE);
+    private static final long CONN_TTL_SECONDS = envLong("PDF_ENGINE_HTTP_CONN_TTL_SECONDS", 60L);
+    private static final long IDLE_EVICT_SECONDS = envLong("PDF_ENGINE_HTTP_IDLE_EVICT_SECONDS", 30L);
+    private static final int VALIDATE_AFTER_INACTIVITY_MS = envInt("PDF_ENGINE_HTTP_VALIDATE_AFTER_INACTIVITY_MS", 2_000);
 
     /**
-     * Bill Pugh singleton holder: the JVM guarantees that the class is loaded
-     * (and therefore INSTANCE initialized) lazily and in a thread-safe way.
+     * Long-lived, thread-safe pooled HTTP client.
      */
-    private static class SingletonHelper {
+    private final CloseableHttpClient httpClient;
+
+    private static final class Holder {
         private static final PdfEngineClientImpl INSTANCE = new PdfEngineClientImpl();
     }
 
     public static PdfEngineClientImpl getInstance() {
-        return SingletonHelper.INSTANCE;
+        return Holder.INSTANCE;
+    }
+
+    private PdfEngineClientImpl() {
+        this(buildDefaultHttpClient());
+    }
+
+    /**
+     * Visible for tests: allows injecting a mocked or custom client.
+     */
+    protected PdfEngineClientImpl(CloseableHttpClient httpClient) {
+        this.httpClient = httpClient;
     }
 
     /**
@@ -85,19 +114,22 @@ public class PdfEngineClientImpl implements PdfEngineClient {
         }
     }
 
-    private HttpPost buildMultipartRequest(PdfEngineRequest pdfEngineRequest, InputStream templateStream) throws IOException {
+    private HttpPost buildMultipartRequest(
+            PdfEngineRequest pdfEngineRequest,
+            InputStream templateStream
+    ) throws IOException {
         StringBody dataBody = new StringBody(pdfEngineRequest.getData(), ContentType.APPLICATION_JSON);
 
         //Build the multipart request
-        MultipartEntityBuilder builder = MultipartEntityBuilder.create();
-        builder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
-        builder.addBinaryBody(TEMPLATE_KEY, templateStream.readAllBytes(), ContentType.create("application/zip"), ZIP_FILE_NAME);
-        builder.addPart(DATA_KEY, dataBody);
-        HttpEntity entity = builder.build();
+        HttpEntity entity = MultipartEntityBuilder.create()
+                .setMode(HttpMultipartMode.BROWSER_COMPATIBLE)
+                .addBinaryBody(TEMPLATE_KEY, templateStream.readAllBytes(), ContentType.create("application/zip"), ZIP_FILE_NAME)
+                .addPart(DATA_KEY, dataBody)
+                .build();
 
         //Set endpoint and auth key
         HttpPost request = new HttpPost(pdfEngineEndpoint);
-        request.setHeader(HEADER_AUTH_KEY, ocpAimSubKey);
+        request.setHeader(subKeyHeader);
         request.setEntity(entity);
         return request;
     }
@@ -111,7 +143,7 @@ public class PdfEngineClientImpl implements PdfEngineClient {
     private PdfEngineResponse makeCall(HttpPost request, Path workingDirPath) {
         PdfEngineResponse pdfEngineResponse = new PdfEngineResponse();
         //Execute call
-        try (CloseableHttpResponse response = this.client.execute(request)) {
+        try (CloseableHttpResponse response = this.httpClient.execute(request)) {
             //Retrieve response
             int statusCode = response.getStatusLine().getStatusCode();
             HttpEntity entityResponse = response.getEntity();
@@ -213,5 +245,80 @@ public class PdfEngineClientImpl implements PdfEngineClient {
         pdfEngineResponse.setStatusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR);
         pdfEngineResponse.setErrorMessage(errMsg);
         return pdfEngineResponse;
+    }
+
+    // -----------------------------------------------------------------
+    // HTTP client construction
+    // -----------------------------------------------------------------
+
+    /**
+     * Builds the shared {@link CloseableHttpClient} with a pooled connection
+     * manager, sensible timeouts and a retry handler for transient I/O errors.
+     */
+    private static CloseableHttpClient buildDefaultHttpClient() {
+        PoolingHttpClientConnectionManager connectionManager =
+                new PoolingHttpClientConnectionManager(CONN_TTL_SECONDS, TimeUnit.SECONDS);
+        connectionManager.setMaxTotal(MAX_CONN_TOTAL);
+        connectionManager.setDefaultMaxPerRoute(MAX_CONN_PER_ROUTE);
+        connectionManager.setValidateAfterInactivity(VALIDATE_AFTER_INACTIVITY_MS);
+
+        RequestConfig requestConfig = RequestConfig.custom()
+                .setConnectTimeout(CONNECT_TIMEOUT_MS)
+                .setConnectionRequestTimeout(CONNECTION_REQUEST_TIMEOUT_MS)
+                .setSocketTimeout(SOCKET_TIMEOUT_MS)
+                .build();
+
+        return HttpClientBuilder.create()
+                .setConnectionManager(connectionManager)
+                .setConnectionManagerShared(false)
+                .setDefaultRequestConfig(requestConfig)
+                .setRetryHandler(buildRetryHandler())
+                .setConnectionTimeToLive(CONN_TTL_SECONDS, TimeUnit.SECONDS)
+                .evictExpiredConnections()
+                .evictIdleConnections(IDLE_EVICT_SECONDS, TimeUnit.SECONDS)
+                .build();
+    }
+
+    /**
+     * Retry handler: retries on transient I/O failures (connect timeouts,
+     * dropped keep-alive connections, read timeouts) but NOT on auth/SSL or
+     * unknown-host errors. Critical to absorb single hiccups on APIM without
+     * surfacing them as HTTP 500 to the caller.
+     */
+    private static DefaultHttpRequestRetryHandler buildRetryHandler() {
+        return new DefaultHttpRequestRetryHandler(
+                RETRY_COUNT,
+                true,
+                List.of(InterruptedIOException.class, UnknownHostException.class, SSLException.class)
+        ) {
+            @Override
+            public boolean retryRequest(
+                    IOException exception,
+                    int executionCount,
+                    org.apache.http.protocol.HttpContext context
+            ) {
+                if (executionCount > RETRY_COUNT) {
+                    return false;
+                }
+                if (exception instanceof ConnectTimeoutException
+                        || exception instanceof NoHttpResponseException
+                        || exception instanceof SocketTimeoutException) {
+                    return true;
+                }
+                return super.retryRequest(exception, executionCount, context);
+            }
+        };
+    }
+
+    // -----------------------------------------------------------------
+    // Helpers
+    // -----------------------------------------------------------------
+
+    private static int envInt(String name, int defaultValue) {
+        return Integer.parseInt(System.getenv().getOrDefault(name, Integer.toString(defaultValue)));
+    }
+
+    private static long envLong(String name, long defaultValue) {
+        return Long.parseLong(System.getenv().getOrDefault(name, Long.toString(defaultValue)));
     }
 }
