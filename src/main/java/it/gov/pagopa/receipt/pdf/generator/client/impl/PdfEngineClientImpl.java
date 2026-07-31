@@ -72,7 +72,7 @@ public class PdfEngineClientImpl implements PdfEngineClient {
     // ---------- Connection pool ----------
     // HttpClient defaults are maxTotal=20, maxPerRoute=2.
     /** Max concurrent connections to the PDF Engine route. Size on per-JVM concurrency peak. */
-    private static final int MAX_CONN_PER_ROUTE = envInt("PDF_ENGINE_HTTP_MAX_CONN_PER_ROUTE", 80);
+    private static final int MAX_CONN_PER_ROUTE = envInt("PDF_ENGINE_HTTP_MAX_CONN_PER_ROUTE", 50);
     /** Pool cap. Single route here, so aligned with {@link #MAX_CONN_PER_ROUTE}. */
     private static final int MAX_CONN_TOTAL = envInt("PDF_ENGINE_HTTP_MAX_CONN_TOTAL", MAX_CONN_PER_ROUTE);
     /** Connection TTL (s). Keep below APIM keep-alive to avoid stale sockets. */
