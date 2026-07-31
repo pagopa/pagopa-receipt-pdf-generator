@@ -59,16 +59,27 @@ public class PdfEngineClientImpl implements PdfEngineClient {
             System.getenv().getOrDefault("OCP_APIM_SUBSCRIPTION_KEY", ""));
 
     // ---------- HTTP timeouts (ms) ----------
+    // Apache HttpClient defaults are -1 (infinite).
+    /** Max time to establish TCP+TLS connection. */
     private static final int CONNECT_TIMEOUT_MS = envInt("PDF_ENGINE_HTTP_CONNECT_TIMEOUT_MS", 5_000);
+    /** Max wait to lease a connection from the pool. Fail fast when pool is saturated. */
     private static final int CONNECTION_REQUEST_TIMEOUT_MS = envInt("PDF_ENGINE_HTTP_CONN_REQUEST_TIMEOUT_MS", 2_000);
+    /** SO_TIMEOUT: max inactivity while reading the response. */
     private static final int SOCKET_TIMEOUT_MS = envInt("PDF_ENGINE_HTTP_SOCKET_TIMEOUT_MS", 30_000);
+    /** Retries on transient I/O errors (see {@link #buildRetryHandler()}). */
     private static final int RETRY_COUNT = envInt("PDF_ENGINE_HTTP_RETRY_COUNT", 2);
 
     // ---------- Connection pool ----------
+    // HttpClient defaults are maxTotal=20, maxPerRoute=2.
+    /** Max concurrent connections to the PDF Engine route. Size on per-JVM concurrency peak. */
     private static final int MAX_CONN_PER_ROUTE = envInt("PDF_ENGINE_HTTP_MAX_CONN_PER_ROUTE", 80);
+    /** Pool cap. Single route here, so aligned with {@link #MAX_CONN_PER_ROUTE}. */
     private static final int MAX_CONN_TOTAL = envInt("PDF_ENGINE_HTTP_MAX_CONN_TOTAL", MAX_CONN_PER_ROUTE);
+    /** Connection TTL (s). Keep below APIM keep-alive to avoid stale sockets. */
     private static final long CONN_TTL_SECONDS = envLong("PDF_ENGINE_HTTP_CONN_TTL_SECONDS", 60L);
+    /** Idle eviction interval (s). Should stay below {@link #CONN_TTL_SECONDS}. */
     private static final long IDLE_EVICT_SECONDS = envLong("PDF_ENGINE_HTTP_IDLE_EVICT_SECONDS", 30L);
+    /** Validate leased connection if idle longer than this (ms). Matches HttpClient default, made explicit. */
     private static final int VALIDATE_AFTER_INACTIVITY_MS = envInt("PDF_ENGINE_HTTP_VALIDATE_AFTER_INACTIVITY_MS", 2_000);
 
     /**
@@ -280,10 +291,9 @@ public class PdfEngineClientImpl implements PdfEngineClient {
     }
 
     /**
-     * Retry handler: retries on transient I/O failures (connect timeouts,
-     * dropped keep-alive connections, read timeouts) but NOT on auth/SSL or
-     * unknown-host errors. Critical to absorb single hiccups on APIM without
-     * surfacing them as HTTP 500 to the caller.
+     * Retry handler for transient I/O failures on APIM (connect timeouts, dropped keep-alive,
+     * read timeouts). Excludes non-transient errors (auth/SSL/unknown host). Note: retries on
+     * {@link SocketTimeoutException} assume PDF Engine is idempotent — disable if not.
      */
     private static DefaultHttpRequestRetryHandler buildRetryHandler() {
         return new DefaultHttpRequestRetryHandler(
