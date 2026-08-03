@@ -8,9 +8,14 @@ import it.gov.pagopa.receipt.pdf.generator.model.template.ReceiptPDFTemplate;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
+import org.apache.http.NoHttpResponseException;
 import org.apache.http.StatusLine;
+import org.apache.http.client.HttpRequestRetryHandler;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.protocol.BasicHttpContext;
+import org.apache.http.protocol.HttpContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,11 +25,15 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import javax.net.ssl.SSLException;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
+import java.io.InterruptedIOException;
+import java.lang.reflect.Method;
+import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -191,9 +200,55 @@ class PdfEngineClientImplTest {
         assertTrue(result.getErrorMessage().startsWith("Exception thrown during pdf generation process:"));
     }
 
-    private PdfEngineRequest buildPdfEngineRequest() throws MalformedURLException, JsonProcessingException {
+    @Test
+    void retryHandlerRetriesOnConnectTimeout() throws Exception {
+        HttpRequestRetryHandler handler = retryHandler();
+        HttpContext ctx = new BasicHttpContext();
+
+        assertTrue(handler.retryRequest(new ConnectTimeoutException("timeout"), 1, ctx));
+        assertTrue(handler.retryRequest(new ConnectTimeoutException("timeout"), 2, ctx));
+    }
+
+    @Test
+    void retryHandlerRetriesOnNoHttpResponse() throws Exception {
+        HttpRequestRetryHandler handler = retryHandler();
+        assertTrue(handler.retryRequest(new NoHttpResponseException("stale keep-alive"), 1, new BasicHttpContext()));
+    }
+
+    @Test
+    void retryHandlerRetriesOnSocketTimeout() throws Exception {
+        HttpRequestRetryHandler handler = retryHandler();
+        assertTrue(handler.retryRequest(new SocketTimeoutException("read timeout"), 1, new BasicHttpContext()));
+    }
+
+    @Test
+    void retryHandlerStopsAfterMaxAttempts() throws Exception {
+        HttpRequestRetryHandler handler = retryHandler();
+        // RETRY_COUNT default is 2, so executionCount=3 must not retry
+        assertFalse(handler.retryRequest(new ConnectTimeoutException("timeout"), 3, new BasicHttpContext()));
+    }
+
+    @Test
+    void retryHandlerDoesNotRetryOnNonTransientErrors() throws Exception {
+        HttpRequestRetryHandler handler = retryHandler();
+        HttpContext ctx = new BasicHttpContext();
+
+        // Excluded classes in DefaultHttpRequestRetryHandler must not be retried.
+        assertFalse(handler.retryRequest(new SSLException("handshake failed"), 1, ctx));
+        assertFalse(handler.retryRequest(new UnknownHostException("dns"), 1, ctx));
+        // Generic InterruptedIOException is in the non-retriable list too.
+        assertFalse(handler.retryRequest(new InterruptedIOException("interrupted"), 1, ctx));
+    }
+
+    private PdfEngineRequest buildPdfEngineRequest() throws JsonProcessingException {
         return PdfEngineRequest.builder()
                 .data(objectMapper.writeValueAsString(new ReceiptPDFTemplate()))
                 .build();
+    }
+
+    private static HttpRequestRetryHandler retryHandler() throws Exception {
+        Method m = PdfEngineClientImpl.class.getDeclaredMethod("buildRetryHandler");
+        m.setAccessible(true);
+        return (HttpRequestRetryHandler) m.invoke(null);
     }
 }
