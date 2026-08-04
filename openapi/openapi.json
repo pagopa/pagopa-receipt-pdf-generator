@@ -4,7 +4,7 @@
     "title": "Receipts Generator Helpdesk",
     "description": "Microservice for exposing REST APIs about receipts helpdesk.",
     "termsOfService": "https://www.pagopa.gov.it/",
-    "version": "1.17.19-1-PAGOPA-3722-tuning-client-pdf-engine"
+    "version": "1.17.20"
   },
   "servers": [
     {
