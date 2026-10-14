@@ -193,8 +193,8 @@ pagopa-receipt-pdf-generator:
         metadata:
           value: "80"
       - type: memory
+        metricType: Utilization
         metadata:
-          type: Utilization # Allowed types are 'Utilization' or 'AverageValue'
           value: "90"
   externalConfigMapValues:
     !!merge <<: *externalConfigMapValues
