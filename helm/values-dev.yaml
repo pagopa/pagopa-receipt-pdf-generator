@@ -189,9 +189,8 @@ pagopa-receipt-pdf-generator:
           queueLength: "50"
           connectionFromEnv: "RECEIPTS_STORAGE_CONN_STRING"
       - type: cpu
+        metricType: Utilization # Allowed types are 'Utilization' or 'AverageValue'
         metadata:
-          # Required
-          type: Utilization # Allowed types are 'Utilization' or 'AverageValue'
           value: "75"
       - type: memory
         metadata:
@@ -233,9 +232,8 @@ pagopa-receipt-pdf-generator-cart:
           queueLength: "50"
           connectionFromEnv: "RECEIPTS_STORAGE_CONN_STRING"
       - type: cpu
+        metricType: Utilization # Allowed types are 'Utilization' or 'AverageValue'
         metadata:
-          # Required
-          type: Utilization # Allowed types are 'Utilization' or 'AverageValue'
           value: "75"
       - type: memory
         metadata:
@@ -274,9 +272,8 @@ pagopa-receipt-pdf-generator-helpdesk:
     cooldownPeriod: 50 # seconds
     triggers:
       - type: cpu
+        metricType: Utilization # Allowed types are 'Utilization' or 'AverageValue'
         metadata:
-          # Required
-          type: Utilization # Allowed types are 'Utilization' or 'AverageValue'
           value: "75"
       - type: memory
         metadata:
