@@ -211,8 +211,7 @@ pagopa-receipt-pdf-generator:
         metadata:
           queueName: "pagopa-p-weu-receipts-queue-receipt-waiting-4-gen"
           queueLength: "5000"
-          accountName: "pagopapweureceiptsfnsa"
-          connectionFromEnv: "RECEIPTS_STORAGE_CONN_STRING"
+          accountName: "pagopapweureceiptsst"
       - type: cron
         metadata:
           timezone: "Europe/Rome"
@@ -276,8 +275,7 @@ pagopa-receipt-pdf-generator-cart:
         metadata:
           queueName: "pagopa-p-weu-receipts-queue-cart-receipt-waiting-4-gen"
           queueLength: "1000"
-          accountName: "pagopapweureceiptsfnsa"
-          connectionFromEnv: "RECEIPTS_STORAGE_CONN_STRING"
+          accountName: "pagopapweureceiptsst"
       - type: cpu
         metricType: Utilization # Allowed types are 'Utilization' or 'AverageValue'
         metadata:
