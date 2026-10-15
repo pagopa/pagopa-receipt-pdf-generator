@@ -187,7 +187,7 @@ pagopa-receipt-pdf-generator:
         metadata:
           queueName: "pagopa-u-weu-receipts-queue-receipt-waiting-4-gen"
           queueLength: "1000"
-          connectionFromEnv: "RECEIPTS_STORAGE_CONN_STRING"
+          accountName: "pagopauweureceiptsst"
       - type: cpu
         metricType: Utilization # Allowed types are 'Utilization' or 'AverageValue'
         metadata:
@@ -230,15 +230,14 @@ pagopa-receipt-pdf-generator-cart:
         metadata:
           queueName: "pagopa-u-weu-receipts-queue-cart-receipt-waiting-4-gen"
           queueLength: "50"
-          connectionFromEnv: "RECEIPTS_STORAGE_CONN_STRING"
+          accountName: "pagopauweureceiptsst"
       - type: cpu
         metricType: Utilization # Allowed types are 'Utilization' or 'AverageValue'
         metadata:
           value: "80"
       - type: memory
+        metricType: Utilization
         metadata:
-          # Required
-          type: Utilization # Allowed types are 'Utilization' or 'AverageValue'
           value: "90"
   externalConfigMapValues:
     !!merge <<: *externalConfigMapValues
@@ -276,9 +275,8 @@ pagopa-receipt-pdf-generator-helpdesk:
         metadata:
           value: "80"
       - type: memory
+        metricType: Utilization
         metadata:
-          # Required
-          type: Utilization # Allowed types are 'Utilization' or 'AverageValue'
           value: "90"
   externalConfigMapValues:
     !!merge <<: *externalConfigMapValues
