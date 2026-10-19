@@ -50,12 +50,8 @@ microservice-chart: &microservice-chart
     servicePort: 8080
   serviceAccount:
     name: "receipts-workload-identity"
-    annotations:
-      azure.workload.identity/client-id: "<azure-workload-identity-client-id>"
-      azure.workload.identity/tenant-id: "<azure-tenant-id>"
   azure:
-    workloadIdentityEnabled: true
-    workloadIdentityClientId: "<azure-workload-identity-client-id>"
+    workloadIdentityClientId: <workload-identity-client-id-set-automatically-by-gha>
   podAnnotations: {}
   podSecurityContext:
     seccompProfile:
@@ -191,7 +187,7 @@ pagopa-receipt-pdf-generator:
         metadata:
           queueName: "pagopa-d-weu-receipts-queue-receipt-waiting-4-gen"
           queueLength: "50"
-          accountName: "pagopadweureceiptsst"
+          connectionFromEnv: "RECEIPTS_STORAGE_CONN_STRING"
       - type: cpu
         metricType: Utilization # Allowed types are 'Utilization' or 'AverageValue'
         metadata:
@@ -234,7 +230,7 @@ pagopa-receipt-pdf-generator-cart:
         metadata:
           queueName: "pagopa-d-weu-receipts-queue-cart-receipt-waiting-4-gen"
           queueLength: "50"
-          accountName: "pagopadweureceiptsst"
+          connectionFromEnv: "RECEIPTS_STORAGE_CONN_STRING"
       - type: cpu
         metricType: Utilization # Allowed types are 'Utilization' or 'AverageValue'
         metadata:
