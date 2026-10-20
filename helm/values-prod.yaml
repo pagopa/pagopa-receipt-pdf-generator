@@ -191,6 +191,12 @@ pagopa-receipt-pdf-generator:
     maxReplica: 20
     pollingInterval: 10 # seconds
     cooldownPeriod: 300 # seconds
+    triggerAuthentications:
+      - name: queue-auth
+        secretTargetRef:
+          - parameter: connection
+            name: pagopa-receipt-pdf-generator
+            key: receipts-storage-account-connection-string
     advanced:
       horizontalPodAutoscalerConfig:
         behavior:
@@ -208,6 +214,8 @@ pagopa-receipt-pdf-generator:
                 periodSeconds: 60
     triggers:
       - type: azure-queue
+        authenticationRef:
+          name: queue-auth
         metadata:
           queueName: "pagopa-p-weu-receipts-queue-receipt-waiting-4-gen"
           queueLength: "5000"
@@ -255,6 +263,12 @@ pagopa-receipt-pdf-generator-cart:
     maxReplica: 10
     pollingInterval: 10 # seconds
     cooldownPeriod: 300 # seconds
+    triggerAuthentications:
+      - name: queue-auth-cart
+        secretTargetRef:
+          - parameter: connection
+            name: pagopa-receipt-pdf-generator-cart
+            key: receipts-storage-account-connection-string
     advanced:
       horizontalPodAutoscalerConfig:
         behavior:
@@ -272,6 +286,8 @@ pagopa-receipt-pdf-generator-cart:
                 periodSeconds: 60
     triggers:
       - type: azure-queue
+        authenticationRef:
+          name: queue-auth-cart
         metadata:
           queueName: "pagopa-p-weu-receipts-queue-cart-receipt-waiting-4-gen"
           queueLength: "1000"
