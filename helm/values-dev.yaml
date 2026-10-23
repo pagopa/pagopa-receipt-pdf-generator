@@ -4,7 +4,7 @@ microservice-chart: &microservice-chart
   fullnameOverride: ""
   image:
     repository: ghcr.io/pagopa/pagopa-receipt-pdf-generator
-    tag: "1.17.21"
+    tag: "1.17.22"
     pullPolicy: Always
   # https://github.com/Azure/azure-functions-host/blob/dev/src/WebJobs.Script.WebHost/Controllers/HostController.cs
   livenessProbe:
@@ -182,12 +182,21 @@ pagopa-receipt-pdf-generator:
     maxReplica: 1
     pollingInterval: 10 # seconds
     cooldownPeriod: 50 # seconds
+    triggerAuthentications:
+      - name: queue-auth
+        secretTargetRef:
+          - parameter: connection
+            name: pagopa-receipt-pdf-generator
+            key: receipts-storage-account-connection-string
     triggers:
       - type: azure-queue
+        authenticationRef:
+          name: queue-auth
         metadata:
           queueName: "pagopa-d-weu-receipts-queue-receipt-waiting-4-gen"
           queueLength: "50"
-          accountName: "pagopadweureceiptsst"
+          accountName: 'pagopadweureceiptsfnsa'
+          connectionFromEnv: "RECEIPTS_STORAGE_CONN_STRING"
       - type: cpu
         metricType: Utilization # Allowed types are 'Utilization' or 'AverageValue'
         metadata:
@@ -225,12 +234,21 @@ pagopa-receipt-pdf-generator-cart:
     maxReplica: 1
     pollingInterval: 10 # seconds
     cooldownPeriod: 50 # seconds
+    triggerAuthentications:
+      - name: queue-auth-cart
+        secretTargetRef:
+          - parameter: connection
+            name: pagopa-receipt-pdf-generator-cart
+            key: receipts-storage-account-connection-string
     triggers:
       - type: azure-queue
+        authenticationRef:
+          name: queue-auth-cart
         metadata:
           queueName: "pagopa-d-weu-receipts-queue-cart-receipt-waiting-4-gen"
           queueLength: "50"
-          accountName: "pagopadweureceiptsst"
+          accountName: 'pagopadweureceiptsfnsa'
+          connectionFromEnv: "RECEIPTS_STORAGE_CONN_STRING"
       - type: cpu
         metricType: Utilization # Allowed types are 'Utilization' or 'AverageValue'
         metadata:
