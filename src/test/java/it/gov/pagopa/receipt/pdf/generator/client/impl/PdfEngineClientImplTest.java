@@ -11,6 +11,7 @@ import org.apache.http.HttpStatus;
 import org.apache.http.NoHttpResponseException;
 import org.apache.http.StatusLine;
 import org.apache.http.client.HttpRequestRetryHandler;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -23,10 +24,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import javax.net.ssl.SSLException;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,6 +37,7 @@ import java.io.InterruptedIOException;
 import java.lang.reflect.Method;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -46,6 +50,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static uk.org.webcompere.systemstubs.SystemStubs.withEnvironmentVariables;
 
 @ExtendWith(MockitoExtension.class)
 class PdfEngineClientImplTest {
@@ -109,6 +114,51 @@ class PdfEngineClientImplTest {
         assertEquals(HttpStatus.SC_OK, result.getStatusCode());
         File tempPdf = new File(result.getTempPdfPath());
         assertTrue(tempPdf.delete());
+    }
+
+    @Test
+    void barcodeFlagEnabledUploadsNewTemplate() throws Exception {
+        withEnvironmentVariables("FF_BAR_CODE", "true")
+                .execute(() -> assertUploadedTemplate("template.zip", "template-legacy.zip", true));
+    }
+
+    @Test
+    void barcodeFlagDisabledUploadsMainBranchTemplate() throws Exception {
+        withEnvironmentVariables("FF_BAR_CODE", "false")
+                .execute(() -> assertUploadedTemplate("template-legacy.zip", "template.zip", false));
+    }
+
+    private void assertUploadedTemplate(String expectedResource, String otherResource, boolean barcodeEnabled) throws Exception {
+        when(clientMock.execute(any())).thenReturn(mockResponse);
+        when(mockResponse.getStatusLine()).thenReturn(mockStatusLine);
+        when(mockStatusLine.getStatusCode()).thenReturn(HttpStatus.SC_UNAUTHORIZED);
+        when(mockResponse.getEntity()).thenReturn(mockEntity);
+
+        PdfEngineResponse result = sut.generatePDF(buildPdfEngineRequest(), tempDirectory.toPath());
+        assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, result.getStatusCode());
+
+        ArgumentCaptor<HttpPost> requestCaptor = ArgumentCaptor.forClass(HttpPost.class);
+        verify(clientMock).execute(requestCaptor.capture());
+        HttpPost request = requestCaptor.getValue();
+        if (barcodeEnabled) {
+            assertEquals("x-ms-routing-name=staging", request.getFirstHeader("Cookie").getValue());
+        } else {
+            assertFalse(request.containsHeader("Cookie"));
+        }
+        ByteArrayOutputStream body = new ByteArrayOutputStream();
+        request.getEntity().writeTo(body);
+        String multipartBody = body.toString(StandardCharsets.ISO_8859_1);
+
+        assertTrue(multipartBody.contains("name=\"template\"; filename=\"template.zip\""));
+        assertTrue(multipartBody.contains(resourceBytes(expectedResource)));
+        assertFalse(multipartBody.contains(resourceBytes(otherResource)));
+    }
+
+    private String resourceBytes(String name) throws IOException {
+        try (InputStream stream = getClass().getClassLoader().getResourceAsStream(name)) {
+            assertNotNull(stream);
+            return new String(stream.readAllBytes(), StandardCharsets.ISO_8859_1);
+        }
     }
 
     @Test
