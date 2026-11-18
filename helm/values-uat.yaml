@@ -78,6 +78,7 @@ microservice-chart: &microservice-chart
       cpu: "0.75"
   fileConfig: {}
   envConfig: &envConfig
+    JAVA_OPTS: "-XX:-UseBASE64Intrinsics"
     TZ: "Europe/Rome"
     ENV: "uat"
     LOG_LEVEL: "INFO"
