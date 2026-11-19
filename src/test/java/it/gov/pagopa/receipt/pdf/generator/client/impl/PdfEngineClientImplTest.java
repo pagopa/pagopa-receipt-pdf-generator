@@ -117,18 +117,47 @@ class PdfEngineClientImplTest {
     }
 
     @Test
-    void barcodeFlagEnabledUploadsNewTemplate() throws Exception {
-        withEnvironmentVariables("FF_BAR_CODE", "true")
+    void newTemplateWithStagingRouting() throws Exception {
+        withEnvironmentVariables("ZIP_FILE_NAME", "template.zip", "STAGING_ROUTING_COOKIE", "true")
                 .execute(() -> assertUploadedTemplate("template.zip", "template-legacy.zip", true));
     }
 
     @Test
-    void barcodeFlagDisabledUploadsMainBranchTemplate() throws Exception {
-        withEnvironmentVariables("FF_BAR_CODE", "false")
+    void legacyTemplateWithoutStagingRouting() throws Exception {
+        withEnvironmentVariables("ZIP_FILE_NAME", "template-legacy.zip", "STAGING_ROUTING_COOKIE", "false")
                 .execute(() -> assertUploadedTemplate("template-legacy.zip", "template.zip", false));
     }
 
-    private void assertUploadedTemplate(String expectedResource, String otherResource, boolean barcodeEnabled) throws Exception {
+    @Test
+    void newTemplateWithoutStagingRouting() throws Exception {
+        withEnvironmentVariables("ZIP_FILE_NAME", "template.zip", "STAGING_ROUTING_COOKIE", "false")
+                .execute(() -> assertUploadedTemplate("template.zip", "template-legacy.zip", false));
+    }
+
+    @Test
+    void legacyTemplateWithStagingRouting() throws Exception {
+        withEnvironmentVariables("ZIP_FILE_NAME", "template-legacy.zip", "STAGING_ROUTING_COOKIE", "true")
+                .execute(() -> assertUploadedTemplate("template-legacy.zip", "template.zip", true));
+    }
+
+    @Test
+    void defaultTemplateIsNewTemplate() throws Exception {
+        withEnvironmentVariables("ZIP_FILE_NAME", null, "STAGING_ROUTING_COOKIE", "false")
+                .execute(() -> assertUploadedTemplate("template.zip", "template-legacy.zip", false));
+    }
+
+    @Test
+    void missingConfiguredTemplateDoesNotCallPdfEngine() throws Exception {
+        withEnvironmentVariables("ZIP_FILE_NAME", "missing-template.zip").execute(() -> {
+            PdfEngineResponse result = sut.generatePDF(buildPdfEngineRequest(), tempDirectory.toPath());
+
+            assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, result.getStatusCode());
+            assertTrue(result.getErrorMessage().contains("PDF Engine template not found: missing-template.zip"));
+            verify(clientMock, never()).execute(any());
+        });
+    }
+
+    private void assertUploadedTemplate(String expectedResource, String otherResource, boolean stagingRoutingEnabled) throws Exception {
         when(clientMock.execute(any())).thenReturn(mockResponse);
         when(mockResponse.getStatusLine()).thenReturn(mockStatusLine);
         when(mockStatusLine.getStatusCode()).thenReturn(HttpStatus.SC_UNAUTHORIZED);
@@ -140,7 +169,7 @@ class PdfEngineClientImplTest {
         ArgumentCaptor<HttpPost> requestCaptor = ArgumentCaptor.forClass(HttpPost.class);
         verify(clientMock).execute(requestCaptor.capture());
         HttpPost request = requestCaptor.getValue();
-        if (barcodeEnabled) {
+        if (stagingRoutingEnabled) {
             assertEquals("x-ms-routing-name=staging", request.getFirstHeader("Cookie").getValue());
         } else {
             assertFalse(request.containsHeader("Cookie"));

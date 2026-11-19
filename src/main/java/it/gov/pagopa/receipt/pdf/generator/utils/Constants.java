@@ -3,7 +3,6 @@ package it.gov.pagopa.receipt.pdf.generator.utils;
 public class Constants {
 
     public static final String ZIP_FILE_NAME = "template.zip";
-    public static final String LEGACY_ZIP_FILE_NAME = "template-legacy.zip";
     public static final String TEMPLATE_PREFIX = "pagopa-ricevuta";
     public static final String PAYER_TEMPLATE_SUFFIX = "p";
     public static final String DEBTOR_TEMPLATE_SUFFIX = "d";

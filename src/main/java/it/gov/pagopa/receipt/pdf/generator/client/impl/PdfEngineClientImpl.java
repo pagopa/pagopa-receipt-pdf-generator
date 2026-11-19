@@ -39,7 +39,6 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.LEGACY_ZIP_FILE_NAME;
 import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.ZIP_FILE_NAME;
 
 /**
@@ -49,7 +48,7 @@ import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.ZIP_FILE_NAME;
 public class PdfEngineClientImpl implements PdfEngineClient {
 
     private static final String HEADER_AUTH_KEY = "Ocp-Apim-Subscription-Key";
-    private static final String STAGING_ROUTING_COOKIE = "x-ms-routing-name=staging";
+    private static final String STAGING_ROUTING_COOKIE_VALUE = "x-ms-routing-name=staging";
     private static final String TEMPLATE_KEY = "template";
     private static final String DATA_KEY = "data";
 
@@ -114,14 +113,14 @@ public class PdfEngineClientImpl implements PdfEngineClient {
      */
     @Override
     public PdfEngineResponse generatePDF(PdfEngineRequest pdfEngineRequest, Path workingDirPath) {
-        boolean barcodeEnabled = Boolean.parseBoolean(System.getenv().getOrDefault("FF_BAR_CODE", "false"));
-        String templateName = barcodeEnabled ? ZIP_FILE_NAME : LEGACY_ZIP_FILE_NAME;
+        String templateName = System.getenv().getOrDefault("ZIP_FILE_NAME", ZIP_FILE_NAME);
+        boolean stagingRoutingEnabled = Boolean.parseBoolean(System.getenv().getOrDefault("STAGING_ROUTING_COOKIE", "false"));
         try (InputStream templateStream = PdfEngineClientImpl.class.getClassLoader().getResourceAsStream(templateName)) {
             if (templateStream == null) {
                 throw new FileNotFoundException("PDF Engine template not found: " + templateName);
             }
             //Encode template and data
-            HttpPost request = buildMultipartRequest(pdfEngineRequest, templateStream, barcodeEnabled);
+            HttpPost request = buildMultipartRequest(pdfEngineRequest, templateStream, stagingRoutingEnabled);
 
             return makeCall(request, workingDirPath);
         } catch (IOException e) {
@@ -132,7 +131,7 @@ public class PdfEngineClientImpl implements PdfEngineClient {
     private HttpPost buildMultipartRequest(
             PdfEngineRequest pdfEngineRequest,
             InputStream templateStream,
-            boolean barcodeEnabled
+            boolean stagingRoutingEnabled
     ) throws IOException {
         StringBody dataBody = new StringBody(pdfEngineRequest.getData(), ContentType.APPLICATION_JSON);
 
@@ -146,8 +145,8 @@ public class PdfEngineClientImpl implements PdfEngineClient {
         //Set endpoint and auth key
         HttpPost request = new HttpPost(pdfEngineEndpoint);
         request.setHeader(subKeyHeader);
-        if (barcodeEnabled) {
-            request.setHeader("Cookie", STAGING_ROUTING_COOKIE);
+        if (stagingRoutingEnabled) {
+            request.setHeader("Cookie", STAGING_ROUTING_COOKIE_VALUE);
         }
         request.setEntity(entity);
         return request;
