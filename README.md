@@ -82,6 +82,8 @@ then replace env variables with correct values
 | `COSMOS_RECEIPT_DB_NAME`              | Database name of the Receipt database in CosmosDB                                |                                                        |
 | `COSMOS_RECEIPT_CONTAINER_NAME`       | Container name of the Receipt container in CosmosDB                              |                                                        |
 | `PDF_ENGINE_ENDPOINT`                 | Endpoint to the PDF engine                                                       |                                                        |
+| `ZIP_FILE_NAME`                      | Bundled template sent to PDF-engine | "template.zip" |
+| `STAGING_ROUTING_COOKIE`             | Send `Cookie: x-ms-routing-name=staging` to PDF-engine when `true`, independently of the selected template | "false" |
 | `OCP_APIM_SUBSCRIPTION_KEY`           | Auth key for Azure to access the PDF Engine                                      |                                                        |
 | `PDV_TOKENIZER_BASE_PATH`             | PDV Tokenizer API base path                                                      | "https://api.uat.tokenizer.pdv.pagopa.it/tokenizer/v1" |
 | `PDV_TOKENIZER_SEARCH_TOKEN_ENDPOINT` | PDV Tokenizer API search token endpoint                                          |                    "/tokens/search"                    |

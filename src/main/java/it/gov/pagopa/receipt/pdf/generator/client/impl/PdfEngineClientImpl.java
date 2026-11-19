@@ -28,11 +28,11 @@ import org.apache.http.util.EntityUtils;
 
 import javax.net.ssl.SSLException;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InterruptedIOException;
 import java.net.SocketTimeoutException;
-import java.net.URL;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -48,10 +48,9 @@ import static it.gov.pagopa.receipt.pdf.generator.utils.Constants.ZIP_FILE_NAME;
 public class PdfEngineClientImpl implements PdfEngineClient {
 
     private static final String HEADER_AUTH_KEY = "Ocp-Apim-Subscription-Key";
+    private static final String STAGING_ROUTING_COOKIE_VALUE = "x-ms-routing-name=staging";
     private static final String TEMPLATE_KEY = "template";
     private static final String DATA_KEY = "data";
-
-    private static final URL TEMPLATE_STREAM = PdfEngineClientImpl.class.getClassLoader().getResource(ZIP_FILE_NAME);
 
     private final String pdfEngineEndpoint = System.getenv().getOrDefault("PDF_ENGINE_ENDPOINT", "");
     private final Header subKeyHeader = new BasicHeader(
@@ -114,10 +113,14 @@ public class PdfEngineClientImpl implements PdfEngineClient {
      */
     @Override
     public PdfEngineResponse generatePDF(PdfEngineRequest pdfEngineRequest, Path workingDirPath) {
-        //Generate client
-        try (InputStream templateStream = TEMPLATE_STREAM.openStream()) {
+        String templateName = System.getenv().getOrDefault("ZIP_FILE_NAME", ZIP_FILE_NAME);
+        boolean stagingRoutingEnabled = Boolean.parseBoolean(System.getenv().getOrDefault("STAGING_ROUTING_COOKIE", "false"));
+        try (InputStream templateStream = PdfEngineClientImpl.class.getClassLoader().getResourceAsStream(templateName)) {
+            if (templateStream == null) {
+                throw new FileNotFoundException("PDF Engine template not found: " + templateName);
+            }
             //Encode template and data
-            HttpPost request = buildMultipartRequest(pdfEngineRequest, templateStream);
+            HttpPost request = buildMultipartRequest(pdfEngineRequest, templateStream, stagingRoutingEnabled);
 
             return makeCall(request, workingDirPath);
         } catch (IOException e) {
@@ -127,7 +130,8 @@ public class PdfEngineClientImpl implements PdfEngineClient {
 
     private HttpPost buildMultipartRequest(
             PdfEngineRequest pdfEngineRequest,
-            InputStream templateStream
+            InputStream templateStream,
+            boolean stagingRoutingEnabled
     ) throws IOException {
         StringBody dataBody = new StringBody(pdfEngineRequest.getData(), ContentType.APPLICATION_JSON);
 
@@ -141,6 +145,9 @@ public class PdfEngineClientImpl implements PdfEngineClient {
         //Set endpoint and auth key
         HttpPost request = new HttpPost(pdfEngineEndpoint);
         request.setHeader(subKeyHeader);
+        if (stagingRoutingEnabled) {
+            request.setHeader("Cookie", STAGING_ROUTING_COOKIE_VALUE);
+        }
         request.setEntity(entity);
         return request;
     }

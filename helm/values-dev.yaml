@@ -4,7 +4,7 @@ microservice-chart: &microservice-chart
   fullnameOverride: ""
   image:
     repository: ghcr.io/pagopa/pagopa-receipt-pdf-generator
-    tag: "1.17.23"
+    tag: "1.17.23-2-add-a11y-barcode-two-pages-support"
     pullPolicy: Always
   # https://github.com/Azure/azure-functions-host/blob/dev/src/WebJobs.Script.WebHost/Controllers/HostController.cs
   livenessProbe:
@@ -90,6 +90,8 @@ microservice-chart: &microservice-chart
     COSMOS_RECEIPT_QUEUE_MAX_RETRY: "5"
     COSMOS_CART_RECEIPT_QUEUE_MAX_RETRY: "5"
     PDF_ENGINE_ENDPOINT: "https://api.dev.platform.pagopa.it/shared/pdf-engine/v1/generate-pdf"
+    ZIP_FILE_NAME: "template.zip"
+    STAGING_ROUTING_COOKIE: "true"
     COSMOS_RECEIPT_SERVICE_ENDPOINT: "https://pagopa-d-weu-receipts-ds-cosmos-account.documents.azure.com:443/"
     COSMOS_BIZ_EVENT_SERVICE_ENDPOINT: "https://pagopa-d-weu-bizevents-ds-cosmos-account.documents.azure.com:443/"
     COSMOS_BIZ_EVENT_READ_REGION: "West Europe"
