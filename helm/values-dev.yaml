@@ -91,7 +91,7 @@ microservice-chart: &microservice-chart
     COSMOS_CART_RECEIPT_QUEUE_MAX_RETRY: "5"
     PDF_ENGINE_ENDPOINT: "https://api.dev.platform.pagopa.it/shared/pdf-engine/v1/generate-pdf"
     ZIP_FILE_NAME: "template.zip"
-    STAGING_ROUTING_COOKIE: "true"
+    STAGING_ROUTING_COOKIE: "false"
     COSMOS_RECEIPT_SERVICE_ENDPOINT: "https://pagopa-d-weu-receipts-ds-cosmos-account.documents.azure.com:443/"
     COSMOS_BIZ_EVENT_SERVICE_ENDPOINT: "https://pagopa-d-weu-bizevents-ds-cosmos-account.documents.azure.com:443/"
     COSMOS_BIZ_EVENT_READ_REGION: "West Europe"
