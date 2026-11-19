@@ -5,7 +5,7 @@
 
     <groupId>it.gov.pagopa.receipt</groupId>
     <artifactId>receipt-pdf-generator</artifactId>
-    <version>1.17.23-2-add-a11y-barcode-two-pages-support</version>
+    <version>1.17.23-3-PAGOPA-3816-barcode-stable</version>
     <packaging>jar</packaging>
 
     <name>pagopa-receipt-pdf-generator</name>
